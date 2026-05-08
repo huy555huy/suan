@@ -82,6 +82,12 @@ async def copilot_page():
     return FileResponse(WEB_ROOT / "copilot.html")
 
 
+@app.get("/journal")
+@app.get("/journal.html")
+async def journal_page():
+    return FileResponse(WEB_ROOT / "journal.html")
+
+
 @app.get("/index.html")
 async def index_html():
     return FileResponse(WEB_ROOT / "index.html")

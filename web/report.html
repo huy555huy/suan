@@ -27,9 +27,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="/static/js/astro_wheel.js"></script>
+  <script src="/static/js/ziwei_wheel.js"></script>
+  <script src="/static/js/journal.js"></script>
+  <script src="/static/js/share_card.js"></script>
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/enhance.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
-  <script defer src="/static/js/app.js"></script>
   <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="/static/css/enhance.css" />
+  <link rel="stylesheet" href="/static/js/astro_wheel.css" />
   <link rel="icon" type="image/svg+xml" href="/static/img/logo.svg" />
   <style>
     @media print {
@@ -124,6 +131,89 @@
     }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-grid .full { grid-column: span 2; }
+
+    /* ── 紫微 12 宫环形盘（报告大盘） ── */
+    .ziwei-wheel-large {
+      padding: 12px 0 6px;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(184,153,104,0.05) 0%, transparent 60%),
+        radial-gradient(circle at 50% 50%, transparent 70%, rgba(74,102,112,0.04) 100%);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .ziwei-wheel-large svg { display: block; max-width: 100%; height: auto; }
+
+    /* 12 宫细表（罗盘下方表格） */
+    .ziwei-palace-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border: 1px solid var(--line);
+      background: var(--paper);
+    }
+    .ziwei-palace-cell {
+      padding: 12px 14px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      font-size: 12.5px;
+      line-height: 1.7;
+      min-height: 92px;
+      position: relative;
+    }
+    .ziwei-palace-cell.is-life {
+      background: rgba(200,64,60,0.05);
+      border-left: 3px solid var(--vermilion);
+    }
+    .ziwei-palace-cell.is-body {
+      background: rgba(74,102,112,0.04);
+      border-left: 3px solid var(--celadon);
+    }
+    .ziwei-palace-cell .zpc-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .ziwei-palace-cell .zpc-name {
+      font-family: var(--font-serif-cn);
+      font-size: 14.5px;
+      letter-spacing: 0.12em;
+      color: var(--ink);
+    }
+    .ziwei-palace-cell.is-life .zpc-name { color: var(--vermilion); }
+    .ziwei-palace-cell .zpc-gz {
+      font-family: "STZhongsong", "STKaiti", var(--font-serif-cn), serif;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: var(--celadon);
+      opacity: 0.85;
+    }
+    .ziwei-palace-cell .zpc-stars { margin-bottom: 4px; }
+    .ziwei-palace-cell .zpc-star {
+      display: inline-block;
+      font-family: var(--font-serif-cn);
+      font-size: 13.5px;
+      color: var(--ink-soft);
+      margin-right: 8px;
+      letter-spacing: 0.06em;
+    }
+    .ziwei-palace-cell .zpc-aux { margin-bottom: 2px; }
+    .ziwei-palace-cell .zpc-auxstar {
+      display: inline-block;
+      font-family: var(--font-serif-cn);
+      font-size: 11px;
+      color: var(--silver-grey);
+      margin-right: 6px;
+    }
+    .ziwei-palace-cell .zpc-huastar {
+      display: inline-block;
+      font-family: "Kaiti SC", var(--font-serif-cn), serif;
+      font-size: 10.5px;
+      color: var(--vermilion);
+      letter-spacing: 0.12em;
+      margin-right: 6px;
+      padding: 1px 4px;
+      border: 1px solid var(--vermilion);
+      border-radius: 1px;
+    }
   </style>
 </head>
 <body class="font-sans-cn text-ink min-h-screen bg-paper-dark/30">
@@ -132,7 +222,7 @@
 <header class="border-b border-[var(--line)] bg-paper sticky top-0 z-30 backdrop-blur no-print">
   <div class="max-w-7xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
     <a href="/" class="flex items-center gap-3">
-      <span class="seal seal--sm">算</span>
+      <span class="seal seal--sm brand-seal-auto">算</span>
       <span class="flex flex-col leading-tight">
         <span class="font-serif-cn text-[18px] tracking-[0.2em] text-ink">算 suan</span>
         <span class="title-eyebrow">研 · 一卷书</span>
@@ -148,6 +238,7 @@
       <a href="/chat" class="btn btn-outline btn-sm">退出</a>
     </div>
   </div>
+  <div class="weather-ribbon weather-ribbon-auto no-print"></div>
 </header>
 
 <main class="max-w-5xl mx-auto px-6 lg:px-10 py-10" x-data="reportFlow()">
@@ -491,17 +582,66 @@
     <!-- 章节 3：紫微 -->
     <div class="scroll-paper p-8 mb-8 report-section page-break" id="ziwei" x-show="charts.ziwei">
       <h2><span>紫微斗数</span><span class="chap-no">卷之三</span></h2>
+
+      <!-- 紫微十二宫环形盘（500px） -->
+      <template x-if="charts.ziwei && (charts.ziwei.palaces || []).length">
+        <div class="ziwei-wheel-large mb-6">
+          <div class="flex justify-center">
+            <svg id="zw-report-wheel" width="500" height="500"
+                 x-init="$nextTick(() => { if (window.SuanZiweiWheel) SuanZiweiWheel.render($el, charts.ziwei, { size: 500 }); })"
+                 x-effect="charts.ziwei && (charts.ziwei.palaces || []).length && window.SuanZiweiWheel && SuanZiweiWheel.render($el, charts.ziwei, { size: 500 })"
+                 ></svg>
+          </div>
+          <div class="text-center text-[11px] text-silver tracking-[0.32em] mt-2 font-kai" style="letter-spacing:0.34em;">十 · 二 · 宫 · 罗 · 经</div>
+        </div>
+      </template>
+
+      <!-- 三件式：命宫 / 身宫 / 五行局（保留作为概要） -->
       <div class="grid md:grid-cols-3 gap-4 mb-6">
         <div class="stat-tile"><div class="stat-label">命宫</div><div class="stat-value" x-text="charts.ziwei.life_palace"></div></div>
         <div class="stat-tile"><div class="stat-label">身宫</div><div class="stat-value" x-text="charts.ziwei.body_palace"></div></div>
         <div class="stat-tile"><div class="stat-label">五行局</div><div class="stat-value" x-text="charts.ziwei.five_element_bureau"></div></div>
       </div>
+
       <h3>四化星</h3>
       <ul>
         <template x-for="[k, v] in Object.entries(charts.ziwei.si_hua || {})" :key="k">
           <li><strong x-text="k + '：'"></strong> <span x-text="v"></span></li>
         </template>
       </ul>
+
+      <!-- 12 宫主星明细（在没有完整 palaces 数据时也能优雅降级） -->
+      <template x-if="charts.ziwei && (charts.ziwei.palaces || []).length">
+        <div class="mt-6">
+          <h3>十二宫主星 · 辅星 · 四化命中</h3>
+          <div class="ziwei-palace-grid">
+            <template x-for="p in charts.ziwei.palaces" :key="p.name + p.branch">
+              <div class="ziwei-palace-cell" :class="p.name === charts.ziwei.life_palace ? 'is-life' : (p.name === charts.ziwei.body_palace ? 'is-body' : '')">
+                <div class="zpc-head">
+                  <span class="zpc-name" x-text="p.name"></span>
+                  <span class="zpc-gz" x-text="(p.stem || '') + p.branch"></span>
+                </div>
+                <div class="zpc-stars" x-show="(p.stars || []).length">
+                  <template x-for="s in (p.stars || [])" :key="s">
+                    <span class="zpc-star" x-text="s"></span>
+                  </template>
+                </div>
+                <div class="zpc-aux" x-show="(p.auxiliary || []).length">
+                  <template x-for="a in (p.auxiliary || [])" :key="a">
+                    <span class="zpc-auxstar" x-text="a"></span>
+                  </template>
+                </div>
+                <div class="zpc-sihua" x-show="(p.si_hua || []).length">
+                  <template x-for="h in (p.si_hua || [])" :key="h">
+                    <span class="zpc-huastar" x-text="h"></span>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+
       <div x-show="opinionByExpert.ziwei" class="mt-6">
         <h3>专家研判 · 中州派</h3>
         <p x-text="opinionByExpert.ziwei ? opinionByExpert.ziwei.summary : ''"></p>
@@ -519,6 +659,25 @@
         <div class="stat-tile"><div class="stat-label">月相</div>
           <div class="stat-value" x-text="charts.natal_astro.moon_phase"></div></div>
       </div>
+
+      <!-- ★ 占星本命盘圆轮 -->
+      <template x-if="charts.natal_astro && charts.natal_astro.planets && charts.natal_astro.angles">
+        <div class="my-6 flex flex-col items-center">
+          <div class="text-[11px] text-silver tracking-[0.32em] font-kai mb-3">本 · 命 · 圆 · 轮</div>
+          <svg id="report-astro-wheel"
+               width="460" height="460"
+               viewBox="0 0 600 600"
+               preserveAspectRatio="xMidYMid meet"
+               style="max-width: 100%;"
+               x-init="$nextTick(() => { if (window.SuanAstroWheel) SuanAstroWheel.render($el, charts.natal_astro, { size: 600 }); })"
+               x-effect="charts.natal_astro && charts.natal_astro.planets && charts.natal_astro.angles && window.SuanAstroWheel && SuanAstroWheel.render($el, charts.natal_astro, { size: 600 })">
+          </svg>
+          <div class="text-[11.5px] text-silver mt-2 tracking-[0.18em] font-kai text-center">
+            ASC 在 9 点钟 · 黄道逆时针 · 5 类相位线
+          </div>
+        </div>
+      </template>
+
       <h3>10 行星 + 4 角</h3>
       <table class="w-full text-[13px]">
         <thead>
@@ -916,14 +1075,46 @@ function reportFlow() {
           body_palace: s.ziwei.body_palace,
           five_element_bureau: s.ziwei.five_element_bureau,
           si_hua: s.ziwei.si_hua || {},
+          // 透传 12 宫数据驱动环形盘渲染
+          palaces: Array.isArray(s.ziwei.palaces) ? s.ziwei.palaces : [],
+          main_stars: s.ziwei.main_stars || {},
+          da_xian: Array.isArray(s.ziwei.da_xian) ? s.ziwei.da_xian : [],
+          school: s.ziwei.school || 'zhongzhou',
         };
       }
       if (s && s.natal_astro) {
-        out.natal_astro = {
-          planets: { sun: { sign: s.natal_astro.sun, sign_degree: 0 }, moon: { sign: s.natal_astro.moon, sign_degree: 0 } },
-          moon_phase: s.natal_astro.moon_phase,
-          distributions: s.natal_astro.distributions || {},
-        };
+        // 后端 _charts_summary_brief 同时兼容两种形态：
+        //  (1) 老的简摘要：仅 sun/moon/moon_phase/distributions
+        //  (2) 新的全摘要：planets/angles/houses/aspects/distributions/moon_phase
+        // 完整字段优先；缺失才退回老形态构造一个空骨架
+        const na = s.natal_astro;
+        const hasFull = na.planets && typeof na.planets === 'object' && Object.keys(na.planets).length > 0
+                        && na.angles && typeof na.angles === 'object';
+        if (hasFull) {
+          out.natal_astro = {
+            planets: na.planets,
+            angles: na.angles,
+            houses: Array.isArray(na.houses) ? na.houses : [],
+            aspects: Array.isArray(na.aspects) ? na.aspects : [],
+            distributions: na.distributions || {},
+            moon_phase: na.moon_phase || '',
+            house_system: na.house_system || 'placidus',
+            school: na.school || 'modern_psychological',
+          };
+        } else {
+          // 退化：仅有 sun/moon 字段，仍能给上方 stat-tile 喂数据
+          out.natal_astro = {
+            planets: {
+              sun:  { sign: na.sun,  sign_degree: 0 },
+              moon: { sign: na.moon, sign_degree: 0 },
+            },
+            angles: {},
+            houses: [],
+            aspects: [],
+            moon_phase: na.moon_phase,
+            distributions: na.distributions || {},
+          };
+        }
       }
       if (s && s.numerology) {
         out.numerology = s.numerology;

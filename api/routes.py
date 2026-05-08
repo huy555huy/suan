@@ -314,16 +314,51 @@ def _charts_summary_brief(charts) -> dict:
         }
     if charts.ziwei:
         zw = charts.ziwei
-        out["ziwei"] = {"life_palace": zw.life_palace, "body_palace": zw.body_palace,
-                        "five_element_bureau": zw.five_element_bureau,
-                        "si_hua": zw.si_hua}
+        # 兼容: 后端 ZiweiChart.palaces 每宫含 {name, branch, stem, ganzhi, stars, auxiliary, si_hua}
+        # 前端 ziwei_wheel.js 期望 {name, branch, stem, stars, auxiliary, si_hua}; ganzhi 容错
+        palaces_out = []
+        for p in (zw.palaces or []):
+            if not isinstance(p, dict):
+                continue
+            palaces_out.append({
+                "name": p.get("name") or "",
+                "branch": p.get("branch") or "",
+                "stem": p.get("stem") or "",
+                "ganzhi": p.get("ganzhi") or (
+                    (p.get("stem") or "") + (p.get("branch") or "")
+                ),
+                "stars": list(p.get("stars") or p.get("main_stars") or []),
+                "auxiliary": list(p.get("auxiliary") or p.get("aux_stars") or []),
+                "si_hua": list(p.get("si_hua") or []),
+            })
+        out["ziwei"] = {
+            "life_palace": zw.life_palace,
+            "body_palace": zw.body_palace,
+            "five_element_bureau": zw.five_element_bureau,
+            "si_hua": zw.si_hua,
+            "palaces": palaces_out,
+            "main_stars": dict(zw.main_stars or {}),
+            "da_xian": list(zw.da_xian or []),
+            "school": getattr(zw, "school", "zhongzhou"),
+        }
     if charts.natal_astro:
         na = charts.natal_astro
+        # 既保留老快摘字段（sun/moon/moon_phase/distributions）方便简单展示，
+        # 也透传完整 planets/angles/houses/aspects 供前端占星轮渲染。
+        # 注意：体积大约从 ~200B 涨到 ~6-10KB；对单次 SSE 帧依然轻量。
         out["natal_astro"] = {
+            # ── 速读字段（向后兼容）─────────────────────────
             "sun": na.planets.get("sun", {}).get("sign"),
             "moon": na.planets.get("moon", {}).get("sign"),
             "moon_phase": na.moon_phase,
             "distributions": na.distributions,
+            # ── 完整盘面（驱动 SVG 圆轮） ───────────────────
+            "planets": na.planets,           # 13 颗行星 / 节点 / 凯龙完整字典
+            "angles": na.angles,             # ASC / MC / DSC / IC（黄经）
+            "houses": na.houses,             # 12 宫边界
+            "aspects": na.aspects,           # 5 类相位连线
+            "house_system": na.house_system,
+            "school": na.school,
         }
     if charts.numerology:
         nu = charts.numerology
@@ -419,6 +454,93 @@ async def compute_charts_only(req: SyncReq):
         "errors": state.errors,
         "caveats": caveats,
     }, media_type="application/json; charset=utf-8")
+
+
+# ── 当日推送 ────────────────────────────────────────────────
+class DailyReq(BaseModel):
+    profile: CreateOrUpdateSession
+
+
+@router.post("/daily")
+async def daily_briefing(req: DailyReq):
+    """当日提示：今日干支 + 节气 + 月相 + 利方位 + 一句话简评。
+
+    LLM 失败 → 仍返回基础信息（干支/节气/月相/方位），不调 LLM 也有用。
+    """
+    from datetime import datetime as _dt, timezone as _tz
+    from computation.calendar import (
+        GAN_WUXING, get_day_pillar, solar_terms_for_year, to_julian_day,
+    )
+
+    now_utc = _dt.utcnow()
+    day_stem, day_branch, _ = get_day_pillar(now_utc.replace(tzinfo=_tz.utc))
+    gz = day_stem + day_branch
+
+    terms = solar_terms_for_year(now_utc.year)
+    sorted_terms = sorted(terms.items(), key=lambda x: x[1])
+    cur_term = "立春"
+    for name, dt in reversed(sorted_terms):
+        if dt.replace(tzinfo=None) <= now_utc:
+            cur_term = name; break
+
+    jd = to_julian_day(now_utc.replace(tzinfo=_tz.utc))
+    phase_frac = ((jd - 2451550.1) / 29.530589) % 1.0
+    moon_names = [
+        (0.03, "新月"), (0.22, "蛾眉月"), (0.28, "上弦月"),
+        (0.47, "盈凸月"), (0.53, "满月"), (0.72, "亏凸月"),
+        (0.78, "下弦月"), (0.97, "残月"), (1.01, "新月"),
+    ]
+    moon = "新月"
+    for thr, nm in moon_names:
+        if phase_frac < thr:
+            moon = nm; break
+
+    day_wuxing = GAN_WUXING.get(day_stem, "土")
+    fav_dir_map = {
+        "木": "东 / 东南", "火": "南 / 东南", "土": "中宫 / 西南",
+        "金": "西 / 西北", "水": "北 / 东北",
+    }
+    fav_dir = fav_dir_map.get(day_wuxing, "中宫")
+    color_map = {"木":"翠玉","火":"朱砂","土":"鎏金","金":"白瓷","水":"黛青"}
+    color_hex = {"木":"#5d7c6a","火":"#c8403c","土":"#b89968","金":"#a09b94","水":"#4a6670"}
+
+    base = {
+        "gz": gz, "term": cur_term, "moon": moon,
+        "lucky_direction": fav_dir,
+        "color_name": color_map.get(day_wuxing, "鎏金"),
+        "color": color_hex.get(day_wuxing, "#b89968"),
+    }
+
+    profile = req.profile.model_dump()
+    if not profile.get("date"):
+        base["hint"] = f"今日 {gz}，{moon}。{cur_term} 时分。利方位：{fav_dir}。"
+        return base
+
+    # LLM 写一句话
+    try:
+        from core.llm_client import chat
+        sys_prompt = (
+            "你是一位克制温润的命理师，给用户写一句\"今日提示\"（30-60 字内）。"
+            "禁用'100%/必然/保证/改命'等绝对化语言。"
+            "结合当日干支 + 节气 + 月相 + 用户档案，给一句具体的'今日宜/忌/心境'提示。"
+            "不写'祝你'/'希望你'等套话；不要 markdown；不要换行。"
+        )
+        user_prompt = (
+            f"今日 {gz}（{day_wuxing}日）· {cur_term} · {moon}\n"
+            f"用户：性别 {profile.get('gender')}，生日 {profile.get('date')} {profile.get('time') or '时辰未知'}，{profile.get('place') or '北京'}\n"
+            f"利方位：{fav_dir} · 利色：{color_map.get(day_wuxing)}\n"
+            f"输出一句话提示。"
+        )
+        text, _ = await chat(
+            [{"role": "system", "content": sys_prompt},
+             {"role": "user", "content": user_prompt}],
+            temperature=0.6, max_tokens=180, tier="low",
+        )
+        base["hint"] = (text or "").strip().split("\n")[0][:140]
+    except Exception:
+        base["hint"] = f"今日 {gz}，{moon}。{cur_term} 时分。利方位：{fav_dir}。"
+
+    return base
 
 
 # ── 知识库速查（B 端 / chat 旁路调用）────────────────────────

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>命运日记 · 算 suan</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: {
+          ink: '#1a1a1a', 'ink-soft': '#2c2c2c',
+          paper: '#faf6f0', 'paper-dark': '#ede5d3', 'paper-warm': '#f3ebd8',
+          vermilion: '#c8403c', celadon: '#4a6670',
+          gold: '#b89968', jade: '#5d7c6a', silver: '#a09b94',
+        },
+        fontFamily: {
+          'serif-cn': ['"Source Han Serif SC"','"Noto Serif SC"','"Songti SC"','serif'],
+          'sans-cn':  ['"PingFang SC"','"Source Han Sans SC"','system-ui','sans-serif'],
+          'kai':      ['"Kaiti SC"','"STKaiti"','"Source Han Serif SC"','serif'],
+        }
+      }}
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <script src="/static/js/journal.js"></script>
+  <script src="/static/js/enhance.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
+
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="/static/css/enhance.css" />
+  <link rel="icon" type="image/svg+xml" href="/static/img/logo.svg" />
+
+  <style>
+    .journal-entry {
+      padding: 22px 26px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      margin-bottom: 18px;
+      position: relative;
+      transition: all .25s ease;
+    }
+    .journal-entry:hover {
+      border-color: var(--ink);
+      transform: translateY(-2px);
+    }
+    .journal-entry.is-due {
+      border-left: 4px solid var(--vermilion);
+      background: linear-gradient(90deg, rgba(200,64,60,.04), transparent 30%);
+    }
+    .journal-entry.is-recalled {
+      opacity: 0.65;
+    }
+    .je-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 14px; margin-bottom: 10px; flex-wrap: wrap;
+    }
+    .je-kind {
+      font-family: var(--font-kai); font-size: 11px; letter-spacing: 0.32em;
+      padding: 2px 10px; border: 1px solid currentColor;
+    }
+    .je-kind.k-consensus { color: var(--jade); }
+    .je-kind.k-advice    { color: var(--gold); }
+    .je-kind.k-caution   { color: var(--vermilion); }
+    .je-kind.k-conflict  { color: var(--celadon); }
+    .je-kind.k-verdict   { color: var(--ink); border-width: 2px; }
+    .je-kind.k-cross_link { color: var(--gold); }
+    .je-kind.k-reflection { color: var(--vermilion-deep, var(--vermilion)); }
+    .je-kind.k-custom    { color: var(--silver-grey); }
+    .je-text {
+      font-family: var(--font-serif-cn); font-size: 15px; line-height: 1.95;
+      color: var(--ink);
+    }
+    .je-meta {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      font-size: 11.5px; color: var(--silver-grey);
+      letter-spacing: 0.16em; margin-top: 14px;
+      font-family: var(--font-kai);
+    }
+    .je-meta .due-soon { color: var(--vermilion); }
+    .je-meta .recalled { color: var(--jade); }
+    .je-actions {
+      display: flex; gap: 12px; margin-top: 14px;
+      padding-top: 12px; border-top: 1px dashed var(--line);
+    }
+    .je-actions button {
+      font-family: var(--font-kai); font-size: 12px;
+      letter-spacing: 0.2em;
+      background: transparent; border: 1px solid var(--line);
+      padding: 6px 14px; cursor: pointer;
+      color: var(--ink-soft);
+      transition: all .2s ease;
+    }
+    .je-actions button:hover { border-color: var(--ink); color: var(--ink); }
+    .je-actions button.recall-btn { color: var(--vermilion); border-color: var(--vermilion); }
+    .je-actions button.recall-btn:hover { background: var(--vermilion); color: var(--paper); }
+    .je-actions button.delete-btn:hover { color: var(--vermilion); border-color: var(--vermilion); }
+
+    .recall-modal {
+      position: fixed; inset: 0;
+      background: rgba(26,26,26,.55); backdrop-filter: blur(3px);
+      z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .recall-modal-card {
+      background: var(--paper); max-width: 540px; width: 100%;
+      border: 1px solid var(--ink); padding: 32px 36px;
+    }
+    .verdict-choice {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px; margin-top: 16px;
+    }
+    .verdict-choice button {
+      padding: 14px; font-family: var(--font-serif-cn);
+      font-size: 14px; letter-spacing: 0.06em;
+      border: 1px solid var(--line); background: var(--paper);
+      cursor: pointer; transition: all .2s ease;
+    }
+    .verdict-choice button:hover { border-color: var(--ink); }
+    .verdict-choice button.applied { color: var(--jade); }
+    .verdict-choice button.partial { color: var(--gold); }
+    .verdict-choice button.notapplied { color: var(--vermilion); }
+    .verdict-choice button.applied:hover { background: var(--jade); color: var(--paper); }
+    .verdict-choice button.partial:hover { background: var(--gold); color: var(--paper); }
+    .verdict-choice button.notapplied:hover { background: var(--vermilion); color: var(--paper); }
+
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 18px; margin-bottom: 28px;
+    }
+    .stat-tile {
+      padding: 18px 22px; border: 1px solid var(--line);
+      background: var(--paper);
+    }
+    .stat-tile .lbl {
+      font-size: 11px; color: var(--silver-grey);
+      letter-spacing: 0.22em; font-family: var(--font-kai);
+    }
+    .stat-tile .num {
+      font-family: var(--font-serif-cn); font-size: 28px;
+      color: var(--ink); margin-top: 6px;
+    }
+    .stat-tile.due .num { color: var(--vermilion); }
+    .stat-tile.recalled .num { color: var(--jade); }
+  </style>
+</head>
+<body class="font-sans-cn text-ink min-h-screen bg-paper-dark/30">
+
+<header class="border-b border-[var(--line)] bg-paper sticky top-0 z-30 backdrop-blur">
+  <div class="max-w-5xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-3">
+      <span class="seal seal--sm">算</span>
+      <span class="flex flex-col leading-tight">
+        <span class="font-serif-cn text-[18px] tracking-[0.2em] text-ink">算 suan</span>
+        <span class="title-eyebrow">命运日记</span>
+      </span>
+    </a>
+    <nav class="hidden md:flex items-center gap-7 text-[12.5px] tracking-[0.16em] text-ink-soft">
+      <a href="/chat" class="hover:text-vermilion transition">问 · 一席话</a>
+      <a href="/report" class="hover:text-vermilion transition">研 · 一卷书</a>
+      <a href="/copilot" class="hover:text-vermilion transition">案 · 命师案头</a>
+    </nav>
+    <a href="/chat" class="btn btn-outline btn-sm">返</a>
+  </div>
+  <div class="weather-ribbon weather-ribbon-auto"></div>
+</header>
+
+<main class="max-w-5xl mx-auto px-6 lg:px-10 py-10" x-data="journalApp()">
+
+  <div class="title-eyebrow mb-3">日记 · 命运笔录</div>
+  <h1 class="font-serif-cn text-[36px] md:text-[44px] tracking-[0.06em] text-ink mb-3 leading-tight">
+    所记之 <span class="text-vermilion">应了什么</span>，没应什么
+  </h1>
+  <p class="font-serif-cn text-[14.5px] leading-[2] text-ink-soft mb-10 max-w-2xl">
+    你在「问·一席话」里记下的每一条共识、建议、警示，都在这里。
+    时辰到时回访它——「应了 / 没应 / 部分应」——这是命理工具最稀有的反馈循环。
+  </p>
+
+  <!-- 统计 -->
+  <div class="stats-row">
+    <div class="stat-tile">
+      <div class="lbl">总记录</div>
+      <div class="num" x-text="entries.length"></div>
+    </div>
+    <div class="stat-tile due">
+      <div class="lbl">该回访</div>
+      <div class="num" x-text="dueEntries.length"></div>
+    </div>
+    <div class="stat-tile recalled">
+      <div class="lbl">已回访</div>
+      <div class="num" x-text="entries.filter(e => e.recalled).length"></div>
+    </div>
+    <div class="stat-tile">
+      <div class="lbl">应验率</div>
+      <div class="num" x-text="appliedRate + '%'"></div>
+    </div>
+  </div>
+
+  <!-- 过滤 -->
+  <div class="flex items-center gap-3 mb-6 flex-wrap">
+    <button class="chip" :class="filter === 'all' ? 'is-active' : ''" @click="filter='all'">全部</button>
+    <button class="chip" :class="filter === 'due' ? 'is-active' : ''" @click="filter='due'">该回访</button>
+    <button class="chip" :class="filter === 'pending' ? 'is-active' : ''" @click="filter='pending'">未回访</button>
+    <button class="chip" :class="filter === 'recalled' ? 'is-active' : ''" @click="filter='recalled'">已回访</button>
+    <span class="text-[11.5px] text-silver tracking-[0.18em] font-kai ml-auto">数据仅在本机 · 关闭浏览器仍在</span>
+  </div>
+
+  <!-- 日记列表 -->
+  <template x-if="filteredEntries.length === 0">
+    <div class="paper-card p-10 text-center">
+      <div class="font-kai text-[14px] tracking-[0.32em] text-silver mb-3">空</div>
+      <p class="font-serif-cn text-[14px] text-ink-soft leading-[1.95]">
+        还没有命运笔录。<br/>
+        到 <a href="/chat" class="text-vermilion">问·一席话</a> 提一个问题，
+        在结论 / 共识 / 建议旁点击即可记入。
+      </p>
+    </div>
+  </template>
+
+  <template x-for="(e, i) in filteredEntries" :key="e.id">
+    <div :class="'journal-entry ' + (isDue(e) ? 'is-due' : '') + ' ' + (e.recalled ? 'is-recalled' : '')">
+      <div class="je-head">
+        <span :class="'je-kind k-' + e.kind" x-text="kindLabel(e.kind)"></span>
+        <span class="font-kai text-[11px] tracking-[0.18em] text-silver" x-text="formatDate(e.createdAt)"></span>
+      </div>
+      <div class="je-text" x-text="e.text"></div>
+      <template x-if="e.advice">
+        <div class="text-[12.5px] text-silver mt-2 italic" x-text="'建议 · ' + e.advice.slice(0, 200)"></div>
+      </template>
+
+      <div class="je-meta">
+        <template x-if="e.source && e.source.question">
+          <span>来源 · <span class="text-ink-soft" x-text="(e.source.question || '').slice(0, 50)"></span></span>
+        </template>
+        <template x-if="e.source && e.source.profileName">
+          <span>档 · <span x-text="e.source.profileName"></span></span>
+        </template>
+        <template x-if="e.recalled">
+          <span class="recalled" x-text="'✓ 已回访 · ' + (e.verdict === 'applied' ? '应了' : e.verdict === 'partial' ? '部分应' : '没应')"></span>
+        </template>
+        <template x-if="!e.recalled">
+          <span :class="isDue(e) ? 'due-soon' : ''" x-text="recallLabel(e)"></span>
+        </template>
+      </div>
+
+      <div class="je-actions">
+        <template x-if="!e.recalled">
+          <button class="recall-btn" @click="openRecall(e)">回访 · 标记应验</button>
+        </template>
+        <template x-if="e.recalled">
+          <button @click="undoRecall(e)">撤销回访</button>
+        </template>
+        <button class="delete-btn" @click="deleteEntry(e)">删除</button>
+        <template x-if="e.sessionId">
+          <a class="text-[12px] text-silver tracking-[0.18em] font-kai ml-auto self-center"
+             :href="'/chat?sid=' + e.sessionId">查原会话 →</a>
+        </template>
+      </div>
+    </div>
+  </template>
+
+  <!-- 回访 modal -->
+  <div class="recall-modal" x-show="recallModal" x-transition style="display:none;">
+    <div class="recall-modal-card">
+      <div class="font-kai text-[12.5px] tracking-[0.32em] text-vermilion mb-2">回访 · 命运笔录</div>
+      <h3 class="font-serif-cn text-[20px] tracking-[0.06em] mb-4">这条记下时距今 <span x-text="recallTarget ? daysSince(recallTarget.createdAt) : 0"></span> 天</h3>
+
+      <p class="font-serif-cn text-[14px] leading-[2] text-ink-soft mb-2" x-text="recallTarget ? recallTarget.text : ''"></p>
+
+      <p class="font-kai text-[12px] tracking-[0.2em] text-silver mt-6 mb-2">— 它应验了吗？</p>
+      <div class="verdict-choice">
+        <button class="applied" @click="confirmRecall('applied')">应了</button>
+        <button class="partial" @click="confirmRecall('partial')">部分应</button>
+        <button class="notapplied" @click="confirmRecall('notapplied')">没应</button>
+      </div>
+
+      <div class="text-right mt-6">
+        <button class="text-[12px] text-silver tracking-[0.18em] font-kai" @click="recallModal=false">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部清空区 -->
+  <div class="mt-12 pt-6 border-t border-[var(--line)] flex items-center justify-between">
+    <span class="text-[11.5px] text-silver tracking-[0.18em] font-kai">— 数据存于本机 localStorage —</span>
+    <div class="flex gap-3">
+      <button class="text-[12px] text-silver tracking-[0.18em] font-kai hover:text-vermilion"
+              @click="exportData()">导出 JSON</button>
+      <button class="text-[12px] text-silver tracking-[0.18em] font-kai hover:text-vermilion"
+              @click="if(confirm('清空全部命运日记？此操作不可恢复。')) clearAll()">清空全部</button>
+    </div>
+  </div>
+</main>
+
+<script>
+function journalApp() {
+  return {
+    entries: [],
+    filter: 'all',
+    recallModal: false,
+    recallTarget: null,
+
+    init() {
+      this.refresh();
+    },
+
+    refresh() {
+      this.entries = (window.SuanJournal && window.SuanJournal.list()) || [];
+    },
+
+    get filteredEntries() {
+      const now = Date.now();
+      switch (this.filter) {
+        case 'due': return this.entries.filter(e => !e.recalled && e.recallAt <= now);
+        case 'pending': return this.entries.filter(e => !e.recalled);
+        case 'recalled': return this.entries.filter(e => e.recalled);
+        default: return this.entries;
+      }
+    },
+
+    get dueEntries() {
+      const now = Date.now();
+      return this.entries.filter(e => !e.recalled && e.recallAt <= now);
+    },
+
+    get appliedRate() {
+      const recalled = this.entries.filter(e => e.recalled);
+      if (!recalled.length) return 0;
+      const applied = recalled.filter(e => e.verdict === 'applied').length;
+      const partial = recalled.filter(e => e.verdict === 'partial').length;
+      return Math.round((applied + partial * 0.5) / recalled.length * 100);
+    },
+
+    isDue(e) {
+      return !e.recalled && e.recallAt <= Date.now();
+    },
+
+    kindLabel(kind) {
+      return ({
+        consensus: '双重共识', advice: '可行建议', caution: '需谨慎',
+        conflict: '显式分歧', verdict: '整次判官',
+        cross_link: '跨系统涌现', reflection: '元认知反思',
+        custom: '自记',
+      })[kind] || kind;
+    },
+
+    formatDate(ts) {
+      const d = new Date(ts);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    },
+
+    daysSince(ts) {
+      return Math.floor((Date.now() - ts) / 86400000);
+    },
+
+    recallLabel(e) {
+      const days = Math.floor((e.recallAt - Date.now()) / 86400000);
+      if (days <= 0) return '已到回访时（点回访按钮）';
+      return `还有 ${days} 天到回访`;
+    },
+
+    openRecall(e) {
+      this.recallTarget = e;
+      this.recallModal = true;
+    },
+
+    confirmRecall(verdict) {
+      if (!this.recallTarget) return;
+      window.SuanJournal.markRecalled(this.recallTarget.id, verdict);
+      this.recallModal = false;
+      this.recallTarget = null;
+      this.refresh();
+    },
+
+    undoRecall(e) {
+      window.SuanJournal.update(e.id, { recalled: false, verdict: null });
+      this.refresh();
+    },
+
+    deleteEntry(e) {
+      if (!confirm('删除这条命运笔录？')) return;
+      window.SuanJournal.remove(e.id);
+      this.refresh();
+    },
+
+    exportData() {
+      const json = window.SuanJournal.exportJSON();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `suan-journal-${this.formatDate(Date.now())}.json`;
+      document.body.appendChild(a);
+      a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    },
+
+    clearAll() {
+      window.SuanJournal.clear();
+      this.refresh();
+    },
+  };
+}
+</script>
+
+</body>
+</html>

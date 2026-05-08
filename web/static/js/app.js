@@ -274,6 +274,28 @@
         this.profile = $store() && $store().profile;
         this.backendOnline = $store() && $store().backendOnline;
 
+        // ── 加载今日推送（如果有 profile + 后端在线）──
+        const tryDaily = () => {
+          if (!this.profile || !this.backendOnline || !window.SuanDaily) return;
+          if (window.SuanDaily.alreadyDismissed && window.SuanDaily.alreadyDismissed()) return;
+          window.SuanDaily.fetchToday(this.profile).then(data => {
+            const wrap = document.getElementById('daily-wrap');
+            if (!wrap || !data) return;
+            wrap.style.display = 'block';
+            window.SuanDaily.render(wrap, data);
+          });
+        };
+        setTimeout(tryDaily, 800);
+        // 后端 ready 后再试一次（可能首次 init 时 backendChecking 还没完）
+        const watcher = setInterval(() => {
+          const s = $store();
+          if (s && !s.backendChecking) {
+            this.backendOnline = s.backendOnline;
+            tryDaily();
+            clearInterval(watcher);
+          }
+        }, 300);
+
         // 监听 store 后端在线变化
         const checkBackend = setInterval(() => {
           const s = $store();
@@ -539,7 +561,7 @@
           }
 
           case 'cross_link_insight': {
-            // ★ 跨系统涌现联结 — 单独显式渲染
+            // ★ 跨系统涌现联结 — 单独显式渲染 + 全屏闪光
             bubble.insights = bubble.insights || [];
             bubble.insights.push({
               headline: data.headline,
@@ -552,6 +574,10 @@
             // 高亮 aligner
             const a = this.agents.find(x => x.id === 'aligner');
             if (a) { a.status = 'done'; a.progress = 100; a.lastMsg = data.headline || '联结完成'; }
+            // 触发全屏闪光（金色径向）
+            if (window.SuanEnhance && window.SuanEnhance.flashOnce) {
+              window.SuanEnhance.flashOnce();
+            }
             break;
           }
 
@@ -770,6 +796,104 @@
         this.agents.forEach(a => { a.status = 'idle'; a.progress = 0; a.lastMsg = ''; });
       },
       toggleTrace(i) { this.messages[i].traceOpen = !this.messages[i].traceOpen; },
+
+      // ── B4：记下到命运日记 ──
+      markToJournal(kind, text, m) {
+        if (!window.SuanJournal) { alert('命运日记模块未加载'); return; }
+        const profile = this.profile || {};
+        const recallDays = (kind === 'advice' || kind === 'consensus') ? 90 : 180;
+        const it = window.SuanJournal.add({
+          kind,
+          text,
+          source: {
+            question: m && m.firstQuestion ? m.firstQuestion : (this.messages.find(x => x.role === 'user') || {}).text,
+            profileName: profile.name || '匿名',
+          },
+          sessionId: this.sid,
+          recallAfterDays: recallDays,
+        });
+        // 视觉反馈
+        const el = window.event && window.event.target;
+        if (el && el.classList) {
+          el.classList.add('journaled');
+          setTimeout(() => el.classList.remove('journaled'), 1500);
+        }
+        this._toast(`已记入命运日记 · 将于 ${recallDays} 天后回访`);
+      },
+
+      recordVerdict(m) {
+        if (!window.SuanJournal) return;
+        const profile = this.profile || {};
+        const summary = m.text ? m.text.slice(0, 200) : (m.consensus || []).join(' / ');
+        const it = window.SuanJournal.add({
+          kind: 'verdict',
+          text: summary,
+          advice: (m.advice || []).join(' / '),
+          source: {
+            question: (this.messages.find(x => x.role === 'user') || {}).text,
+            profileName: profile.name || '匿名',
+            confidence: m.confidence,
+          },
+          sessionId: this.sid,
+          recallAfterDays: 90,
+        });
+        this._toast('已记下整次判官 · 90 天后回访');
+      },
+
+      // ── B5：生成结论卡 PNG ──
+      async shareCard(m) {
+        if (!window.SuanShareCard) { alert('结论卡模块未加载'); return; }
+        const profile = this.profile || {};
+        const userQ = (this.messages.find(x => x.role === 'user') || {}).text || '一段研判';
+
+        // 找最有代表性的一句结论
+        let conclusion = '';
+        if (m.consensus && m.consensus.length) conclusion = m.consensus[0];
+        else if (m.advice && m.advice.length) conclusion = m.advice[0];
+        else if (m.text) {
+          // 取 narrative 第一段非空文本
+          const firstPara = m.text.split(/\n\n+/).find(p => p && !/^[\s>#-]/.test(p));
+          conclusion = (firstPara || m.text).slice(0, 80);
+        }
+
+        const date = (window.SuanEnhance && window.SuanEnhance.yearGanzhi)
+          ? `${window.SuanEnhance.yearGanzhi(new Date())}年 · ${window.SuanEnhance.currentSolarTerm(new Date())}`
+          : new Date().toISOString().slice(0,10);
+
+        const profileLine = (profile.gender === 'male' ? '乾造' : profile.gender === 'female' ? '坤造' : '中性')
+          + ' · ' + (profile.date || '') + ' · ' + (profile.place || '');
+
+        const council = (m.trace && m.trace.steps || [])
+          .filter(s => s.kind === 'expert')
+          .map(s => ({ bazi:'八字', ziwei:'紫微', astrology:'占星', tarot:'塔罗',
+                       numerology:'数命', yijing:'易经', fengshui:'风水', liunian:'流年' }[s.agent] || s.agent))
+          .filter((v, i, a) => v && a.indexOf(v) === i)
+          .slice(0, 4);
+
+        await window.SuanShareCard.downloadCard({
+          title: userQ.slice(0, 22),
+          conclusion: conclusion.slice(0, 60),
+          confidence: m.confidence,
+          profileLine,
+          councilSig: council,
+          date,
+          source: '算 suan · 中西命理研判',
+        });
+      },
+
+      _toast(text) {
+        let el = document.getElementById('suan-toast');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'suan-toast';
+          el.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:12px 22px;font-family:var(--font-serif-cn);font-size:13px;letter-spacing:0.14em;border-radius:2px;z-index:9999;opacity:0;transition:opacity .3s ease;';
+          document.body.appendChild(el);
+        }
+        el.textContent = text;
+        el.style.opacity = '1';
+        clearTimeout(el._t);
+        el._t = setTimeout(() => { el.style.opacity = '0'; }, 2400);
+      },
       element(s) { return pickElementFromGanZhi(s); },
     }));
 

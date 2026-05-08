@@ -27,9 +27,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/enhance.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
-  <script defer src="/static/js/app.js"></script>
   <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="/static/css/enhance.css" />
   <link rel="icon" type="image/svg+xml" href="/static/img/logo.svg" />
   <style>
     .client-row {
@@ -83,7 +85,7 @@
 <header class="border-b border-[var(--line)] bg-paper flex-shrink-0">
   <div class="px-5 lg:px-8 py-3 flex items-center justify-between">
     <a href="/" class="flex items-center gap-3">
-      <span class="seal seal--sm">算</span>
+      <span class="seal seal--sm brand-seal-auto">算</span>
       <span class="flex flex-col leading-tight">
         <span class="font-serif-cn text-[16px] tracking-[0.18em]">算 · 案头</span>
         <span class="title-eyebrow">命理师工作台</span>
@@ -96,9 +98,10 @@
     </nav>
     <div class="flex items-center gap-3 text-[12.5px] text-ink-soft">
       <span class="confidence confidence-medium">流派 · 子平 + 中州 + 现代心理派</span>
-      <button class="btn btn-outline btn-sm">另存白本</button>
+      <button class="btn btn-outline btn-sm" onclick="window.print()">另存白本</button>
     </div>
   </div>
+  <div class="weather-ribbon weather-ribbon-auto"></div>
 </header>
 
 <!-- 三栏布局 -->

@@ -269,19 +269,51 @@ def _charts_summary(charts: Charts) -> dict:
         }
     if charts.ziwei:
         zw = charts.ziwei
+        # 透传 12 宫完整数据（驱动前端环形盘渲染）
+        palaces_out = []
+        for p in (zw.palaces or []):
+            if not isinstance(p, dict):
+                continue
+            palaces_out.append({
+                "name": p.get("name") or "",
+                "branch": p.get("branch") or "",
+                "stem": p.get("stem") or "",
+                "ganzhi": p.get("ganzhi") or (
+                    (p.get("stem") or "") + (p.get("branch") or "")
+                ),
+                "stars": list(p.get("stars") or p.get("main_stars") or []),
+                "auxiliary": list(p.get("auxiliary") or p.get("aux_stars") or []),
+                "si_hua": list(p.get("si_hua") or []),
+            })
         summary["ziwei"] = {
             "life_palace": zw.life_palace,
             "body_palace": zw.body_palace,
             "five_element_bureau": zw.five_element_bureau,
+            "si_hua": dict(zw.si_hua or {}),
+            "palaces": palaces_out,
+            "main_stars": dict(zw.main_stars or {}),
+            "da_xian": list(zw.da_xian or []),
+            "school": getattr(zw, "school", "zhongzhou"),
         }
     if charts.natal_astro:
         na = charts.natal_astro
+        # 既保留老快摘字段（sun/moon/asc/moon_phase/distributions），
+        # 也透传完整 planets/angles/houses/aspects 供前端占星轮 SVG 渲染。
+        # 体积约 6-10KB；对单次 SSE 帧依然轻量。
         summary["natal_astro"] = {
+            # ── 速读字段（向后兼容）────────────────────────
             "sun": na.planets.get("sun", {}).get("sign"),
             "moon": na.planets.get("moon", {}).get("sign"),
             "asc": na.planets.get("ascendant") or {"sign": _sign_from_deg(na.angles.get("ASC", 0))},
             "moon_phase": na.moon_phase,
             "distributions": na.distributions,
+            # ── 完整盘面（驱动 SVG 圆轮） ──────────────────
+            "planets": na.planets,           # 13 颗行星 / 节点 / 凯龙
+            "angles": na.angles,             # ASC / MC / DSC / IC（黄经）
+            "houses": na.houses,             # 12 宫边界
+            "aspects": na.aspects,           # 5 类相位
+            "house_system": na.house_system,
+            "school": na.school,
         }
     if charts.tarot:
         summary["tarot"] = {

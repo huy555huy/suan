@@ -30,10 +30,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <!-- 关键：app.js 在 alpinejs 之前加载，确保 alpine:init 监听器先注册 -->
+  <script src="/static/js/astro_wheel.js"></script>
+  <script src="/static/js/ziwei_wheel.js"></script>
+  <script src="/static/js/journal.js"></script>
+  <script src="/static/js/share_card.js"></script>
+  <script src="/static/js/daily.js"></script>
+  <script src="/static/js/tarot_flip.js"></script>
   <script src="/static/js/app.js"></script>
+  <script src="/static/js/enhance.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
 
   <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="/static/css/enhance.css" />
+  <link rel="stylesheet" href="/static/js/astro_wheel.css" />
   <link rel="icon" type="image/svg+xml" href="/static/img/logo.svg" />
   <style>
     .modal-veil {
@@ -257,6 +266,14 @@
     }
     .caveat-banner ul { font-family: var(--font-serif-cn); color: var(--ink-soft); line-height: 1.8; }
     .caveat-banner li::before { content: '· '; color: var(--vermilion); }
+
+    /* 紫微 12 宫缩略盘容器 */
+    .ziwei-wheel-thumb {
+      padding: 12px 8px 10px;
+      background: linear-gradient(180deg, rgba(184,153,104,0.04), transparent 60%);
+      border: 1px solid var(--line);
+    }
+    .ziwei-wheel-thumb svg { display: block; }
   </style>
 </head>
 <body class="font-sans-cn text-ink h-screen flex flex-col overflow-hidden">
@@ -265,7 +282,7 @@
 <header class="border-b border-[var(--line)] bg-paper flex-shrink-0">
   <div class="px-5 lg:px-8 py-3 flex items-center justify-between">
     <a href="/" class="flex items-center gap-3">
-      <span class="seal seal--sm">算</span>
+      <span class="seal seal--sm brand-seal-auto">算</span>
       <span class="flex flex-col leading-tight">
         <span class="font-serif-cn text-[16px] tracking-[0.18em]">算</span>
         <span class="title-eyebrow">问 · 一席话</span>
@@ -278,10 +295,15 @@
       <a href="/" class="btn btn-outline btn-sm">返</a>
     </div>
   </div>
+  <!-- ★ 顶部气象条：节气 + 今日干支 + 月相 + 年干支 -->
+  <div class="weather-ribbon weather-ribbon-auto"></div>
+  <!-- 当日推送（profile 填完后异步出现）-->
+  <div id="daily-wrap" class="daily-wrap" style="display:none;"></div>
 </header>
 
 <!-- ===== 主体（chatStream 用 Alpine 数据） ===== -->
-<main class="flex-1 grid grid-cols-12 gap-0 overflow-hidden" x-data="chatStream()">
+<main class="flex-1 grid grid-cols-12 gap-0 overflow-hidden" x-data="chatStream()"
+      :class="{ 'is-waiting-user': waitingForUserReply }">
 
   <!-- ============= 生辰录入 modal ============= -->
   <div class="modal-veil" x-show="needProfile" x-transition style="display:none;" @keydown.escape.window="if(profile) needProfile=false">
@@ -415,6 +437,21 @@
   <!-- ============= 中 · 对话区 ============= -->
   <section class="col-span-12 md:col-span-6 lg:col-span-7 flex flex-col overflow-hidden bg-paper-dark/30">
 
+    <!-- ★ ask_user 全屏 banner（waitingForUserReply 时显示）-->
+    <div class="ask-prompt-banner" x-show="waitingForUserReply" x-transition>
+      <span class="pulse-dot"></span>
+      <div class="flex-1">
+        <div class="font-kai text-[12.5px] tracking-[0.3em] text-vermilion mb-1">Planner · 在等你的回答</div>
+        <div class="text-[14px] text-ink-soft" x-text="
+          (() => {
+            const lastAsk = [...messages].reverse().find(m => m.isAskUser);
+            return lastAsk ? lastAsk.question : '请在下方输入框回答';
+          })()
+        "></div>
+      </div>
+      <div class="text-[11px] text-silver tracking-[0.18em] font-kai">↓ 输入框已激活</div>
+    </div>
+
     <div class="flex-1 overflow-y-auto px-6 lg:px-12 py-8" id="chatScroll">
       <div class="max-w-3xl mx-auto space-y-6">
 
@@ -486,6 +523,53 @@
                     </div>
                   </template>
 
+                  <!-- ★ 紫微 12 宫环形盘缩略 — 排盘后 hover 看星 -->
+                  <template x-if="m.chartsSummary && m.chartsSummary.ziwei && (m.chartsSummary.ziwei.palaces || []).length">
+                    <div class="ziwei-wheel-thumb mt-4">
+                      <div class="text-[11px] text-silver tracking-[0.32em] font-kai mb-2">紫 · 微 · 十 · 二 · 宫</div>
+                      <div class="flex justify-center">
+                        <svg :id="'zw-thumb-' + i" width="280" height="280"
+                             x-init="$nextTick(() => { if (window.SuanZiweiWheel) SuanZiweiWheel.render($el, m.chartsSummary.ziwei, { size: 280, compact: true }); })"
+                             x-effect="m.chartsSummary && m.chartsSummary.ziwei && window.SuanZiweiWheel && SuanZiweiWheel.render($el, m.chartsSummary.ziwei, { size: 280, compact: true })"
+                             ></svg>
+                      </div>
+                      <div class="text-[11px] text-silver text-center tracking-[0.18em] mt-1 font-kai" x-show="m.chartsSummary.ziwei.life_palace">
+                        命宫 ·
+                        <span x-text="m.chartsSummary.ziwei.life_palace"></span>
+                        　|　 五行局 ·
+                        <span x-text="m.chartsSummary.ziwei.five_element_bureau"></span>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- ★ 占星本命盘圆轮 — natal_astro 出现即渲染 -->
+                  <template x-if="m.chartsSummary && m.chartsSummary.natal_astro && m.chartsSummary.natal_astro.planets && m.chartsSummary.natal_astro.angles">
+                    <div class="astro-wheel-thumb mt-4">
+                      <div class="text-[11px] text-silver tracking-[0.32em] font-kai mb-2">本 · 命 · 星 · 盘</div>
+                      <div class="flex justify-center">
+                        <svg :id="'aw-thumb-' + i"
+                             width="380" height="380"
+                             viewBox="0 0 600 600"
+                             preserveAspectRatio="xMidYMid meet"
+                             x-init="$nextTick(() => { if (window.SuanAstroWheel) SuanAstroWheel.render($el, m.chartsSummary.natal_astro, { size: 600 }); })"
+                             x-effect="m.chartsSummary && m.chartsSummary.natal_astro && m.chartsSummary.natal_astro.planets && m.chartsSummary.natal_astro.angles && window.SuanAstroWheel && SuanAstroWheel.render($el, m.chartsSummary.natal_astro, { size: 600 })"
+                             @astro-planet-click="$dispatch('astro-planet-click', $event.detail)">
+                        </svg>
+                      </div>
+                      <div class="text-[11px] text-silver text-center tracking-[0.18em] mt-1 font-kai">
+                        <template x-if="m.chartsSummary.natal_astro.planets.sun && m.chartsSummary.natal_astro.planets.sun.sign">
+                          <span>☉ <span x-text="m.chartsSummary.natal_astro.planets.sun.sign"></span></span>
+                        </template>
+                        <template x-if="m.chartsSummary.natal_astro.planets.moon && m.chartsSummary.natal_astro.planets.moon.sign">
+                          <span> · ☽ <span x-text="m.chartsSummary.natal_astro.planets.moon.sign"></span></span>
+                        </template>
+                        <template x-if="m.chartsSummary.natal_astro.moon_phase">
+                          <span> · <span x-text="m.chartsSummary.natal_astro.moon_phase"></span></span>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+
                   <!-- ★ Planner 思考链：每一步可见 -->
                   <template x-if="m.plannerThoughts && m.plannerThoughts.length">
                     <div class="planner-chain">
@@ -542,8 +626,10 @@
                     </div>
                   </template>
 
-                  <!-- 主正文（流式） -->
-                  <div class="narrative-md mt-4" x-html="window.renderMd ? window.renderMd(m.text) : m.text"></div>
+                  <!-- 主正文（流式 + 打字光标）-->
+                  <div class="narrative-md mt-4"
+                       :class="{ 'is-typing': m.streaming && m.text }"
+                       x-html="window.renderMd ? window.renderMd(m.text) : m.text"></div>
                   <template x-if="m.streaming && !m.text && !m.plannerThoughts">
                     <div class="flex items-center gap-2 text-silver text-[12px] mt-3">
                       <span class="agent-dot is-running"></span>
@@ -567,9 +653,11 @@
                     <div class="meta-list mt-5">
                       <template x-if="m.consensus && m.consensus.length">
                         <div>
-                          <h5>双重共识</h5>
+                          <h5>双重共识 <span class="text-silver text-[10px] tracking-[0.18em] ml-2">点条目可记入命运日记</span></h5>
                           <ul>
-                            <template x-for="c in m.consensus" :key="c"><li x-text="c"></li></template>
+                            <template x-for="c in m.consensus" :key="c">
+                              <li class="journal-able" @click="markToJournal('consensus', c, m)" x-text="c"></li>
+                            </template>
                           </ul>
                         </div>
                       </template>
@@ -577,7 +665,9 @@
                         <div>
                           <h5>显式分歧</h5>
                           <ul>
-                            <template x-for="c in m.conflicts" :key="c.topic || c.arbitration"><li x-text="(c.topic ? c.topic + ': ' : '') + (c.arbitration || '')"></li></template>
+                            <template x-for="c in m.conflicts" :key="c.topic || c.arbitration">
+                              <li class="journal-able" @click="markToJournal('conflict', (c.topic ? c.topic + ': ' : '') + (c.arbitration || ''), m)" x-text="(c.topic ? c.topic + ': ' : '') + (c.arbitration || '')"></li>
+                            </template>
                           </ul>
                         </div>
                       </template>
@@ -585,7 +675,9 @@
                         <div>
                           <h5>可行建议</h5>
                           <ul>
-                            <template x-for="a in m.advice" :key="a"><li x-text="a"></li></template>
+                            <template x-for="a in m.advice" :key="a">
+                              <li class="journal-able" @click="markToJournal('advice', a, m)" x-text="a"></li>
+                            </template>
                           </ul>
                         </div>
                       </template>
@@ -593,10 +685,23 @@
                         <div>
                           <h5>需要谨慎</h5>
                           <ul>
-                            <template x-for="a in m.cautions" :key="a"><li x-text="a"></li></template>
+                            <template x-for="a in m.cautions" :key="a">
+                              <li class="journal-able" @click="markToJournal('caution', a, m)" x-text="a"></li>
+                            </template>
                           </ul>
                         </div>
                       </template>
+                    </div>
+                  </template>
+
+                  <!-- 分享一帖 / 记下整段判官 -->
+                  <template x-if="m.confidence && !m.streaming">
+                    <div class="flex items-center gap-3 mt-5 pt-4 border-t border-[var(--line)]">
+                      <button class="btn btn-ghost btn-sm font-kai" style="letter-spacing:0.18em;"
+                              @click="shareCard(m)">分享一帖 →</button>
+                      <button class="btn btn-ghost btn-sm font-kai" style="letter-spacing:0.18em;"
+                              @click="recordVerdict(m)">记下这次判官 →</button>
+                      <a href="/journal" class="text-[11.5px] text-silver tracking-[0.18em] font-kai ml-auto hover:text-vermilion">命运日记 →</a>
                     </div>
                   </template>
 

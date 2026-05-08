@@ -33,6 +33,7 @@ from agents.safety import apply_safety
 from agents.verifier import verify_opinion
 from agents.classifier import _keyword_route
 from agents.compute_dispatch import dispatch_compute
+from agents.orchestrator import _charts_summary
 from knowledge.retrieval import retrieve_classics
 from knowledge.rule_engine import find_matching_rules
 
@@ -170,6 +171,13 @@ async def run_planner_loop(state: AgentState, message_queue: asyncio.Queue,
                     await dispatch_compute(ct, state)
                     chart_summary = _chart_brief(state.charts, ct)
                     yield await _evt("chart_ready", chart_type=ct, summary=chart_summary)
+                    # ★ 同步推一个完整 charts_summary，让前端的 SVG 圆轮（紫微 / 占星）能立刻渲染。
+                    # 与旧固定流水线（orchestrator.run_pipeline）的事件名一致。
+                    try:
+                        yield await _evt("charts_summary",
+                                         charts=_charts_summary(state.charts))
+                    except Exception:
+                        pass
                     history.append({
                         "action_type": "compute_chart",
                         "chart_type": ct,
@@ -198,6 +206,11 @@ async def run_planner_loop(state: AgentState, message_queue: asyncio.Queue,
                         await dispatch_compute(needed_chart, state)
                         yield await _evt("chart_ready", chart_type=needed_chart,
                                          summary=_chart_brief(state.charts, needed_chart))
+                        try:
+                            yield await _evt("charts_summary",
+                                             charts=_charts_summary(state.charts))
+                        except Exception:
+                            pass
                     except Exception as e:
                         yield await _evt("action_error", action="auto_compute",
                                          chart_type=needed_chart, error=str(e))
