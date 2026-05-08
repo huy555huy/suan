@@ -88,6 +88,14 @@ async def journal_page():
     return FileResponse(WEB_ROOT / "journal.html")
 
 
+@app.get("/v2")
+@app.get("/v2.html")
+async def v2_page():
+    """新设计 SPA（编辑设计杂志风），替代 SaaS 仪表盘风。
+    内嵌 React + Babel standalone，单文件 168KB。"""
+    return FileResponse(WEB_ROOT / "v2.html")
+
+
 @app.get("/index.html")
 async def index_html():
     return FileResponse(WEB_ROOT / "index.html")

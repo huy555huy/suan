@@ -1,0 +1,3776 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>算 · suan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper:        oklch(0.972 0.006 80);
+    --paper-2:      oklch(0.948 0.008 78);
+    --paper-3:      oklch(0.92 0.010 76);
+    --ink:          oklch(0.18 0.013 260);
+    --ink-2:        oklch(0.34 0.014 258);
+    --ink-3:        oklch(0.52 0.012 256);
+    --ink-4:        oklch(0.68 0.010 250);
+    --cinnabar:     oklch(0.56 0.165 28);
+    --cinnabar-2:   oklch(0.48 0.16 28);
+    --cinnabar-3:   oklch(0.92 0.04 28);
+    --gild:         oklch(0.78 0.045 78);
+    --gild-2:       oklch(0.86 0.030 78);
+    --jade:         oklch(0.52 0.06 168);
+
+    --rule: 1px solid color-mix(in oklch, var(--gild) 50%, transparent);
+    --rule-strong: 1px solid color-mix(in oklch, var(--ink) 50%, transparent);
+
+    --serif-cn: "Noto Serif SC", "Source Han Serif", "Songti SC", serif;
+    --serif-en: "EB Garamond", "Iowan Old Style", Georgia, serif;
+    --mono:     "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --sans:     ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    --pad: 28px;
+    --gutter: 56px;
+    --screen-pad: clamp(20px, 4vw, 80px);
+  }
+
+  /* dark mode tokens */
+  body[data-mode="dark"] {
+    --paper:    oklch(0.16 0.010 258);
+    --paper-2:  oklch(0.20 0.011 258);
+    --paper-3:  oklch(0.24 0.012 258);
+    --ink:      oklch(0.95 0.008 80);
+    --ink-2:    oklch(0.82 0.010 80);
+    --ink-3:    oklch(0.66 0.010 80);
+    --ink-4:    oklch(0.50 0.010 80);
+    --cinnabar: oklch(0.66 0.16 28);
+    --cinnabar-2: oklch(0.74 0.15 28);
+    --cinnabar-3: oklch(0.30 0.10 28);
+    --gild:     oklch(0.55 0.05 78);
+    --gild-2:   oklch(0.40 0.04 78);
+  }
+
+  body[data-palette="ink-only"] { --cinnabar: var(--ink); --cinnabar-2: var(--ink-2); --cinnabar-3: var(--paper-3); }
+
+  body[data-density="dense"] { --pad: 18px; --gutter: 36px; }
+  body[data-density="airy"]  { --pad: 40px; --gutter: 80px; }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif-cn);
+    font-feature-settings: "palt", "kern";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* paper texture — subtle */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(1200px 800px at 10% 0%, color-mix(in oklch, var(--gild) 6%, transparent), transparent 60%),
+      radial-gradient(900px 700px at 100% 100%, color-mix(in oklch, var(--cinnabar) 3%, transparent), transparent 70%);
+    z-index: 0;
+  }
+  body[data-mode="dark"]::before {
+    background:
+      radial-gradient(1200px 800px at 10% 0%, color-mix(in oklch, var(--gild) 14%, transparent), transparent 60%),
+      radial-gradient(900px 700px at 100% 100%, color-mix(in oklch, var(--cinnabar) 10%, transparent), transparent 70%);
+  }
+
+  ::selection { background: var(--cinnabar); color: var(--paper); }
+
+  /* utility classes */
+  .mono { font-family: var(--mono); font-feature-settings: "tnum","ss01"; letter-spacing: 0.01em; }
+  .en { font-family: var(--serif-en); }
+  .em { font-family: var(--serif-en); font-style: italic; }
+  .pinyin { font-family: var(--mono); font-size: 0.72em; letter-spacing: 0.18em; text-transform: lowercase; color: var(--ink-3); font-weight: 400; }
+  .caps { font-family: var(--mono); font-size: 0.72em; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); font-weight: 400; }
+  .num { font-family: var(--mono); font-feature-settings: "tnum"; }
+  .hairline { background: linear-gradient(to right, transparent, var(--gild), transparent); height: 1px; }
+  .hairline-v { background: linear-gradient(to bottom, transparent, var(--gild), transparent); width: 1px; }
+  .vrule { width: 1px; align-self: stretch; background: var(--gild); opacity: 0.5; }
+
+  /* the seal */
+  .seal {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    background: var(--cinnabar);
+    color: var(--paper);
+    font-family: var(--serif-cn);
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1;
+    width: 44px; height: 44px;
+    border-radius: 4px;
+    letter-spacing: 0;
+    box-shadow:
+      inset 0 0 0 2px var(--cinnabar),
+      inset 0 0 0 4px color-mix(in oklch, var(--cinnabar) 50%, var(--paper));
+    /* ink-stamp wear */
+    filter: contrast(1.1) saturate(1.05);
+    position: relative;
+    transform: rotate(-2deg);
+  }
+  .seal::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: 4px;
+    background:
+      radial-gradient(circle at 30% 20%, transparent 0 1px, color-mix(in oklch, var(--cinnabar) 100%, transparent) 1px 100%) 0 0/3px 3px,
+      radial-gradient(circle at 70% 80%, transparent 0 1px, color-mix(in oklch, var(--cinnabar) 100%, transparent) 1px 100%) 1px 1px/3px 3px;
+    mix-blend-mode: lighten;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* button system */
+  .btn {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 14px 22px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--serif-cn);
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: 0;
+    transition: transform .12s ease, background .12s ease;
+  }
+  .btn:hover { background: var(--cinnabar); border-color: var(--cinnabar); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: color-mix(in oklch, var(--ink) 50%, transparent);
+  }
+  .btn-ghost:hover { background: var(--ink); color: var(--paper); }
+  .btn .arr { font-family: var(--mono); font-size: 13px; }
+
+  input, textarea, select {
+    font-family: var(--serif-cn);
+    background: transparent;
+    color: var(--ink);
+    border: none;
+    border-bottom: 1px solid color-mix(in oklch, var(--ink) 30%, transparent);
+    border-radius: 0;
+    padding: 10px 0;
+    font-size: 17px;
+    width: 100%;
+    outline: none;
+    transition: border-color .15s ease;
+  }
+  input:focus, textarea:focus, select:focus { border-bottom-color: var(--cinnabar); }
+  input::placeholder { color: var(--ink-4); }
+
+  /* nav */
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center;
+    padding: 18px var(--screen-pad);
+    background: color-mix(in oklch, var(--paper) 90%, transparent);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border-bottom: var(--rule);
+  }
+  .topnav .brand {
+    display: flex; align-items: baseline; gap: 14px;
+    margin-right: auto;
+  }
+  .topnav .brand .ch { font-size: 28px; font-weight: 700; letter-spacing: 0.08em; }
+  .topnav .brand .ch::after {
+    content: "·"; padding: 0 6px; color: var(--ink-3); font-weight: 400;
+  }
+  .topnav .brand .en { font-family: var(--serif-en); font-style: italic; font-size: 18px; color: var(--ink-2); }
+  .topnav .links { display: flex; gap: 0; }
+  .topnav .links button {
+    appearance: none; background: transparent; border: none; cursor: pointer;
+    padding: 10px 16px;
+    font-family: var(--serif-cn); font-weight: 400; font-size: 15px; color: var(--ink-3);
+    letter-spacing: 0.06em;
+    position: relative;
+    transition: color .15s ease;
+  }
+  .topnav .links button .pinyin { display: block; font-size: 9px; letter-spacing: 0.2em; margin-top: 2px; opacity: 0; transition: opacity .15s ease; color: var(--ink-4); }
+  .topnav .links button:hover { color: var(--ink); }
+  .topnav .links button:hover .pinyin { opacity: 1; }
+  .topnav .links button[data-active="true"] { color: var(--ink); font-weight: 600; }
+  .topnav .links button[data-active="true"] .pinyin { opacity: 1; color: var(--cinnabar); }
+  .topnav .links button[data-active="true"]::after {
+    content: ""; position: absolute; left: 16px; right: 16px; bottom: -19px; height: 2px; background: var(--cinnabar);
+  }
+  .topnav .right { display: flex; align-items: center; gap: 16px; margin-left: 24px; }
+  .topnav .right .stamp { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; color: var(--ink-3); text-transform: uppercase; }
+
+  /* main */
+  main { position: relative; z-index: 1; }
+
+  /* fade in */
+  .fade-in { animation: fade .35s ease both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* common screen container */
+  .screen { padding: clamp(40px, 6vw, 96px) var(--screen-pad); }
+
+  /* corner brackets */
+  .bracket { position: relative; }
+  .bracket::before, .bracket::after {
+    content: ""; position: absolute; width: 14px; height: 14px;
+    border: 1.5px solid var(--cinnabar);
+  }
+  .bracket::before { top: -10px; left: -10px; border-right: none; border-bottom: none; }
+  .bracket::after  { bottom: -10px; right: -10px; border-left: none; border-top: none; }
+
+  /* chip */
+  .chip {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 6px 12px;
+    border: 1px solid color-mix(in oklch, var(--ink) 25%, transparent);
+    border-radius: 999px;
+    font-size: 13px; color: var(--ink-2);
+    letter-spacing: 0.04em;
+  }
+  .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cinnabar); }
+
+  /* card */
+  .card {
+    background: color-mix(in oklch, var(--paper) 60%, var(--paper-2));
+    border: var(--rule);
+    padding: var(--pad);
+  }
+
+  /* thin scrollbar */
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--ink) 20%, transparent); }
+  *::-webkit-scrollbar-track { background: transparent; }
+
+  @media (max-width: 900px) {
+    .topnav .links { display: none; }
+  }
+</style>
+</head>
+<body data-mode="light" data-palette="cinnabar" data-density="normal">
+  <div id="root"></div>
+
+  <script>
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "mode": "light",
+      "palette": "cinnabar",
+      "density": "normal",
+      "verticalCn": false,
+      "animSpeed": 1,
+      "showSeal": true
+    }/*EDITMODE-END*/;
+    window.__TWEAK_DEFAULTS = TWEAK_DEFAULTS;
+  </script>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel">
+
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakColor  label="Palette" value={t.palette}
+//                        options={[['#D97757', '#29261b', '#f6f4ef'],
+//                                  ['#475569', '#0f172a', '#f1f5f9']]}
+//                        onChange={(v) => setTweak('palette', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;width:100%;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
+    // can react — the parent message only reaches the host, not peers.
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  // Auto-inject a rail toggle when a <deck-stage> is on the page. The
+  // toggle drives the deck's per-viewer _railVisible via window message;
+  // state is mirrored from the same localStorage key the deck reads so
+  // the control reflects reality across reloads. The mechanism is the
+  // message — authors who want custom placement can post it directly
+  // and pass noDeckControls to suppress this one.
+  const hasDeckStage = React.useMemo(
+    () => typeof document !== 'undefined' && !!document.querySelector('deck-stage'),
+    [],
+  );
+  // Hide the toggle until the host has actually enabled the rail (the
+  // __omelette_rail_enabled window message, posted only when the
+  // omelette_deck_rail_enabled flag is on for this user). The initial read
+  // covers TweaksPanel mounting after the message already arrived; the
+  // listener covers the common case of mounting first.
+  const [railEnabled, setRailEnabled] = React.useState(
+    () => hasDeckStage && !!document.querySelector('deck-stage')?._railEnabled,
+  );
+  React.useEffect(() => {
+    if (!hasDeckStage || railEnabled) return undefined;
+    const onMsg = (e) => {
+      if (e.data && e.data.type === '__omelette_rail_enabled') setRailEnabled(true);
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [hasDeckStage, railEnabled]);
+  const [railVisible, setRailVisible] = React.useState(() => {
+    try { return localStorage.getItem('deck-stage.railVisible') !== '0'; } catch (e) { return true; }
+  });
+  const toggleRail = (on) => {
+    setRailVisible(on);
+    window.postMessage({ type: '__deck_rail_visible', on }, '*');
+  };
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-noncommentable=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+          {hasDeckStage && railEnabled && !noDeckControls && (
+            <TweakSection label="Deck">
+              <TweakToggle label="Thumbnail rail" value={railVisible} onChange={toggleRail} />
+            </TweakSection>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  // Segments wrap mid-word once per-segment width runs out. The track is
+  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
+  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
+  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
+  // back to a dropdown rather than wrap.
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    // <select> emits strings — map back to the original option value so the
+    // fallback stays type-preserving (numbers, booleans) like the segment path.
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
+// read on both #111 and #fafafa without per-option configuration. Hex input
+// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+// TweakColor — curated color/palette picker. Each option is either a single
+// hex string or an array of 1-5 hex strings; the card adapts — a lone color
+// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
+// rest stacked in a sharp column on the right. onChange emits the
+// option in the shape it was passed (string stays string, array stays array).
+// Without options it falls back to the native color input for back-compat.
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  // Native <input type=color> emits lowercase hex per the HTML spec, so
+  // compare case-insensitively. String() guards JSON.stringify(undefined),
+  // which returns the primitive undefined (no .toLowerCase).
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+  </script>
+
+  <script type="text/babel">
+// Sample profile + chart data (matches the README test case)
+const SAMPLE_PROFILE = {
+  name: "陈书雅",
+  pinyin: "chén shū yǎ",
+  en: "Chen Shuya",
+  gender: "女",
+  birth: "1991-08-15 14:30",
+  place: "北京",
+  placeEn: "Beijing",
+  scenario: "career",
+};
+
+// BaZi 八字 — 辛未 · 丙申 · 丁巳 · 丁未
+const BAZI = {
+  pillars: [
+    { label: "年柱", labelEn: "Year",  stem: "辛", branch: "未", stemPinyin: "xīn", branchPinyin: "wèi", element: "金", phase: "yin metal", hidden: ["己","丁","乙"] },
+    { label: "月柱", labelEn: "Month", stem: "丙", branch: "申", stemPinyin: "bǐng", branchPinyin: "shēn", element: "火", phase: "yang fire", hidden: ["庚","壬","戊"] },
+    { label: "日柱", labelEn: "Day",   stem: "丁", branch: "巳", stemPinyin: "dīng", branchPinyin: "sì", element: "火", phase: "yin fire · day master", hidden: ["丙","庚","戊"], master: true },
+    { label: "时柱", labelEn: "Hour",  stem: "丁", branch: "未", stemPinyin: "dīng", branchPinyin: "wèi", element: "火", phase: "yin fire", hidden: ["己","丁","乙"] },
+  ],
+  master: "丁火",
+  pattern: "正财格",
+  patternEn: "Direct Wealth Frame",
+  yongShen: "木",
+  yongShenEn: "Wood",
+  shenSha: ["驿马","华盖","太极贵人"],
+  daYun: [
+    { age: "5",  ganzhi: "丁酉", note: "童运" },
+    { age: "15", ganzhi: "戊戌", note: "" },
+    { age: "25", ganzhi: "己亥", note: "" },
+    { age: "35", ganzhi: "庚子", note: "← 当前", current: true },
+    { age: "45", ganzhi: "辛丑", note: "" },
+    { age: "55", ganzhi: "壬寅", note: "" },
+  ],
+  fiveElements: { 木: 1, 火: 4, 土: 2, 金: 2, 水: 0 },
+};
+
+const ZIWEI = {
+  局: "水二局",
+  ming: "巳宫",
+  shen: "酉宫",
+  zhuxing: ["巨门(化禄)","太阳"],
+  bihua: { 禄: "巨门", 权: "太阳", 科: "天梁", 忌: "文昌" },
+};
+
+// Astrology
+const ASTRO = {
+  sun: { sign: "Leo", deg: 21.95, glyph: "♌" },
+  moon: { sign: "Libra", deg: 14.2, glyph: "♎" },
+  asc: { sign: "Sagittarius", deg: 9.0, glyph: "♐" },
+  mc: { sign: "Virgo", deg: 12, glyph: "♍" },
+  phase: "蛾眉月 · waxing crescent",
+  bodies: [
+    { name: "Sun",     glyph: "☉", sign: "Leo",       deg: 21.95, house: 9, longitude: 141.95 },
+    { name: "Moon",    glyph: "☾", sign: "Libra",     deg: 14.2,  house: 11, longitude: 194.2 },
+    { name: "Mercury", glyph: "☿", sign: "Leo",       deg: 5.4,   house: 9, longitude: 125.4 },
+    { name: "Venus",   glyph: "♀", sign: "Cancer",    deg: 28.7,  house: 8, longitude: 118.7 },
+    { name: "Mars",    glyph: "♂", sign: "Cancer",    deg: 12.1,  house: 7, longitude: 102.1 },
+    { name: "Jupiter", glyph: "♃", sign: "Leo",       deg: 0.8,   house: 9, longitude: 120.8 },
+    { name: "Saturn",  glyph: "♄", sign: "Capricorn", deg: 4.5,   house: 1, longitude: 274.5 },
+    { name: "Uranus",  glyph: "♅", sign: "Capricorn", deg: 11.0,  house: 2, longitude: 281.0 },
+    { name: "Neptune", glyph: "♆", sign: "Capricorn", deg: 14.8,  house: 2, longitude: 284.8 },
+    { name: "Pluto",   glyph: "♇", sign: "Scorpio",   deg: 17.2,  house: 11, longitude: 227.2 },
+  ],
+  aspects: [
+    { a: "Sun", b: "Saturn", type: "square", orb: 1.6 },
+    { a: "Moon", b: "Mercury", type: "trine", orb: 2.0 },
+    { a: "Venus", b: "Pluto", type: "opposition", orb: 1.5 },
+  ],
+};
+
+const NUMER = {
+  life: 7, expression: 1, soul: 3, personality: 7, year: 6,
+  notes: { 7: "求道者 · seeker", 1: "开创者 · initiator", 6: "顾守 · responsibility year" }
+};
+
+// Chat / experts
+const EXPERTS = [
+  { id: "bazi",      cn: "八字",     en: "BaZi",        sys: "cn", desc: "子平派 · 辛未丙申丁巳丁未" },
+  { id: "ziwei",     cn: "紫微",     en: "Zǐwēi",       sys: "cn", desc: "中州派 · 命宫巳" },
+  { id: "yijing",    cn: "易经",     en: "Yìjīng",      sys: "cn", desc: "京房纳甲 · 起卦" },
+  { id: "fengshui",  cn: "风水",     en: "Fēngshuǐ",    sys: "cn", desc: "玄空飞星 · 八宅" },
+  { id: "liunian",   cn: "流年",     en: "Annual",      sys: "cn", desc: "丙午 2026 · 流月推演" },
+  { id: "astrology", cn: "占星",     en: "Astrology",   sys: "wt", desc: "Placidus · 现代心理派" },
+  { id: "tarot",     cn: "塔罗",     en: "Tarot",       sys: "wt", desc: "RWS · 凯尔特十字" },
+  { id: "numero",    cn: "数字",     en: "Numerology",  sys: "wt", desc: "毕达哥拉斯派" },
+];
+
+const SAMPLE_QUESTION = "今年事业怎么走？我想换一个方向，但不确定该走科技还是教育。";
+
+// SSE event timeline (faux-stream for the prototype)
+const STREAM = [
+  { t: 0,    type: "phase",      payload: { id: "classify",  cn: "问题分类",      en: "Classifier"  } },
+  { t: 700,  type: "classifier", payload: { topic: "career_direction · 事业方向", confidence: 0.92 } },
+  { t: 1100, type: "phase",      payload: { id: "compute",   cn: "盘面计算",      en: "Calculator"  } },
+  { t: 1700, type: "chart",      payload: { systems: 7, ms: 142 } },
+  { t: 2100, type: "phase",      payload: { id: "experts",   cn: "八路并行推理",  en: "8 Experts"   } },
+  { t: 2400, type: "expert",     payload: { id: "bazi",  status: "thinking" } },
+  { t: 2500, type: "expert",     payload: { id: "ziwei", status: "thinking" } },
+  { t: 2600, type: "expert",     payload: { id: "yijing",status: "thinking" } },
+  { t: 2700, type: "expert",     payload: { id: "fengshui", status: "thinking" } },
+  { t: 2800, type: "expert",     payload: { id: "liunian",  status: "thinking" } },
+  { t: 2900, type: "expert",     payload: { id: "astrology",status: "thinking" } },
+  { t: 3000, type: "expert",     payload: { id: "tarot",    status: "thinking" } },
+  { t: 3100, type: "expert",     payload: { id: "numero",   status: "thinking" } },
+  { t: 4400, type: "expert",     payload: { id: "bazi", status: "done", claim: "丁火日主，火旺金弱；正财格成，宜以技艺生财，避急于扩张。" } },
+  { t: 4900, type: "expert",     payload: { id: "ziwei", status: "done", claim: "巨门化禄入命宫；适合以言谈、文字、教研立身；忌昌入迁移，远行需慎契约。" } },
+  { t: 5300, type: "expert",     payload: { id: "tarot", status: "done", claim: "Three of Pentacles · 协作精进；逆位 Wheel of Fortune 提示节奏自控。" } },
+  { t: 5700, type: "expert",     payload: { id: "yijing", status: "done", claim: "得风火家人变水火既济；先稳内部秩序，方可外谋新局。" } },
+  { t: 6100, type: "expert",     payload: { id: "astrology", status: "done", claim: "9 宫狮子群星与 6 宫处女对望；学问 / 远方 ↔ 服务 / 工艺 是核心张力。" } },
+  { t: 6500, type: "expert",     payload: { id: "liunian", status: "done", claim: "丙午年丁火得禄；上半年宜定方向，下半年宜执行；冲日柱注意契约。" } },
+  { t: 6900, type: "expert",     payload: { id: "fengshui", status: "done", claim: "八运震宫见七赤；办公东向布水，忌正南动土。" } },
+  { t: 7300, type: "expert",     payload: { id: "numero", status: "done", claim: "Personal year 6 · 责任之年；新事须以现有结构为本，非纯创新年。" } },
+  { t: 7600, type: "phase",      payload: { id: "synth", cn: "中西小综合", en: "Sub-synthesis" } },
+  { t: 8400, type: "synth",      payload: { sys: "cn", text: "中式三家共指：日主火旺 · 喜金水 · 忌再行火地；事业宜技艺 / 教研，避急扩张。" } },
+  { t: 9000, type: "synth",      payload: { sys: "wt", text: "西式三家共指：9宫学问与远方为利；6宫工艺为底；个人年6责任之年。" } },
+  { t: 9400, type: "phase",      payload: { id: "align", cn: "中西交叉验证", en: "Cross Aligner" } },
+  { t: 10400,type: "align",      payload: { consensus: 2, divergence: 1, complementary: 1 } },
+  { t: 10800,type: "phase",      payload: { id: "verdict", cn: "综合判官", en: "Synthesis Judge" } },
+  { t: 11600,type: "verdict",    payload: { confidence: "high", core: "以技艺为本的教育科技方向" } },
+  { t: 11900,type: "phase",      payload: { id: "narr", cn: "叙事", en: "Narrative" } },
+];
+const NARRATIVE_TEXT = `你这一问，问得正当其时。
+
+四柱里，你是丁火日主，生于丙申月——火旺而金透；命局喜的是金水的收敛与流动，最忌的是再添一把火。这并不是让你停下来，而是提醒你：今年的方向感比速度更要紧。
+
+紫微里巨门化禄入命宫，这是一颗适合用「言说与文字」生财的星；占星上 9 宫狮子群星给了你学问与远方的渴望，6 宫处女则把你拉回工艺与服务的具体里。两边其实在说同一件事——你最适合的，不是单纯的科技，也不是纯粹的教育，而是把"教育"作为内核，把"科技"作为工具的那条窄路。
+
+塔罗里抽到的 Three of Pentacles 是协作精进牌；逆位的 Wheel of Fortune 提醒你，今年节奏要由你自己掌握，而不是被外部机会牵着走。数字命理上你正在 Personal Year 6——这是一个责任之年，新东西要长在旧结构之上，而不是另起炉灶。
+
+具体节奏上：上半年至立秋前后，宜定方向、签约慎；下半年丁火得禄，是动手的窗口。关键的几个分歧——中式说"避急扩张"，西式说"远方有利"——其实在 aligner 里被合成为一句话：远方可以去，但要带着可重复的方法论去，而不是带着冲动去。
+
+最后一句不入命理，只是常识：换方向是大事，不必一次想完。`;
+
+Object.assign(window, { SAMPLE_PROFILE, BAZI, ZIWEI, ASTRO, NUMER, EXPERTS, SAMPLE_QUESTION, STREAM, NARRATIVE_TEXT });
+
+  </script>
+
+  <script type="text/babel">
+// Animated visuals — SVG-based, no external assets
+
+// 占星轮（升级版）— 黄道带按元素染色 + 行星按属性配色 + 相位线分色
+function AnimatedAstroWheel({ size = 460 }) {
+  const r = size / 2, cx = r, cy = r;
+  const rOuterEdge = r - 4;
+  const rZodiacOuter = r - 8;       // 黄道带外圈
+  const rZodiacInner = r - 38;      // 黄道带内圈（共 30px 厚带）
+  const rHouseRing  = r - 60;        // 12 宫位圈（虚线）
+  const rPlanet     = r - 56;        // 行星轨道
+  const rAspectAnchor = r - 92;      // 相位线收口
+  const houses = Array.from({ length: 12 }, (_, i) => i);
+  // 12 黄道：符号 / 中文 / 元素
+  const ZODIAC = [
+    { g: "♈", cn: "白羊", el: "fire"  }, { g: "♉", cn: "金牛", el: "earth" },
+    { g: "♊", cn: "双子", el: "air"   }, { g: "♋", cn: "巨蟹", el: "water" },
+    { g: "♌", cn: "狮子", el: "fire"  }, { g: "♍", cn: "处女", el: "earth" },
+    { g: "♎", cn: "天秤", el: "air"   }, { g: "♏", cn: "天蝎", el: "water" },
+    { g: "♐", cn: "射手", el: "fire"  }, { g: "♑", cn: "摩羯", el: "earth" },
+    { g: "♒", cn: "水瓶", el: "air"   }, { g: "♓", cn: "双鱼", el: "water" },
+  ];
+  const ELEMENT_FILL = {
+    fire:  "color-mix(in oklch, var(--cinnabar) 14%, transparent)",
+    earth: "color-mix(in oklch, var(--jade) 12%, transparent)",
+    air:   "color-mix(in oklch, var(--gild) 18%, transparent)",
+    water: "color-mix(in oklch, oklch(0.52 0.05 230) 14%, transparent)",
+  };
+  const ELEMENT_STROKE = {
+    fire:  "var(--cinnabar)",   earth: "var(--jade)",
+    air:   "var(--gild)",       water: "oklch(0.52 0.05 230)",
+  };
+  // 行星按属性配色
+  const PLANET_COLOR = {
+    Sun:     "oklch(0.78 0.16 78)",   // 金黄
+    Moon:    "oklch(0.86 0.02 260)",  // 银白
+    Mercury: "oklch(0.62 0.05 268)",  // 墨灰
+    Venus:   "oklch(0.78 0.10 12)",   // 粉桃
+    Mars:    "var(--cinnabar)",        // 朱砂
+    Jupiter: "var(--gild)",            // 鎏金
+    Saturn:  "oklch(0.42 0.04 268)",  // 黛青深
+    Uranus:  "oklch(0.62 0.10 220)",  // 青蓝
+    Neptune: "oklch(0.55 0.10 240)",  // 深蓝紫
+    Pluto:   "oklch(0.30 0.08 320)",  // 深紫
+  };
+  // 相位线配色
+  const ASPECT_COLOR = {
+    trine:      { stroke: "var(--jade)", dash: "0", width: 1.2 },
+    sextile:    { stroke: "var(--gild)", dash: "0", width: 0.8 },
+    conjunction:{ stroke: "var(--gild)", dash: "0", width: 1.0 },
+    square:     { stroke: "var(--cinnabar)", dash: "3 2", width: 1.0 },
+    opposition: { stroke: "oklch(0.52 0.05 230)", dash: "5 3", width: 1.2 },
+  };
+
+  // SVG path 扇形
+  const sector = (a1d, a2d, rIn, rOut) => {
+    const a1 = (a1d - 90) * Math.PI / 180;
+    const a2 = (a2d - 90) * Math.PI / 180;
+    const x1 = cx + rIn  * Math.cos(a1), y1 = cy + rIn  * Math.sin(a1);
+    const x2 = cx + rOut * Math.cos(a1), y2 = cy + rOut * Math.sin(a1);
+    const x3 = cx + rOut * Math.cos(a2), y3 = cy + rOut * Math.sin(a2);
+    const x4 = cx + rIn  * Math.cos(a2), y4 = cy + rIn  * Math.sin(a2);
+    return `M${x1} ${y1} L${x2} ${y2} A${rOut} ${rOut} 0 0 1 ${x3} ${y3} L${x4} ${y4} A${rIn} ${rIn} 0 0 0 ${x1} ${y1} Z`;
+  };
+
+  return (
+    <div style={{ position: "relative", width: size, height: size, color: "var(--ink)" }}>
+      <style>{`
+        @keyframes spin-cw  { to { transform: rotate(360deg); } }
+        @keyframes spin-ccw { to { transform: rotate(-360deg); } }
+        @keyframes draw-line { from { stroke-dasharray: 1000; stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+        @keyframes fade-in   { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse-r   { 0%,100% { r: 5; } 50% { r: 7; } }
+        @keyframes planet-breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+      `}</style>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", inset: 0 }}>
+        <defs>
+          {/* 中心微辉 */}
+          <radialGradient id="aw-core">
+            <stop offset="0%"  stopColor="var(--cinnabar)" stopOpacity="0.28" />
+            <stop offset="60%" stopColor="var(--cinnabar)" stopOpacity="0.04" />
+            <stop offset="100%" stopColor="var(--cinnabar)" stopOpacity="0" />
+          </radialGradient>
+          {/* 行星 halo */}
+          <filter id="aw-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" />
+          </filter>
+        </defs>
+
+        {/* 中心辉光 */}
+        <circle cx={cx} cy={cy} r={rAspectAnchor + 14} fill="url(#aw-core)" />
+
+        {/* 黄道带（12 扇按元素染色） */}
+        <g style={{ transformOrigin: "center", animation: "spin-cw 220s linear infinite" }}>
+          {ZODIAC.map((z, i) => (
+            <path key={`zfill-${i}`} d={sector(i*30, (i+1)*30, rZodiacInner, rZodiacOuter)}
+              fill={ELEMENT_FILL[z.el]}
+              stroke={ELEMENT_STROKE[z.el]} strokeOpacity="0.35" strokeWidth="0.6" />
+          ))}
+          {/* 黄道分隔线 */}
+          {houses.map(i => {
+            const a = (i * 30 - 90) * Math.PI / 180;
+            return <line key={`zline-${i}`}
+              x1={cx + Math.cos(a) * rZodiacInner} y1={cy + Math.sin(a) * rZodiacInner}
+              x2={cx + Math.cos(a) * rZodiacOuter} y2={cy + Math.sin(a) * rZodiacOuter}
+              stroke="var(--ink)" strokeOpacity="0.18" strokeWidth="0.8" />;
+          })}
+          {/* 黄道带最外圈 */}
+          <circle cx={cx} cy={cy} r={rZodiacOuter} fill="none" stroke="var(--ink)" strokeOpacity="0.35" />
+          <circle cx={cx} cy={cy} r={rZodiacInner} fill="none" stroke="var(--ink)" strokeOpacity="0.18" />
+          {/* 12 黄道符号 */}
+          {ZODIAC.map((z, i) => {
+            const a = (i * 30 + 15 - 90) * Math.PI / 180;
+            const tx = cx + Math.cos(a) * (rZodiacOuter - 16);
+            const ty = cy + Math.sin(a) * (rZodiacOuter - 16);
+            return (
+              <g key={`zsym-${i}`}>
+                <text x={tx} y={ty - 4} fontSize={18}
+                  fill={ELEMENT_STROKE[z.el]}
+                  textAnchor="middle" dominantBaseline="central"
+                  fontFamily="var(--serif-en)" fontWeight="600">{z.g}</text>
+                <text x={tx} y={ty + 11} fontSize={9}
+                  fill="var(--ink-3)" fillOpacity="0.85"
+                  textAnchor="middle" dominantBaseline="central"
+                  fontFamily="var(--serif-cn)" letterSpacing="0.1em">{z.cn}</text>
+              </g>
+            );
+          })}
+        </g>
+
+        {/* 12 宫位虚线圈 */}
+        <g style={{ transformOrigin: "center", animation: "spin-ccw 380s linear infinite" }}>
+          <circle cx={cx} cy={cy} r={rHouseRing} fill="none"
+            stroke="var(--ink)" strokeOpacity="0.18" strokeDasharray="2 4" />
+          {houses.map(i => {
+            const a = (i * 30 - 90) * Math.PI / 180;
+            return <line key={`hline-${i}`}
+              x1={cx + Math.cos(a) * (rHouseRing - 12)} y1={cy + Math.sin(a) * (rHouseRing - 12)}
+              x2={cx + Math.cos(a) * (rHouseRing + 12)} y2={cy + Math.sin(a) * (rHouseRing + 12)}
+              stroke="var(--ink)" strokeOpacity="0.10" strokeWidth="0.6" />;
+          })}
+        </g>
+
+        {/* 相位线（按类型分色 + 入场动画） */}
+        <g style={{ animation: "fade-in 2s ease both" }}>
+          {ASTRO.aspects.map((asp, i) => {
+            const A = ASTRO.bodies.find(b => b.name === asp.a);
+            const B = ASTRO.bodies.find(b => b.name === asp.b);
+            if (!A || !B) return null;
+            const aa = (A.longitude - 90) * Math.PI / 180;
+            const ab = (B.longitude - 90) * Math.PI / 180;
+            const ax = cx + Math.cos(aa) * rAspectAnchor;
+            const ay = cy + Math.sin(aa) * rAspectAnchor;
+            const bx = cx + Math.cos(ab) * rAspectAnchor;
+            const by = cy + Math.sin(ab) * rAspectAnchor;
+            const cfg = ASPECT_COLOR[asp.type] || ASPECT_COLOR.conjunction;
+            return <line key={`asp-${i}`} x1={ax} y1={ay} x2={bx} y2={by}
+              stroke={cfg.stroke} strokeOpacity="0.65"
+              strokeDasharray={cfg.dash} strokeWidth={cfg.width}
+              style={{ animation: `draw-line 3s ${0.4 + i * 0.3}s ease both` }} />;
+          })}
+        </g>
+
+        {/* 行星 — 按真实经度位置 + 各自旋转 */}
+        {ASTRO.bodies.map((b, i) => {
+          const dur = 70 + i * 22;
+          const color = PLANET_COLOR[b.name] || "var(--ink)";
+          return (
+            <g key={b.name} style={{ transformOrigin: "center", animation: `spin-cw ${dur}s linear infinite` }}>
+              <g transform={`translate(${cx},${cy}) rotate(${b.longitude - 90})`}>
+                {/* halo */}
+                <circle cx={rPlanet} cy={0} r={14} fill={color} fillOpacity="0.18" filter="url(#aw-glow)" />
+                {/* body */}
+                <circle cx={rPlanet} cy={0} r={11}
+                  fill="var(--paper)"
+                  stroke={color} strokeWidth="1.4"
+                  style={{ animation: `planet-breathe ${4 + i*0.3}s ease-in-out infinite`, transformOrigin: `${rPlanet}px 0px` }} />
+                {/* glyph */}
+                <text x={rPlanet} y={0} fontSize={14} fill={color}
+                  textAnchor="middle" dominantBaseline="central"
+                  fontFamily="var(--serif-en)" fontWeight="600">{b.glyph}</text>
+                {/* 度数小标 */}
+                <text x={rPlanet} y={20} fontSize={8.5} fill="var(--ink-3)"
+                  textAnchor="middle" fontFamily="var(--mono)" letterSpacing="0.04em">
+                  {Math.round(b.deg)}°
+                </text>
+              </g>
+            </g>
+          );
+        })}
+
+        {/* 中心朱砂脉冲（合议焦点） */}
+        <circle cx={cx} cy={cy} r={5} fill="var(--cinnabar)"
+          style={{ animation: "pulse-r 2.5s ease-in-out infinite" }} />
+        <circle cx={cx} cy={cy} r={1.5} fill="var(--paper)" />
+      </svg>
+    </div>
+  );
+}
+
+// Bagua (八卦) — 8 trigrams arranged in a circle, slowly rotating
+function AnimatedBagua({ size = 280 }) {
+  const trigrams = [
+    { name: "乾", lines: [1,1,1] }, { name: "兑", lines: [1,1,0] },
+    { name: "离", lines: [1,0,1] }, { name: "震", lines: [1,0,0] },
+    { name: "巽", lines: [0,1,1] }, { name: "坎", lines: [0,1,0] },
+    { name: "艮", lines: [0,0,1] }, { name: "坤", lines: [0,0,0] },
+  ];
+  const r = size / 2;
+  return (
+    <div style={{ position: "relative", width: size, height: size }}>
+      <style>{`
+        @keyframes bagua-spin { to { transform: rotate(360deg); } }
+        @keyframes taiji-spin { to { transform: rotate(-360deg); } }
+      `}</style>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+        style={{ animation: "bagua-spin 90s linear infinite", transformOrigin: "center" }}>
+        <circle cx={r} cy={r} r={r - 4} fill="none" stroke="var(--ink)" strokeOpacity="0.25" />
+        {trigrams.map((t, i) => {
+          const angle = (i * 45 - 90);
+          const a = angle * Math.PI / 180;
+          const cx = r + Math.cos(a) * (r - 30);
+          const cy = r + Math.sin(a) * (r - 30);
+          return (
+            <g key={i} transform={`translate(${cx},${cy}) rotate(${angle + 90})`}>
+              {t.lines.map((line, j) => (
+                line === 1
+                  ? <rect key={j} x={-14} y={-12 + j * 7} width={28} height={3} fill="var(--ink)" />
+                  : <g key={j}>
+                      <rect x={-14} y={-12 + j * 7} width={11} height={3} fill="var(--ink)" />
+                      <rect x={3}   y={-12 + j * 7} width={11} height={3} fill="var(--ink)" />
+                    </g>
+              ))}
+            </g>
+          );
+        })}
+      </svg>
+      {/* Taiji center (yin-yang style — counter rotating) */}
+      <svg width={size * 0.32} height={size * 0.32}
+        viewBox="0 0 100 100"
+        style={{
+          position: "absolute", left: "50%", top: "50%",
+          transform: "translate(-50%, -50%)",
+          animation: "taiji-spin 14s linear infinite",
+          transformOrigin: "center",
+        }}>
+        <circle cx="50" cy="50" r="48" fill="var(--paper)" stroke="var(--ink)" strokeWidth="1.5" />
+        <path d="M50 2 A 48 48 0 0 1 50 98 A 24 24 0 0 1 50 50 A 24 24 0 0 0 50 2 Z" fill="var(--ink)" />
+        <circle cx="50" cy="26" r="5" fill="var(--paper)" />
+        <circle cx="50" cy="74" r="5" fill="var(--cinnabar)" />
+      </svg>
+    </div>
+  );
+}
+
+// Hexagram — 6 horizontal lines drawing in
+function AnimatedHexagram({ lines = [1,0,1,1,0,1], size = 100, delay = 0 }) {
+  return (
+    <svg width={size} height={size * 1.1} viewBox="0 0 100 110">
+      <style>{`@keyframes hex-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }`}</style>
+      {lines.map((l, i) => {
+        const y = 96 - i * 16;
+        return l === 1
+          ? <rect key={i} x={10} y={y} width={80} height={6} fill="currentColor"
+              style={{ transformOrigin: "center", animation: `hex-draw 0.45s ${delay + i * 0.12}s ease both` }} />
+          : <g key={i} style={{ transformOrigin: "center", animation: `hex-draw 0.45s ${delay + i * 0.12}s ease both` }}>
+              <rect x={10} y={y} width={32} height={6} fill="currentColor" />
+              <rect x={58} y={y} width={32} height={6} fill="currentColor" />
+            </g>;
+      })}
+    </svg>
+  );
+}
+
+// Drifting glyph cloud — calligraphic CN characters drifting + fading
+function GlyphCloud({ chars = ["乾","坤","坎","离","震","巽","艮","兑","禄","权","科","忌"], count = 14 }) {
+  const items = useMemo(() => Array.from({ length: count }, (_, i) => ({
+    char: chars[i % chars.length],
+    x: Math.random() * 100, y: Math.random() * 100,
+    size: 22 + Math.random() * 60,
+    dur: 18 + Math.random() * 20,
+    delay: Math.random() * -20,
+    op: 0.04 + Math.random() * 0.07,
+  })), [count]);
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+      <style>{`
+        @keyframes drift { 0% { transform: translateY(20px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(-40px); opacity: 0; } }
+      `}</style>
+      {items.map((it, i) => (
+        <span key={i} style={{
+          position: "absolute", left: `${it.x}%`, top: `${it.y}%`,
+          fontFamily: "var(--serif-cn)", fontWeight: 700,
+          fontSize: it.size, color: "var(--ink)", opacity: it.op,
+          animation: `drift ${it.dur}s ${it.delay}s ease-in-out infinite`,
+          userSelect: "none",
+        }}>{it.char}</span>
+      ))}
+    </div>
+  );
+}
+
+// Animated cinnabar seal — breathes + occasionally re-stamps with ink ripple
+function BreathingSeal({ char = "算", size = 84 }) {
+  return (
+    <div style={{ position: "relative", width: size, height: size, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+      <style>{`
+        @keyframes seal-breathe { 0%,100% { transform: rotate(-3deg) scale(1); } 50% { transform: rotate(-2deg) scale(1.02); } }
+        @keyframes seal-ripple  { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.7); opacity: 0; } }
+      `}</style>
+      <span aria-hidden style={{
+        position: "absolute", inset: 0,
+        border: "1.5px solid var(--cinnabar)",
+        animation: "seal-ripple 2.4s ease-out infinite",
+      }} />
+      <span aria-hidden style={{
+        position: "absolute", inset: 0,
+        border: "1.5px solid var(--cinnabar)",
+        animation: "seal-ripple 2.4s 1.2s ease-out infinite",
+      }} />
+      <span style={{
+        width: size, height: size,
+        background: "var(--cinnabar)", color: "var(--paper)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: "var(--serif-cn)", fontWeight: 700, fontSize: size * 0.42,
+        boxShadow: "inset 0 0 0 3px var(--cinnabar), inset 0 0 0 5px color-mix(in oklch, var(--cinnabar) 50%, var(--paper))",
+        animation: "seal-breathe 4s ease-in-out infinite",
+      }}>{char}</span>
+    </div>
+  );
+}
+
+// Ink stroke — animated brush-like horizontal ink streak
+function InkStroke({ width = "100%", height = 4, delay = 0 }) {
+  return (
+    <div style={{ width, height, background: "var(--ink)", transformOrigin: "left center",
+      animation: `hex-draw 1s ${delay}s cubic-bezier(.2,.7,.3,1) both` }} />
+  );
+}
+
+// Tarot card with flip
+// 塔罗牌（升级版）— 按 suit 配色 + SVG 矢量插画感 + 朱金双框
+function TarotCardFlip({ name = "III · Pentacles", glyph = "III", reversed = false, delay = 0, suit = "pent", cn = "三 · 星币" }) {
+  // 自动从 name 推 suit（兼容旧调用）
+  let _suit = suit;
+  if (!_suit || _suit === "pent") {
+    if (/Pent|Coin|星币|钱币/i.test(name)) _suit = "pent";
+    else if (/Cup|圣杯/i.test(name)) _suit = "cup";
+    else if (/Sword|宝剑/i.test(name)) _suit = "sword";
+    else if (/Wand|权杖/i.test(name)) _suit = "wand";
+    else _suit = "major";  // 大阿卡纳
+  }
+  // suit 调色板
+  const PALETTE = {
+    pent:  { bg: "oklch(0.94 0.04 145)", accent: "var(--jade)",      ink: "oklch(0.30 0.04 145)", glyphPath: "M50 14 a36 36 0 1 0 0.001 0 z M50 26 v48 M30 50 h40" },  // 翠玉 + 圆+十字（星币）
+    cup:   { bg: "oklch(0.92 0.06 230)", accent: "oklch(0.42 0.08 230)", ink: "oklch(0.28 0.04 230)", glyphPath: "M28 22 h44 v18 a22 22 0 0 1 -44 0 z M50 60 v18 M34 78 h32" }, // 黛青 + 圣杯
+    sword: { bg: "oklch(0.94 0.04 78)",  accent: "var(--gild)",       ink: "oklch(0.32 0.04 78)",  glyphPath: "M50 12 v60 M40 70 h20 M44 76 h12 M50 82 v6" },  // 鎏金 + 宝剑
+    wand:  { bg: "oklch(0.94 0.07 28)",  accent: "var(--cinnabar)",   ink: "oklch(0.30 0.06 28)",  glyphPath: "M30 80 L70 20 M28 20 l8 0 l4 8 M64 72 l8 0 l-4 8" },  // 朱砂 + 权杖
+    major: { bg: "oklch(0.96 0.02 80)",  accent: "var(--ink)",        ink: "var(--ink)",            glyphPath: "M50 10 L60 38 L88 40 L66 58 L74 86 L50 70 L26 86 L34 58 L12 40 L40 38 Z" }, // 大阿卡纳 · 八角星
+  };
+  const p = PALETTE[_suit] || PALETTE.major;
+
+  return (
+    <div style={{ perspective: 1000, width: 120, height: 180 }}>
+      <style>{`
+        @keyframes flip-card { from { transform: rotateY(180deg); } to { transform: rotateY(0); } }
+        @keyframes shimmer-edge { 0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 0 transparent; } 50% { box-shadow: 0 4px 14px rgba(0,0,0,0.10), 0 0 0 1px color-mix(in oklch, var(--gild) 30%, transparent); } }
+      `}</style>
+      <div style={{
+        width: "100%", height: "100%",
+        position: "relative", transformStyle: "preserve-3d",
+        animation: `flip-card 1s ${delay}s cubic-bezier(.2,.7,.3,1) both`,
+      }}>
+        {/* 正面 */}
+        <div style={{
+          position: "absolute", inset: 0,
+          backfaceVisibility: "hidden",
+          background: p.bg,
+          border: `1.5px solid ${p.ink}`,
+          padding: 8,
+          display: "flex", flexDirection: "column",
+          transform: reversed ? "rotate(180deg)" : "none",
+          animation: "shimmer-edge 6s ease-in-out infinite",
+        }}>
+          {/* 朱金双线内框 */}
+          <div style={{
+            position: "absolute", inset: 5,
+            border: `0.6px solid ${p.accent}`,
+            pointerEvents: "none",
+          }} />
+          <div style={{
+            position: "absolute", inset: 9,
+            border: `0.4px solid ${p.ink}`,
+            opacity: 0.35,
+            pointerEvents: "none",
+          }} />
+
+          {/* 顶部：suit caps */}
+          <div className="mono" style={{
+            fontSize: 8, letterSpacing: "0.28em",
+            color: p.ink, opacity: 0.6, textAlign: "center",
+            paddingTop: 6, textTransform: "uppercase",
+          }}>
+            {_suit === "major" ? "ARCANUM" :
+             _suit === "pent"  ? "PENTACLES · 土" :
+             _suit === "cup"   ? "CUPS · 水" :
+             _suit === "sword" ? "SWORDS · 风" :
+                                 "WANDS · 火"}
+          </div>
+
+          {/* 中央 SVG 插画 */}
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+            <svg viewBox="0 0 100 100" width="64" height="64" style={{ display: "block" }}>
+              {/* 内底圆 */}
+              <circle cx="50" cy="50" r="42"
+                fill={`color-mix(in oklch, ${p.accent} 8%, transparent)`}
+                stroke={p.accent} strokeOpacity="0.35" strokeWidth="0.6" />
+              {/* glyph 主路径 */}
+              <path d={p.glyphPath} fill="none" stroke={p.accent} strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" />
+              {/* 中心点 */}
+              <circle cx="50" cy="50" r="2.4" fill={p.accent} opacity="0.55" />
+            </svg>
+          </div>
+
+          {/* 罗马数字 / 编号（大字） */}
+          <div style={{
+            fontFamily: "var(--serif-en)", fontStyle: "italic",
+            fontSize: 22, color: p.accent, textAlign: "center",
+            fontWeight: 500, letterSpacing: "0.04em",
+          }}>{glyph}</div>
+
+          {/* hairline */}
+          <div style={{
+            width: "60%", height: 1, margin: "6px auto",
+            background: `linear-gradient(to right, transparent, ${p.accent}, transparent)`,
+            opacity: 0.5,
+          }} />
+
+          {/* 牌名（中英） */}
+          <div style={{ textAlign: "center", padding: "0 6px 8px" }}>
+            <div style={{ fontFamily: "var(--serif-cn)", fontSize: 11.5, color: p.ink, letterSpacing: "0.08em", marginBottom: 2 }}>
+              {cn || ""}
+            </div>
+            <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 9.5, color: p.ink, opacity: 0.7 }}>
+              {name.replace(/^[IVX]+\s*[·.]?\s*/i, "")}
+            </div>
+          </div>
+
+          {/* 逆位提示 */}
+          {reversed && (
+            <div style={{
+              position: "absolute", top: 4, right: 4,
+              fontFamily: "var(--mono)", fontSize: 8, color: p.accent,
+              padding: "1px 4px", background: "var(--paper)",
+              border: `0.6px solid ${p.accent}`,
+            }}>℞</div>
+          )}
+        </div>
+
+        {/* 背面（朱砂底 + 朱金 ornate）*/}
+        <div style={{
+          position: "absolute", inset: 0,
+          backfaceVisibility: "hidden",
+          background: "var(--cinnabar)",
+          transform: "rotateY(180deg)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 6,
+        }}>
+          <div style={{
+            position: "absolute", inset: 5,
+            border: "0.8px solid color-mix(in oklch, var(--paper) 70%, transparent)",
+          }} />
+          <svg viewBox="0 0 100 100" width="60%" height="60%">
+            {/* 八角星 + 三圈 */}
+            <g stroke="var(--paper)" fill="none" strokeOpacity="0.85">
+              <circle cx="50" cy="50" r="40" strokeWidth="0.6" />
+              <circle cx="50" cy="50" r="32" strokeWidth="0.4" strokeDasharray="2 3" />
+              <path d="M50 14 L58 42 L86 50 L58 58 L50 86 L42 58 L14 50 L42 42 Z" strokeWidth="1" />
+              <circle cx="50" cy="50" r="6" fill="var(--paper)" strokeWidth="0" />
+              <text x="50" y="54" textAnchor="middle"
+                fontFamily="var(--serif-cn)" fontSize="10" fontWeight="700"
+                fill="var(--cinnabar)">算</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  AnimatedAstroWheel, AnimatedBagua, AnimatedHexagram,
+  GlyphCloud, BreathingSeal, InkStroke, TarotCardFlip,
+});
+
+
+
+// MysticalCompute — ONE unified gesture: an enso circle slowly drawn, with 8 quiet
+// expert markers along its rim and a breathing taiji at center. No chaos.
+function MysticalCompute({ phase, expertState }) {
+  const size = 440;
+  const cx = size / 2, cy = size / 2;
+  const rOuter = 178;
+  const rMarker = 178;
+  const rLabel = 208;
+  return (
+    <div style={{ position: "relative", width: "100%", padding: "32px 0 24px", borderTop: "var(--rule)", borderBottom: "var(--rule)", display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
+      <style>{`
+        @keyframes mc-enso { from { stroke-dashoffset: 1200; } to { stroke-dashoffset: 0; } }
+        @keyframes mc-breathe { 0%,100% { transform: scale(1); opacity: 0.92; } 50% { transform: scale(1.04); opacity: 1; } }
+        @keyframes mc-rotate { to { transform: rotate(360deg); } }
+        @keyframes mc-fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes mc-pulsedot { 0%,100% { transform: scale(1); } 50% { transform: scale(1.35); } }
+      `}</style>
+
+      <div style={{ position: "relative", width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", inset: 0 }}>
+          {/* faint guide circle */}
+          <circle cx={cx} cy={cy} r={rOuter} fill="none" stroke="var(--ink)" strokeOpacity="0.06" />
+          {/* enso — single ink stroke being drawn */}
+          <circle cx={cx} cy={cy} r={rOuter} fill="none"
+            stroke="var(--ink)" strokeWidth="1.5" strokeLinecap="round"
+            strokeDasharray="1200" strokeDashoffset="1200"
+            style={{ transformOrigin: "center", transform: "rotate(-90deg)", animation: "mc-enso 3.6s cubic-bezier(.22,1,.36,1) forwards" }} />
+          {/* 8 hairline radial spokes, very faint */}
+          {Array.from({ length: 8 }).map((_, i) => {
+            const a = (i * 45 - 90) * Math.PI / 180;
+            return <line key={i}
+              x1={cx + Math.cos(a) * 60} y1={cy + Math.sin(a) * 60}
+              x2={cx + Math.cos(a) * (rOuter - 6)} y2={cy + Math.sin(a) * (rOuter - 6)}
+              stroke="var(--ink)" strokeOpacity="0.05" />;
+          })}
+        </svg>
+
+        {/* 8 expert markers along the rim */}
+        {EXPERTS.map((ex, i) => {
+          const a = (i * 45 - 90) * Math.PI / 180;
+          const x = cx + Math.cos(a) * rMarker;
+          const y = cy + Math.sin(a) * rMarker;
+          const lx = cx + Math.cos(a) * rLabel;
+          const ly = cy + Math.sin(a) * rLabel;
+          const st = (expertState && expertState[ex.id]) ? expertState[ex.id].status : "idle";
+          const done = st === "done";
+          const thinking = st === "thinking";
+          return (
+            <React.Fragment key={ex.id}>
+              {/* dot */}
+              <div style={{
+                position: "absolute", left: x - 5, top: y - 5,
+                width: 10, height: 10, borderRadius: "50%",
+                background: done ? "var(--cinnabar)" : "var(--paper)",
+                border: `1px solid ${done ? "var(--cinnabar)" : (thinking ? "var(--ink)" : "color-mix(in oklch, var(--ink) 25%, transparent)")}`,
+                animation: thinking ? "mc-pulsedot 1.6s ease-in-out infinite" : "none",
+                transition: "background 0.5s ease, border-color 0.5s ease",
+              }} />
+              {/* label */}
+              <div style={{
+                position: "absolute",
+                left: lx, top: ly,
+                transform: "translate(-50%, -50%)",
+                fontFamily: "var(--serif-cn)", fontSize: 13, fontWeight: 600,
+                color: done ? "var(--cinnabar)" : (thinking ? "var(--ink)" : "var(--ink-3)"),
+                opacity: 0,
+                animation: `mc-fadein 0.6s ${0.4 + i * 0.08}s ease-out forwards`,
+                whiteSpace: "nowrap",
+                letterSpacing: "0.05em",
+                transition: "color 0.5s ease",
+              }}>{ex.cn}</div>
+            </React.Fragment>
+          );
+        })}
+
+        {/* center: breathing taiji */}
+        <div style={{
+          position: "absolute", left: "50%", top: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 84, height: 84,
+          animation: "mc-breathe 5s ease-in-out infinite",
+        }}>
+          <svg width="84" height="84" viewBox="0 0 100 100" style={{ animation: "mc-rotate 24s linear infinite", transformOrigin: "center" }}>
+            <circle cx="50" cy="50" r="48" fill="var(--paper)" stroke="var(--ink)" strokeWidth="1" />
+            <path d="M50 2 A 48 48 0 0 1 50 98 A 24 24 0 0 1 50 50 A 24 24 0 0 0 50 2 Z" fill="var(--ink)" />
+            <circle cx="50" cy="26" r="4" fill="var(--paper)" />
+            <circle cx="50" cy="74" r="4" fill="var(--cinnabar)" />
+          </svg>
+        </div>
+      </div>
+
+      {/* phase line — single quiet line below the circle */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 16, opacity: 0, animation: "mc-fadein 0.6s 0.2s ease-out forwards" }}>
+        <span className="caps" style={{ fontSize: 10, color: "var(--cinnabar)", letterSpacing: "0.22em" }}>推演</span>
+        <span style={{ fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 600, letterSpacing: "0.04em" }}>
+          {phase ? phase.cn : "..."}
+        </span>
+        <span className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 14, color: "var(--ink-3)" }}>
+          {phase ? phase.en : ""}
+        </span>
+      </div>
+    </div>
+  );
+}
+window.MysticalCompute = MysticalCompute;
+
+
+
+// InnerEmblem — calm centered cinnabar seal with thin gold ring + four cardinals.
+function InnerEmblem({ size = 210 }) {
+  const cx = size / 2, cy = size / 2;
+  const rRing = size * 0.46;
+  const rChar = size * 0.4;
+  const sealSize = Math.round(size * 0.48);
+  const branches = [
+    { c: "午", a: -90 },
+    { c: "酉", a: 0 },
+    { c: "子", a: 90 },
+    { c: "卯", a: 180 },
+  ];
+  return (
+    <div style={{ position: "relative", width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <style>{`
+        @keyframes ie-rotate { to { transform: rotate(360deg); } }
+        @keyframes ie-breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+      `}</style>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", inset: 0, animation: "ie-rotate 90s linear infinite", transformOrigin: "center" }}>
+        <circle cx={cx} cy={cy} r={rRing} fill="none" stroke="var(--gild)" strokeWidth="1" strokeOpacity="0.6" />
+        <circle cx={cx} cy={cy} r={rRing - 8} fill="none" stroke="var(--ink)" strokeWidth="0.5" strokeOpacity="0.12" strokeDasharray="1 4" />
+      </svg>
+      {branches.map(b => {
+        const a = b.a * Math.PI / 180;
+        const x = cx + Math.cos(a) * rChar;
+        const y = cy + Math.sin(a) * rChar;
+        return (
+          <div key={b.c} style={{
+            position: "absolute", left: x, top: y, transform: "translate(-50%,-50%)",
+            fontFamily: "var(--serif-cn)", fontSize: size * 0.085, fontWeight: 500,
+            color: "var(--ink-3)", letterSpacing: "0.02em",
+          }}>{b.c}</div>
+        );
+      })}
+      {/* center cinnabar seal — self-contained, guaranteed centered */}
+      <div style={{
+        position: "relative",
+        width: sealSize, height: sealSize,
+        background: "var(--cinnabar)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        animation: "ie-breathe 5s ease-in-out infinite",
+        boxShadow: "0 0 0 3px var(--paper), 0 0 0 4px color-mix(in oklch, var(--cinnabar) 35%, transparent)",
+      }}>
+        <span style={{
+          fontFamily: "var(--serif-cn)", fontWeight: 700,
+          fontSize: sealSize * 0.62, color: "var(--paper)",
+          lineHeight: 1, letterSpacing: 0,
+        }}>算</span>
+      </div>
+    </div>
+  );
+}
+window.InnerEmblem = InnerEmblem;
+
+  </script>
+
+  <script type="text/babel">
+// Shared components
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+// Seal — cinnabar 印章
+function Seal({ char = "算", size = 44, rotate = -2 }) {
+  return (
+    <span className="seal" style={{ width: size, height: size, fontSize: size * 0.42, transform: `rotate(${rotate}deg)` }}>
+      {char}
+    </span>
+  );
+}
+
+// Two-line CN/EN label lockup
+function Lockup({ cn, en, size = "md", align = "left" }) {
+  const sizes = {
+    sm: { cn: 14, en: 10 },
+    md: { cn: 22, en: 11 },
+    lg: { cn: 36, en: 13 },
+    xl: { cn: 64, en: 15 },
+    xxl: { cn: 120, en: 18 },
+  };
+  const s = sizes[size] || sizes.md;
+  return (
+    <div style={{ textAlign: align, lineHeight: 1.05 }}>
+      <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 700, fontSize: s.cn, letterSpacing: "0.04em" }}>{cn}</div>
+      <div className="caps" style={{ fontSize: s.en, marginTop: size === "xxl" ? 10 : 6 }}>{en}</div>
+    </div>
+  );
+}
+
+// Hairline rule with optional center label
+function Rule({ label, style }) {
+  if (!label) return <div className="hairline" style={style} />;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 16, ...style }}>
+      <div className="hairline" style={{ flex: 1 }} />
+      <div className="caps" style={{ fontSize: 10, color: "var(--ink-3)" }}>{label}</div>
+      <div className="hairline" style={{ flex: 1 }} />
+    </div>
+  );
+}
+
+// Vertical CN column with monospace label
+function VColumn({ chars, label, height = 200 }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+      <div style={{
+        writingMode: "vertical-rl",
+        fontFamily: "var(--serif-cn)",
+        fontWeight: 600,
+        fontSize: 22,
+        letterSpacing: "0.4em",
+        color: "var(--ink)",
+        height,
+        display: "flex",
+        alignItems: "center",
+      }}>
+        {chars}
+      </div>
+      {label && <div className="caps" style={{ fontSize: 9 }}>{label}</div>}
+    </div>
+  );
+}
+
+// BaZi pillar card
+function PillarCard({ pillar, big = false }) {
+  return (
+    <div style={{
+      border: pillar.master ? "1.5px solid var(--cinnabar)" : "1px solid color-mix(in oklch, var(--ink) 18%, transparent)",
+      padding: big ? "28px 20px" : "20px 16px",
+      background: pillar.master ? "color-mix(in oklch, var(--cinnabar) 4%, transparent)" : "transparent",
+      position: "relative",
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 14,
+      minHeight: big ? 280 : 200,
+    }}>
+      <div className="caps" style={{ fontSize: 9, color: "var(--ink-3)" }}>{pillar.labelEn}</div>
+      <div style={{ fontFamily: "var(--serif-cn)", fontSize: big ? 64 : 48, fontWeight: 600, lineHeight: 1, color: pillar.master ? "var(--cinnabar)" : "var(--ink)" }}>{pillar.stem}</div>
+      <div className="hairline" style={{ width: "60%" }} />
+      <div style={{ fontFamily: "var(--serif-cn)", fontSize: big ? 64 : 48, fontWeight: 400, lineHeight: 1 }}>{pillar.branch}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center", marginTop: 4 }}>
+        <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{pillar.stemPinyin} · {pillar.branchPinyin}</div>
+        <div className="caps" style={{ fontSize: 9, color: "var(--ink-4)", letterSpacing: "0.18em" }}>{pillar.phase}</div>
+      </div>
+      <div style={{ marginTop: "auto", display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
+        {pillar.hidden.map(h => (
+          <span key={h} style={{ fontFamily: "var(--serif-cn)", fontSize: 14, color: "var(--ink-3)", opacity: 0.7 }}>{h}</span>
+        ))}
+      </div>
+      {pillar.master && (
+        <div style={{ position: "absolute", top: -10, right: -10 }}>
+          <Seal char="主" size={28} rotate={4} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Five elements bar
+function FiveElementsBar({ data }) {
+  const max = Math.max(...Object.values(data));
+  const elements = ["木","火","土","金","水"];
+  const colors = {
+    "木": "oklch(0.62 0.10 145)",
+    "火": "var(--cinnabar)",
+    "土": "oklch(0.66 0.08 75)",
+    "金": "oklch(0.78 0.03 80)",
+    "水": "oklch(0.45 0.08 250)",
+  };
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14 }}>
+      {elements.map(el => {
+        const v = data[el];
+        const pct = max ? (v / max) * 100 : 0;
+        return (
+          <div key={el} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+            <div style={{ height: 80, width: 28, background: "color-mix(in oklch, var(--ink) 5%, transparent)", display: "flex", alignItems: "flex-end", border: "1px solid color-mix(in oklch, var(--ink) 12%, transparent)" }}>
+              <div style={{ width: "100%", height: `${pct}%`, background: colors[el], transition: "height .8s ease" }} />
+            </div>
+            <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 500 }}>{el}</div>
+            <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{v.toFixed(0)}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Astrology wheel — minimal, hand-grid style
+function AstroWheel({ size = 360, data }) {
+  const r = size / 2;
+  const cx = r, cy = r;
+  const rOuter = r - 6;
+  const rInner = r - 60;
+  const rPlanet = r - 36;
+
+  const houses = Array.from({ length: 12 }, (_, i) => i);
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+      {/* outer ring */}
+      <circle cx={cx} cy={cy} r={rOuter} fill="none" stroke="currentColor" strokeOpacity="0.25" />
+      <circle cx={cx} cy={cy} r={rInner} fill="none" stroke="currentColor" strokeOpacity="0.18" />
+      <circle cx={cx} cy={cy} r={rInner - 60} fill="none" stroke="currentColor" strokeOpacity="0.12" />
+      {/* house spokes */}
+      {houses.map(i => {
+        const a = (i * 30) * Math.PI / 180;
+        const x1 = cx + Math.cos(a) * rInner;
+        const y1 = cy + Math.sin(a) * rInner;
+        const x2 = cx + Math.cos(a) * rOuter;
+        const y2 = cy + Math.sin(a) * rOuter;
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeOpacity="0.25" />;
+      })}
+      {/* sign labels (zodiac glyphs) */}
+      {["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"].map((g, i) => {
+        const a = (i * 30 + 15 - 90) * Math.PI / 180;
+        const lx = cx + Math.cos(a) * (rOuter - 30);
+        const ly = cy + Math.sin(a) * (rOuter - 30);
+        return (
+          <text key={i} x={lx} y={ly} fontSize={14} fill="currentColor" fillOpacity="0.55"
+                textAnchor="middle" dominantBaseline="central" fontFamily="var(--serif-en)">{g}</text>
+        );
+      })}
+      {/* aspect lines (cross center) */}
+      {data.aspects.map((asp, i) => {
+        const A = data.bodies.find(b => b.name === asp.a);
+        const B = data.bodies.find(b => b.name === asp.b);
+        if (!A || !B) return null;
+        const aa = (A.longitude - 90) * Math.PI / 180;
+        const ab = (B.longitude - 90) * Math.PI / 180;
+        const ax = cx + Math.cos(aa) * (rInner - 60);
+        const ay = cy + Math.sin(aa) * (rInner - 60);
+        const bx = cx + Math.cos(ab) * (rInner - 60);
+        const by = cy + Math.sin(ab) * (rInner - 60);
+        const stroke = asp.type === "trine" ? "var(--cinnabar)" : asp.type === "square" ? "currentColor" : "var(--gild)";
+        const dash = asp.type === "opposition" ? "4 3" : "0";
+        return <line key={i} x1={ax} y1={ay} x2={bx} y2={by} stroke={stroke} strokeOpacity="0.55" strokeDasharray={dash} strokeWidth="0.8" />;
+      })}
+      {/* planet glyphs */}
+      {data.bodies.map((b, i) => {
+        const a = (b.longitude - 90) * Math.PI / 180;
+        const px = cx + Math.cos(a) * rPlanet;
+        const py = cy + Math.sin(a) * rPlanet;
+        return (
+          <g key={b.name}>
+            <circle cx={px} cy={py} r={11} fill="var(--paper)" stroke="currentColor" strokeOpacity="0.6" />
+            <text x={px} y={py} fontSize={13} fill="currentColor" textAnchor="middle" dominantBaseline="central" fontFamily="var(--serif-en)">{b.glyph}</text>
+          </g>
+        );
+      })}
+      {/* center seal-like dot */}
+      <circle cx={cx} cy={cy} r={3} fill="var(--cinnabar)" />
+    </svg>
+  );
+}
+
+// Chip
+function Chip({ children, dot = true }) {
+  return (
+    <span className="chip">
+      {dot && <span className="dot" />}
+      {children}
+    </span>
+  );
+}
+
+// Big watermark CN char
+function WatermarkChar({ char, size = 600, opacity = 0.045, top, right, left, bottom }) {
+  return (
+    <div aria-hidden style={{
+      position: "absolute",
+      fontFamily: "var(--serif-cn)",
+      fontWeight: 900,
+      fontSize: size,
+      lineHeight: 1,
+      color: "var(--ink)",
+      opacity,
+      pointerEvents: "none",
+      userSelect: "none",
+      top, right, left, bottom,
+      letterSpacing: 0,
+    }}>{char}</div>
+  );
+}
+
+// Ornament: classical bracket frame
+function FrameBox({ children, style }) {
+  return (
+    <div style={{ position: "relative", padding: 24, border: "1px solid color-mix(in oklch, var(--ink) 18%, transparent)", ...style }}>
+      <span style={{ position: "absolute", top: -1, left: -1, width: 14, height: 14, borderTop: "2px solid var(--cinnabar)", borderLeft: "2px solid var(--cinnabar)" }} />
+      <span style={{ position: "absolute", top: -1, right: -1, width: 14, height: 14, borderTop: "2px solid var(--cinnabar)", borderRight: "2px solid var(--cinnabar)" }} />
+      <span style={{ position: "absolute", bottom: -1, left: -1, width: 14, height: 14, borderBottom: "2px solid var(--cinnabar)", borderLeft: "2px solid var(--cinnabar)" }} />
+      <span style={{ position: "absolute", bottom: -1, right: -1, width: 14, height: 14, borderBottom: "2px solid var(--cinnabar)", borderRight: "2px solid var(--cinnabar)" }} />
+      {children}
+    </div>
+  );
+}
+
+// Top nav
+function TopNav({ current, setScreen, hasProfile }) {
+  const links = [
+    { id: "home",      cn: "起",  en: "home"      },
+    { id: "onboard",   cn: "立",  en: "onboard"   },
+    { id: "chart",     cn: "盘",  en: "chart"     },
+    { id: "chat",      cn: "问",  en: "consult"   },
+    { id: "report",    cn: "析",  en: "report"    },
+    { id: "copilot",   cn: "司",  en: "copilot"   },
+  ];
+  const today = new Date().toLocaleDateString("en-US", { year:"numeric", month:"short", day:"2-digit" });
+  return (
+    <div className="topnav">
+      <div className="brand" onClick={() => setScreen("home")} style={{ cursor: "pointer" }}>
+        <Seal char="算" size={36} />
+        <div>
+          <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 700, fontSize: 20, letterSpacing: "0.06em", lineHeight: 1 }}>算</div>
+          <div className="caps" style={{ fontSize: 8, marginTop: 2 }}>suàn · v1.4</div>
+        </div>
+      </div>
+      <div className="links">
+        {links.map(l => (
+          <button key={l.id} data-active={current === l.id} onClick={() => setScreen(l.id)}>
+            {l.cn}
+            <span className="pinyin">{l.en}</span>
+          </button>
+        ))}
+      </div>
+      <div className="right">
+        <div className="stamp" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+          <span>{today}</span>
+          <span style={{ color: hasProfile ? "var(--cinnabar)" : "var(--ink-4)" }}>
+            {hasProfile ? `· 档 ${SAMPLE_PROFILE.name}` : "· 未立档"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Footer
+function Footer() {
+  return (
+    <footer style={{ padding: "60px var(--screen-pad) 40px", borderTop: "var(--rule)", marginTop: 80 }}>
+      <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <Seal char="算" size={36} />
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <div style={{ fontSize: 13, color: "var(--ink-3)", lineHeight: 1.6 }}>
+            本系统输出仅供文化参考与自我反思。重大人生决定请结合自身判断与专业人士意见。
+          </div>
+          <div className="em" style={{ fontSize: 13, color: "var(--ink-4)", marginTop: 6 }}>
+            Output is for cultural reference and self-reflection. Significant life decisions should be made with personal judgment and professional counsel.
+          </div>
+        </div>
+        <div className="caps" style={{ fontSize: 10, color: "var(--ink-4)", textAlign: "right", lineHeight: 1.8 }}>
+          严肃的工程<br/>敬畏的工艺<br/>—— v1.4 · MMXXVI
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+Object.assign(window, {
+  Seal, Lockup, Rule, VColumn, PillarCard, FiveElementsBar, AstroWheel,
+  Chip, WatermarkChar, FrameBox, TopNav, Footer,
+});
+
+  </script>
+
+  <script type="text/babel">
+// Landing screen — animated centerpiece + bold type
+function LandingScreen({ go }) {
+  return (
+    <div className="fade-in">
+      <section style={{ position: "relative", padding: "40px var(--screen-pad) 80px", overflow: "hidden", minHeight: "88vh" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.7fr", gap: 80, alignItems: "center", maxWidth: 1400, margin: "60px auto 0", position: "relative", zIndex: 2 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 28 }}>
+              <BreathingSeal char="算" size={68} />
+              <div>
+                <div className="caps" style={{ fontSize: 11, color: "var(--cinnabar)" }}>中西命理 AI Agent · CHINESE & WESTERN DIVINATION</div>
+                <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 4, letterSpacing: "0.18em" }}>suàn · v1.4 · MMXXVI</div>
+              </div>
+            </div>
+            {/* refined editorial hero — quieter, ceremonial */}
+            <h1 style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: "clamp(44px, 5.4vw, 76px)", lineHeight: 1.06, letterSpacing: "0.04em", margin: 0, textWrap: "balance", color: "var(--ink)" }}>
+              知命 <span style={{ color: "var(--gild)", fontWeight: 400, margin: "0 0.2em" }}>·</span> 察微
+            </h1>
+            <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: "clamp(20px, 2vw, 26px)", color: "var(--ink-2)", marginTop: 20, lineHeight: 1.4, maxWidth: 640, fontWeight: 400 }}>
+              Read the chart. Hear the subtle. Eight expert agents — five Chinese schools, three Western — meeting across two traditions.
+            </div>
+            {/* aphorism — refined editorial pull, not a billboard */}
+            <div style={{ marginTop: 44, paddingLeft: 22, borderLeft: "2px solid var(--cinnabar)", maxWidth: 620 }}>
+              <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 500, fontSize: 22, lineHeight: 1.6, letterSpacing: "0.03em", color: "var(--ink)" }}>
+                算得准，是地板。<br/>
+                <span style={{ color: "var(--cinnabar)" }}>讲得活</span>，是天花板。
+              </div>
+              <div className="caps" style={{ fontSize: 9, color: "var(--ink-4)", marginTop: 12, letterSpacing: "0.24em" }}>
+                设计原则 · DESIGN PRINCIPLE
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 14, marginTop: 44, flexWrap: "wrap" }}>
+              <button className="btn" onClick={() => go("onboard")}>立档 · 开始 <span className="arr">→</span></button>
+              <button className="btn btn-ghost" onClick={() => go("chat")}>直接发问 · ask without a chart</button>
+            </div>
+            <div style={{ marginTop: 56, display: "flex", gap: 36, flexWrap: "wrap" }}>
+              <Stat n="8" label="Expert agents · 路推理" />
+              <Stat n="26" label="Topic alignment · 标准对齐" />
+              <Stat n="81" label="Classics · 公有领域典籍" />
+              <Stat n="61" label="Rules · 规则" />
+            </div>
+          </div>
+          {/* right: vertical seal column — quiet, brand-forward */}
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 0, padding: "20px 0" }}>
+            <style>{`
+              @keyframes ls-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+              @keyframes ls-breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+            `}</style>
+            <div className="caps" style={{ fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.3em", marginBottom: 28, opacity: 0, animation: "ls-fade 0.8s 0.2s ease-out forwards" }}>
+              印 · SEAL
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 22, animation: "ls-breathe 6s ease-in-out infinite" }}>
+              {[
+                { ch: "知", py: "zhī" },
+                { ch: "命", py: "mìng" },
+                { ch: "察", py: "chá" },
+                { ch: "微", py: "wēi" },
+              ].map((s, i) => (
+                <div key={i} style={{ position: "relative", opacity: 0, animation: `ls-fade 0.6s ${0.4 + i * 0.15}s ease-out forwards` }}>
+                  <div style={{
+                    width: 130, height: 130,
+                    background: "var(--cinnabar)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 0 0 2px var(--paper), 0 0 0 3px color-mix(in oklch, var(--cinnabar) 30%, transparent)",
+                  }}>
+                    <span style={{ fontFamily: "var(--serif-cn)", fontWeight: 700, fontSize: 78, color: "var(--paper)", lineHeight: 1 }}>
+                      {s.ch}
+                    </span>
+                  </div>
+                  <div className="mono" style={{ position: "absolute", top: "50%", left: "calc(100% + 18px)", transform: "translateY(-50%)", fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.18em" }}>
+                    {s.py}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Rule label="八路推理 · EIGHT EXPERTS" style={{ padding: "0 var(--screen-pad)" }} />
+
+      {/* Eight experts */}
+      <section style={{ padding: "80px var(--screen-pad)", maxWidth: 1400, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 56 }}>
+          <div>
+            <Lockup cn="八路推理" en="EIGHT EXPERTS · PARALLEL" size="lg" />
+            <p style={{ fontSize: 15, color: "var(--ink-2)", lineHeight: 1.7, marginTop: 18 }}>
+              五路中式与三路西式，互不可见对方结论，独立推理后由 Aligner 在 26 个 topic 上做交叉验证。共识 / 分歧 / 互补，皆显式呈现。
+            </p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0 }}>
+            {EXPERTS.map((ex, i) => (
+              <div key={ex.id} style={{
+                padding: 24,
+                borderTop: i < 4 ? "var(--rule)" : "var(--rule)",
+                borderBottom: i >= 4 ? "var(--rule)" : "none",
+                borderLeft: i % 4 !== 0 ? "var(--rule)" : "none",
+              }}>
+                <div className="caps" style={{ fontSize: 9, color: ex.sys === "cn" ? "var(--cinnabar)" : "var(--ink-3)" }}>
+                  {ex.sys === "cn" ? "CN · 中" : "WT · 西"} · {String(i + 1).padStart(2, "0")}
+                </div>
+                <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 28, marginTop: 10 }}>{ex.cn}</div>
+                <div className="em" style={{ fontSize: 14, color: "var(--ink-3)", marginTop: 2 }}>{ex.en}</div>
+                <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 14, lineHeight: 1.5 }}>{ex.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <Rule label="工作流 · PIPELINE" style={{ padding: "0 var(--screen-pad)" }} />
+
+      {/* Pipeline */}
+      <section style={{ padding: "80px var(--screen-pad)", maxWidth: 1400, margin: "0 auto" }}>
+        <div style={{ marginBottom: 48 }}>
+          <Lockup cn="一次问询，七层递进" en="ONE QUERY · SEVEN LAYERS" size="lg" />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 0, position: "relative" }}>
+          {[
+            { cn: "分类",   en: "Classify",     ms: "60ms" },
+            { cn: "起盘",   en: "Compute",      ms: "142ms" },
+            { cn: "推理",   en: "8 Experts",    ms: "~70s" },
+            { cn: "校验",   en: "Verifier",     ms: "~10s" },
+            { cn: "小综",   en: "Sub-synth",    ms: "~6s" },
+            { cn: "对齐",   en: "Align",        ms: "~5s" },
+            { cn: "判官",   en: "Judge",        ms: "~4s" },
+          ].map((p, i) => (
+            <div key={i} style={{
+              padding: "24px 16px",
+              borderLeft: i === 0 ? "1px solid var(--ink)" : "var(--rule)",
+              borderRight: i === 6 ? "1px solid var(--ink)" : "none",
+              borderTop: "1px solid var(--ink)", borderBottom: "1px solid var(--ink)",
+              position: "relative",
+            }}>
+              <div className="mono" style={{ fontSize: 9, color: "var(--ink-4)", letterSpacing: "0.18em" }}>L{i + 1}</div>
+              <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 22, marginTop: 8 }}>{p.cn}</div>
+              <div className="em" style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 2 }}>{p.en}</div>
+              <div className="mono" style={{ fontSize: 10, color: "var(--cinnabar)", marginTop: 12 }}>{p.ms}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <Rule label="哲学 · PHILOSOPHY" style={{ padding: "0 var(--screen-pad)" }} />
+
+      {/* Manifesto */}
+      <section style={{ padding: "80px var(--screen-pad)", maxWidth: 1400, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80 }}>
+        <div>
+          <div className="caps" style={{ fontSize: 10 }}>必须硬 · MUST BE HARD</div>
+          <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 0", fontSize: 17, lineHeight: 1.9, color: "var(--ink)" }}>
+            <li>· 算盘起卦 · chart computation</li>
+            <li>· 行星位置真实性 · ephemeris truth</li>
+            <li>· chart_ref 校验 · reference integrity</li>
+            <li>· Schema · 红线 · safety</li>
+          </ul>
+        </div>
+        <div>
+          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>必须软 · MUST BE SOFT</div>
+          <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 0", fontSize: 17, lineHeight: 1.9, color: "var(--ink)" }}>
+            <li>· 规则如何应用 · rule application</li>
+            <li>· 典籍如何综合 · classical synthesis</li>
+            <li>· 跨系统怎么联结 · cross linkage</li>
+            <li>· 何时追问 · when to ask back</li>
+          </ul>
+        </div>
+        <FrameBox style={{ gridColumn: "1 / -1", padding: 40 }}>
+          <div className="em" style={{ fontFamily: "var(--serif-en)", fontSize: 32, fontStyle: "italic", lineHeight: 1.4, color: "var(--ink)", textWrap: "balance" }}>
+            “This is an Agent, not a chatty rule engine. The rule engine outputs reference material — not commands. The LLM may deviate; deviations are logged for masters to review. That log is the real engine of the data flywheel.”
+          </div>
+          <div style={{ fontSize: 14, color: "var(--ink-3)", marginTop: 24, fontFamily: "var(--serif-cn)" }}>
+            — 设计方案 v1.4 · 第二章
+          </div>
+        </FrameBox>
+      </section>
+    </div>
+  );
+}
+
+function Stat({ n, label }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ fontFamily: "var(--serif-en)", fontWeight: 500, fontSize: 56, lineHeight: 1, color: "var(--ink)" }}>{n}</div>
+      <div className="caps" style={{ fontSize: 10 }}>{label}</div>
+    </div>
+  );
+}
+
+window.LandingScreen = LandingScreen;
+
+  </script>
+
+  <script type="text/babel">
+// Onboarding — birth chart entry, 3 steps
+function OnboardingScreen({ go, onComplete }) {
+  const [step, setStep] = useState(1);
+  const [data, setData] = useState({
+    name: "", gender: "女", date: "", time: "", place: "", scenario: "general",
+    calendar: "solar", trueSolar: true,
+  });
+
+  const fillSample = () => {
+    setData({
+      name: "陈书雅", gender: "女", date: "1991-08-15", time: "14:30",
+      place: "北京", scenario: "career", calendar: "solar", trueSolar: true,
+    });
+  };
+
+  const stepLabels = [
+    { cn: "立名", en: "identity",   pinyin: "lì míng" },
+    { cn: "立时", en: "moment",     pinyin: "lì shí" },
+    { cn: "立问", en: "question",   pinyin: "lì wèn" },
+  ];
+
+  return (
+    <div className="fade-in screen" style={{ position: "relative", minHeight: "calc(100vh - 80px)" }}>
+      <WatermarkChar char="立" size={580} top={40} right={-40} opacity={0.05} />
+
+      <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "260px 1fr", gap: 80 }}>
+        {/* left: stepper */}
+        <div>
+          <Lockup cn="立档" en="ESTABLISH RECORD" size="lg" />
+          <p style={{ fontSize: 14, color: "var(--ink-3)", lineHeight: 1.7, marginTop: 16 }}>
+            盘面由本地纯算法生成，不经 LLM。三步即立。
+          </p>
+          <div style={{ marginTop: 48, display: "flex", flexDirection: "column", gap: 0 }}>
+            {stepLabels.map((s, i) => {
+              const n = i + 1;
+              const active = step === n;
+              const done = step > n;
+              return (
+                <div key={i} style={{
+                  padding: "20px 0",
+                  borderTop: i === 0 ? "var(--rule)" : "none",
+                  borderBottom: "var(--rule)",
+                  display: "flex", alignItems: "center", gap: 16,
+                  opacity: done ? 0.6 : 1,
+                }}>
+                  <div style={{
+                    width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+                    border: active ? "1.5px solid var(--cinnabar)" : "1px solid var(--ink-3)",
+                    background: done ? "var(--ink)" : "transparent",
+                    color: done ? "var(--paper)" : active ? "var(--cinnabar)" : "var(--ink-3)",
+                    fontFamily: "var(--mono)", fontSize: 13,
+                  }}>{done ? "✓" : n}</div>
+                  <div>
+                    <div style={{ fontFamily: "var(--serif-cn)", fontWeight: active ? 700 : 500, fontSize: 18 }}>{s.cn}</div>
+                    <div className="mono" style={{ fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.18em" }}>{s.pinyin} · {s.en}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <button className="btn btn-ghost" style={{ marginTop: 32, fontSize: 13 }} onClick={fillSample}>
+            ⊕ 填入示例 · use sample
+          </button>
+        </div>
+
+        {/* right: form */}
+        <div>
+          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>步 STEP {step} / 3</div>
+          <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 48, lineHeight: 1.1, marginTop: 12, marginBottom: 40, color: "var(--ink)" }}>
+            {step === 1 && "Who is the chart for?"}
+            {step === 2 && "When and where were they born?"}
+            {step === 3 && "What is the question this season?"}
+          </div>
+
+          {step === 1 && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+              <Field label="姓名" en="NAME">
+                <input value={data.name} onChange={e => setData({ ...data, name: e.target.value })} placeholder="如 · 陈书雅" />
+              </Field>
+              <Field label="性别" en="GENDER">
+                <Segmented options={[{v:"女", l:"女 / female"},{v:"男", l:"男 / male"},{v:"other", l:"其他 / other"}]}
+                  value={data.gender} onChange={v => setData({ ...data, gender: v })} />
+              </Field>
+              <Field label="情境" en="SCENARIO" full>
+                <Segmented options={[
+                  {v:"general", l:"通览 · general"},
+                  {v:"career", l:"事业 · career"},
+                  {v:"relation", l:"关系 · relation"},
+                  {v:"study", l:"学业 · study"},
+                  {v:"health", l:"安康 · health"},
+                ]} value={data.scenario} onChange={v => setData({ ...data, scenario: v })} />
+              </Field>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+              <Field label="日期" en="DATE">
+                <input type="date" value={data.date} onChange={e => setData({ ...data, date: e.target.value })} />
+              </Field>
+              <Field label="时辰" en="TIME">
+                <input type="time" value={data.time} onChange={e => setData({ ...data, time: e.target.value })} />
+              </Field>
+              <Field label="出生地" en="BIRTHPLACE" full>
+                <input value={data.place} onChange={e => setData({ ...data, place: e.target.value })} placeholder="如 · 北京 / Beijing, China" />
+              </Field>
+              <Field label="历法" en="CALENDAR">
+                <Segmented options={[{v:"solar", l:"阳历 · gregorian"},{v:"lunar", l:"农历 · lunar"}]}
+                  value={data.calendar} onChange={v => setData({ ...data, calendar: v })} />
+              </Field>
+              <Field label="真太阳时" en="TRUE SOLAR TIME">
+                <Segmented options={[{v:true, l:"开 · on"},{v:false, l:"关 · off"}]}
+                  value={data.trueSolar} onChange={v => setData({ ...data, trueSolar: v })} />
+              </Field>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <Field label="本次议题" en="QUESTION FOR THIS SESSION" full>
+                <textarea rows={4} placeholder="如 · 今年事业怎么走？我想换一个方向，但不确定该走科技还是教育。"
+                  defaultValue={SAMPLE_QUESTION}
+                  style={{ resize: "none", fontSize: 17, lineHeight: 1.6 }} />
+              </Field>
+              <div style={{ marginTop: 32, padding: 20, background: "color-mix(in oklch, var(--cinnabar) 4%, transparent)", border: "1px dashed color-mix(in oklch, var(--cinnabar) 30%, transparent)" }}>
+                <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>合规 · COMPLIANCE</div>
+                <div style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.7, marginTop: 8 }}>
+                  涉及医疗、法律、自残相关的问题，系统会自动切换到专业建议或心理援助热线。这不是限制，是边界。
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* nav */}
+          <div style={{ display: "flex", gap: 12, marginTop: 56, justifyContent: "space-between", alignItems: "center" }}>
+            <button className="btn btn-ghost" onClick={() => step > 1 ? setStep(step - 1) : go("home")}>
+              ← {step > 1 ? "上一步" : "返"}
+            </button>
+            {step < 3 ? (
+              <button className="btn" onClick={() => setStep(step + 1)}>
+                继 · next <span className="arr">→</span>
+              </button>
+            ) : (
+              <button className="btn" onClick={() => { onComplete(); go("chart"); }}>
+                成档 · seal & continue <span className="arr">→</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, en, full, children }) {
+  return (
+    <div style={{ gridColumn: full ? "1 / -1" : "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+        <span style={{ fontFamily: "var(--serif-cn)", fontWeight: 500, fontSize: 14 }}>{label}</span>
+        <span className="caps" style={{ fontSize: 9 }}>{en}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Segmented({ options, value, onChange }) {
+  return (
+    <div style={{ display: "flex", border: "1px solid color-mix(in oklch, var(--ink) 25%, transparent)" }}>
+      {options.map((o, i) => (
+        <button key={String(o.v)} type="button" onClick={() => onChange(o.v)}
+          style={{
+            flex: 1, padding: "10px 12px", border: "none",
+            borderLeft: i > 0 ? "1px solid color-mix(in oklch, var(--ink) 18%, transparent)" : "none",
+            background: value === o.v ? "var(--ink)" : "transparent",
+            color: value === o.v ? "var(--paper)" : "var(--ink-2)",
+            fontFamily: "var(--serif-cn)", fontSize: 13,
+            cursor: "pointer", letterSpacing: "0.04em",
+            transition: "all .15s ease",
+          }}>
+          {o.l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+window.OnboardingScreen = OnboardingScreen;
+
+  </script>
+
+  <script type="text/babel">
+// Chart visualization — BaZi pillars + ZiWei + astrology + numerology
+function ChartScreen({ go }) {
+  const [tab, setTab] = useState("bazi");
+
+  return (
+    <div className="fade-in screen" style={{ position: "relative" }}>
+      {/* identity strip */}
+      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "end", borderBottom: "1px solid var(--ink)", paddingBottom: 24 }}>
+          <div>
+            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>盘 · CHART · {SAMPLE_PROFILE.scenario.toUpperCase()}</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 24, marginTop: 14, flexWrap: "wrap" }}>
+              <h1 style={{ fontFamily: "var(--serif-cn)", fontWeight: 700, fontSize: 64, margin: 0, letterSpacing: "0.04em" }}>
+                {SAMPLE_PROFILE.name}
+              </h1>
+              <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 28, color: "var(--ink-3)" }}>{SAMPLE_PROFILE.en}</div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--ink-3)", letterSpacing: "0.18em" }}>{SAMPLE_PROFILE.pinyin}</div>
+            </div>
+            <div style={{ display: "flex", gap: 32, marginTop: 18, flexWrap: "wrap" }}>
+              <Meta cn="生于" en="BORN" v={SAMPLE_PROFILE.birth} />
+              <Meta cn="出生地" en="PLACE" v={`${SAMPLE_PROFILE.place} · ${SAMPLE_PROFILE.placeEn}`} />
+              <Meta cn="性别" en="GENDER" v={SAMPLE_PROFILE.gender} />
+              <Meta cn="计算" en="COMPUTE" v="142ms · pure python" />
+            </div>
+          </div>
+          <Seal char="档" size={64} rotate={3} />
+        </div>
+
+        {/* tab nav */}
+        <div style={{ display: "flex", gap: 0, marginTop: 32, borderBottom: "var(--rule)" }}>
+          {[
+            { id: "bazi",      cn: "八字",    en: "Four Pillars" },
+            { id: "ziwei",     cn: "紫微",    en: "Zǐwēi" },
+            { id: "astro",     cn: "占星",    en: "Astrology" },
+            { id: "numero",    cn: "数字",    en: "Numerology" },
+            { id: "all",       cn: "总览",    en: "All systems" },
+          ].map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              appearance: "none", background: "transparent", border: "none", cursor: "pointer",
+              padding: "16px 22px", borderBottom: tab === t.id ? "2px solid var(--cinnabar)" : "2px solid transparent",
+              fontFamily: "var(--serif-cn)", fontSize: 16, fontWeight: tab === t.id ? 600 : 400,
+              color: tab === t.id ? "var(--ink)" : "var(--ink-3)",
+              marginBottom: -1, letterSpacing: "0.04em",
+            }}>
+              {t.cn}<span className="em" style={{ marginLeft: 10, fontSize: 13, color: "var(--ink-4)" }}>{t.en}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 1400, margin: "40px auto 0" }}>
+        {tab === "bazi" && <BaziView />}
+        {tab === "ziwei" && <ZiweiView />}
+        {tab === "astro" && <AstroView />}
+        {tab === "numero" && <NumeroView />}
+        {tab === "all" && <AllView />}
+      </div>
+
+      {/* CTA */}
+      <div style={{ maxWidth: 1400, margin: "80px auto 0", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "var(--rule)", paddingTop: 32 }}>
+        <div>
+          <div className="caps" style={{ fontSize: 10 }}>下一步 · NEXT</div>
+          <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 22, marginTop: 6, color: "var(--ink-2)" }}>
+            Take this chart into a consultation.
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button className="btn btn-ghost" onClick={() => go("report")}>生成研报 · deep report</button>
+          <button className="btn" onClick={() => go("chat")}>请教 · consult <span className="arr">→</span></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Meta({ cn, en, v }) {
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+        <span style={{ fontFamily: "var(--serif-cn)", fontSize: 13, color: "var(--ink-3)" }}>{cn}</span>
+        <span className="caps" style={{ fontSize: 9 }}>{en}</span>
+      </div>
+      <div className="mono" style={{ fontSize: 14, color: "var(--ink)", marginTop: 4 }}>{v}</div>
+    </div>
+  );
+}
+
+function BaziView() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 56 }}>
+      {/* 4 pillars */}
+      <div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+          {BAZI.pillars.map(p => <PillarCard key={p.label} pillar={p} big />)}
+        </div>
+
+        <div style={{ marginTop: 48 }}>
+          <Rule label="大运 · MAJOR LUCK CYCLES" />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 0, marginTop: 24 }}>
+            {BAZI.daYun.map((d, i) => (
+              <div key={i} style={{
+                padding: "16px 12px",
+                borderLeft: i === 0 ? "1px solid var(--ink)" : "var(--rule)",
+                borderRight: i === 5 ? "1px solid var(--ink)" : "none",
+                borderTop: "1px solid var(--ink)", borderBottom: "1px solid var(--ink)",
+                background: d.current ? "color-mix(in oklch, var(--cinnabar) 6%, transparent)" : "transparent",
+                position: "relative",
+              }}>
+                <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{d.age}+</div>
+                <div style={{ fontFamily: "var(--serif-cn)", fontSize: 28, fontWeight: 600, marginTop: 6, color: d.current ? "var(--cinnabar)" : "var(--ink)" }}>{d.ganzhi}</div>
+                {d.current && <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)", marginTop: 8 }}>当前 · NOW</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* notes */}
+        <div style={{ marginTop: 48, padding: 28, background: "color-mix(in oklch, var(--paper) 50%, var(--paper-2))", borderLeft: "2px solid var(--cinnabar)" }}>
+          <div className="caps" style={{ fontSize: 10 }}>命局速断 · QUICK READ</div>
+          <p style={{ fontFamily: "var(--serif-cn)", fontSize: 18, lineHeight: 1.85, marginTop: 12, marginBottom: 0, color: "var(--ink)" }}>
+            日主 <span style={{ color: "var(--cinnabar)", fontWeight: 600 }}>丁火</span> 生于丙申月，火透干而金藏支；月令申金为偏财，年柱辛金为偏财，故成 <span style={{ fontWeight: 600 }}>正财格</span>。火势旺而无水制，喜用之神在 <span style={{ color: "var(--cinnabar)", fontWeight: 600 }}>木</span>，能生火又能疏土；忌见再添丁丙之火地。
+          </p>
+        </div>
+      </div>
+
+      {/* sidebar */}
+      <div>
+        <Lockup cn="五行" en="FIVE PHASES" size="md" />
+        <div style={{ marginTop: 24 }}>
+          <FiveElementsBar data={BAZI.fiveElements} />
+        </div>
+
+        <div style={{ marginTop: 56 }}>
+          <Lockup cn="格局 / 用神" en="PATTERN / FAVORABLE" size="md" />
+          <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 0 }}>
+            <KV k="格局" en="pattern" v={`${BAZI.pattern} · ${BAZI.patternEn}`} />
+            <KV k="用神" en="yòng shén" v={`${BAZI.yongShen} · ${BAZI.yongShenEn}`} accent />
+            <KV k="日主" en="day master" v={BAZI.master} />
+          </div>
+        </div>
+
+        <div style={{ marginTop: 48 }}>
+          <Lockup cn="神煞" en="SHEN SHA" size="md" />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 18 }}>
+            {BAZI.shenSha.map(s => <Chip key={s}>{s}</Chip>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KV({ k, en, v, accent }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "12px 0", borderBottom: "var(--rule)" }}>
+      <div>
+        <div style={{ fontFamily: "var(--serif-cn)", fontSize: 14, color: "var(--ink-2)" }}>{k}</div>
+        <div className="caps" style={{ fontSize: 9 }}>{en}</div>
+      </div>
+      <div style={{ fontFamily: "var(--serif-cn)", fontSize: 18, fontWeight: 600, color: accent ? "var(--cinnabar)" : "var(--ink)" }}>{v}</div>
+    </div>
+  );
+}
+
+function ZiweiView() {
+  // simplified 12-palace grid (4x4 with center 2x2 info)
+  const palaces = [
+    "命宫","父母","福德","田宅",
+    "兄弟","",      "",     "官禄",
+    "夫妻","",      "",     "仆役",
+    "子女","财帛","疾厄","迁移",
+  ];
+  // Reorder to canonical 12-palace ring (clockwise from Si)
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 56 }}>
+      <div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gridTemplateRows: "repeat(4, 140px)", gap: 0, border: "1px solid var(--ink)" }}>
+          {palaces.map((p, i) => {
+            const isCenter = i === 5 || i === 6 || i === 9 || i === 10;
+            const skip = i === 6 || i === 10; // covered by spans
+            if (skip) return null;
+            const ming = p === "命宫";
+            return (
+              <div key={i} style={{
+                gridColumn: i === 5 || i === 9 ? "span 2" : "auto",
+                gridRow: i === 5 ? "span 2" : "auto",
+                borderRight: i % 4 < 3 ? "var(--rule)" : "none",
+                borderBottom: Math.floor(i / 4) < 3 ? "var(--rule)" : "none",
+                padding: 16,
+                position: "relative",
+                background: ming ? "color-mix(in oklch, var(--cinnabar) 5%, transparent)" : "transparent",
+              }}>
+                {i === 5 ? (
+                  <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", alignItems: "center", gap: 8 }}>
+                    <div className="caps" style={{ fontSize: 9 }}>命主 · CENTER</div>
+                    <div style={{ fontFamily: "var(--serif-cn)", fontSize: 36, fontWeight: 700 }}>{SAMPLE_PROFILE.name}</div>
+                    <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{ZIWEI.局}</div>
+                    <div className="hairline" style={{ width: "60%", margin: "8px 0" }} />
+                    <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>命: {ZIWEI.ming} · 身: {ZIWEI.shen}</div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontFamily: "var(--serif-cn)", fontSize: 16, fontWeight: 600, color: ming ? "var(--cinnabar)" : "var(--ink)" }}>{p}</div>
+                    {ming && (
+                      <div style={{ marginTop: 12, fontFamily: "var(--serif-cn)", fontSize: 14, lineHeight: 1.6 }}>
+                        <div>巨门 <span style={{ color: "var(--cinnabar)" }}>禄</span></div>
+                        <div>太阳 <span style={{ color: "var(--cinnabar)" }}>权</span></div>
+                      </div>
+                    )}
+                    {p === "迁移" && <div style={{ marginTop: 8, fontFamily: "var(--serif-cn)", fontSize: 13, color: "var(--ink-2)" }}>文昌 <span style={{ color: "var(--cinnabar)" }}>忌</span></div>}
+                    {p === "官禄" && <div style={{ marginTop: 8, fontFamily: "var(--serif-cn)", fontSize: 13, color: "var(--ink-2)" }}>天梁 <span style={{ color: "var(--cinnabar)" }}>科</span></div>}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <Lockup cn="四化" en="FOUR TRANSFORMATIONS" size="md" />
+        <div style={{ marginTop: 18 }}>
+          {Object.entries(ZIWEI.bihua).map(([k, v]) => (
+            <KV key={k} k={`化${k}`} en={k === "禄" ? "lù · prosperity" : k === "权" ? "quán · authority" : k === "科" ? "kē · fame" : "jì · taboo"} v={v} accent={k === "禄"} />
+          ))}
+        </div>
+
+        <div style={{ marginTop: 48 }}>
+          <Lockup cn="中州派" en="ZHONGZHOU SCHOOL" size="md" />
+          <p style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.7, marginTop: 12 }}>
+            紫微推演以中州派飞星为主，结合三方四正与化禄/化忌交涉点判读。
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AstroView() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "start" }}>
+      <div style={{ display: "flex", justifyContent: "center", color: "var(--ink)" }}>
+        <AnimatedAstroWheel size={460} />
+      </div>
+      <div>
+        <Lockup cn="三大点" en="THREE LUMINARIES" size="md" />
+        <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0, border: "1px solid var(--ink)" }}>
+          {[
+            { cn: "太阳", en: "Sun", body: ASTRO.sun },
+            { cn: "月亮", en: "Moon", body: ASTRO.moon },
+            { cn: "上升", en: "Asc", body: ASTRO.asc },
+          ].map((x, i) => (
+            <div key={i} style={{ padding: 20, borderRight: i < 2 ? "var(--rule)" : "none", textAlign: "center" }}>
+              <div className="caps" style={{ fontSize: 10 }}>{x.en}</div>
+              <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 18, marginTop: 6 }}>{x.cn}</div>
+              <div style={{ fontFamily: "var(--serif-en)", fontSize: 36, marginTop: 10 }}>{x.body.glyph}</div>
+              <div className="em" style={{ fontSize: 16, marginTop: 4 }}>{x.body.sign}</div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 4 }}>{x.body.deg.toFixed(2)}°</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 36 }}>
+          <Lockup cn="行星位置" en="POSITIONS" size="md" />
+          <div style={{ marginTop: 14, fontFamily: "var(--mono)", fontSize: 13, lineHeight: 1.9 }}>
+            {ASTRO.bodies.slice(0, 7).map(b => (
+              <div key={b.name} style={{ display: "grid", gridTemplateColumns: "32px 1fr 80px 60px", gap: 12, padding: "4px 0", borderBottom: "var(--rule)" }}>
+                <span style={{ fontFamily: "var(--serif-en)", fontSize: 16 }}>{b.glyph}</span>
+                <span style={{ fontFamily: "var(--serif-en)" }}>{b.name}</span>
+                <span style={{ color: "var(--ink-3)" }}>{b.sign}</span>
+                <span style={{ color: "var(--cinnabar)" }}>{b.deg.toFixed(1)}° · {b.house}H</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginTop: 36 }}>
+          <Lockup cn="主要相位" en="KEY ASPECTS" size="md" />
+          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 0 }}>
+            {ASTRO.aspects.map((a, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 90px 50px", padding: "10px 0", borderBottom: "var(--rule)", fontSize: 14 }}>
+                <span><span className="em">{a.a}</span> ⟷ <span className="em">{a.b}</span></span>
+                <span style={{ color: "var(--cinnabar)", fontFamily: "var(--mono)", fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>{a.type}</span>
+                <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>orb {a.orb}°</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NumeroView() {
+  const items = [
+    { n: NUMER.life, cn: "生命数", en: "Life Path", note: "求道者 · seeker" },
+    { n: NUMER.expression, cn: "表达数", en: "Expression", note: "开创者 · initiator" },
+    { n: NUMER.soul, cn: "灵魂数", en: "Soul Urge", note: "表达者 · communicator" },
+    { n: NUMER.personality, cn: "性格数", en: "Personality", note: "求道者 · seeker" },
+    { n: NUMER.year, cn: "个人年", en: "Personal Year", note: "责任之年 · year of duty", current: true },
+  ];
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 0, border: "1px solid var(--ink)" }}>
+        {items.map((it, i) => (
+          <div key={i} style={{
+            padding: 36, borderRight: i < 4 ? "var(--rule)" : "none",
+            background: it.current ? "color-mix(in oklch, var(--cinnabar) 5%, transparent)" : "transparent",
+            textAlign: "center", position: "relative",
+          }}>
+            <div className="caps" style={{ fontSize: 10 }}>{it.en}</div>
+            <div style={{ fontFamily: "var(--serif-en)", fontSize: 120, fontWeight: 500, lineHeight: 1, color: it.current ? "var(--cinnabar)" : "var(--ink)", marginTop: 10 }}>{it.n}</div>
+            <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 18, marginTop: 12 }}>{it.cn}</div>
+            <div className="em" style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 4 }}>{it.note}</div>
+            {it.current && <div style={{ position: "absolute", top: 14, right: 14 }}><Seal char="今" size={26} rotate={4} /></div>}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 56, padding: 32, borderLeft: "2px solid var(--cinnabar)", background: "color-mix(in oklch, var(--paper) 50%, var(--paper-2))" }}>
+        <div className="caps" style={{ fontSize: 10 }}>毕达哥拉斯派 · PYTHAGOREAN</div>
+        <p style={{ fontFamily: "var(--serif-cn)", fontSize: 18, lineHeight: 1.85, marginTop: 12, marginBottom: 0 }}>
+          生命数 7 与表达数 1 形成"内省者—开创者"的张力——你内里需要独处与求道，外在却要表达与开创。今年个人年 6，是责任之年；新东西须长在已有结构上，非纯创新年。
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AllView() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+      <div className="card">
+        <Lockup cn="八字 · 四柱" en="FOUR PILLARS" size="md" />
+        <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+          {BAZI.pillars.map(p => <PillarCard key={p.label} pillar={p} />)}
+        </div>
+      </div>
+      <div className="card" style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "var(--ink)" }}>
+        <Lockup cn="占星 · 星盘" en="NATAL CHART" size="md" />
+        <div style={{ marginTop: 16 }}><AstroWheel size={300} data={ASTRO} /></div>
+      </div>
+      <div className="card">
+        <Lockup cn="紫微 · 命主" en="ZIWEI · LIFE PALACE" size="md" />
+        <div style={{ marginTop: 24, fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.9 }}>
+          <div>命宫: <strong>巳宫</strong> · 巨门化禄 · 太阳化权</div>
+          <div>身宫: <strong>酉宫</strong></div>
+          <div>局: <strong>{ZIWEI.局}</strong></div>
+        </div>
+      </div>
+      <div className="card">
+        <Lockup cn="数字命理" en="NUMEROLOGY" size="md" />
+        <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, textAlign: "center" }}>
+          {[NUMER.life, NUMER.expression, NUMER.soul, NUMER.personality, NUMER.year].map((n, i) => (
+            <div key={i}>
+              <div style={{ fontFamily: "var(--serif-en)", fontSize: 48, fontWeight: 500, lineHeight: 1, color: i === 4 ? "var(--cinnabar)" : "var(--ink)" }}>{n}</div>
+              <div className="caps" style={{ fontSize: 8, marginTop: 8 }}>
+                {["LIFE","EXPR","SOUL","PERS","YEAR"][i]}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+window.ChartScreen = ChartScreen;
+
+  </script>
+
+  <script type="text/babel">
+// Chat — animated SSE streaming consultation
+function ChatScreen({ go, animSpeed = 1 }) {
+  const [tick, setTick] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(false);
+  const [narrCharCount, setNarrCharCount] = useState(0);
+
+  // events that have fired
+  const events = useMemo(() => STREAM.filter(e => e.t <= tick), [tick]);
+  const phases = events.filter(e => e.type === "phase");
+  const currentPhase = phases.length ? phases[phases.length - 1].payload : null;
+  const expertEvents = events.filter(e => e.type === "expert");
+  const synthEvents = events.filter(e => e.type === "synth");
+  const align = events.find(e => e.type === "align")?.payload;
+  const verdict = events.find(e => e.type === "verdict")?.payload;
+  const reachedNarr = events.some(e => e.type === "phase" && e.payload.id === "narr");
+
+  // expert state map
+  const expertState = {};
+  EXPERTS.forEach(ex => { expertState[ex.id] = { status: "idle", claim: null }; });
+  expertEvents.forEach(e => {
+    expertState[e.payload.id] = { status: e.payload.status, claim: e.payload.claim || expertState[e.payload.id].claim };
+  });
+
+  // run animation
+  useEffect(() => {
+    if (!running) return;
+    const start = Date.now();
+    const total = STREAM[STREAM.length - 1].t;
+    let raf;
+    const step = () => {
+      const elapsed = (Date.now() - start) * animSpeed;
+      setTick(elapsed);
+      if (elapsed < total + 800) {
+        raf = requestAnimationFrame(step);
+      } else {
+        setTick(total + 800);
+        setDone(true);
+      }
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [running, animSpeed]);
+
+  // narrative typewriter
+  useEffect(() => {
+    if (!reachedNarr) return;
+    let i = 0;
+    const id = setInterval(() => {
+      i += Math.max(1, Math.floor(2 * animSpeed));
+      setNarrCharCount(Math.min(NARRATIVE_TEXT.length, i));
+      if (i >= NARRATIVE_TEXT.length) clearInterval(id);
+    }, 28 / animSpeed);
+    return () => clearInterval(id);
+  }, [reachedNarr, animSpeed]);
+
+  const startRun = () => {
+    setTick(0); setNarrCharCount(0); setDone(false); setRunning(true);
+  };
+
+  return (
+    <div className="fade-in screen" style={{ position: "relative" }}>
+      <div style={{ maxWidth: 1400, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 360px", gap: 56 }}>
+        {/* main */}
+        <div>
+          {/* ask */}
+          <div style={{ borderBottom: "1px solid var(--ink)", paddingBottom: 32 }}>
+            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>问 · CONSULT · session #4f2a91</div>
+            <div style={{ display: "flex", gap: 20, marginTop: 18, alignItems: "flex-start" }}>
+              <Seal char="问" size={48} rotate={-3} />
+              <div style={{ flex: 1 }}>
+                <div className="caps" style={{ fontSize: 9 }}>{SAMPLE_PROFILE.name} · 14:30 · 北京 · career</div>
+                <div style={{ fontFamily: "var(--serif-cn)", fontSize: 30, fontWeight: 500, lineHeight: 1.4, marginTop: 10, color: "var(--ink)" }}>
+                  {SAMPLE_QUESTION}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* run controls */}
+          {!running && (
+            <div style={{ marginTop: 40, display: "flex", gap: 14, alignItems: "center" }}>
+              <button className="btn" onClick={startRun}>
+                请教 · run consultation <span className="arr">→</span>
+              </button>
+              <span className="em" style={{ fontSize: 14, color: "var(--ink-3)" }}>30 events · ~12s simulated stream</span>
+            </div>
+          )}
+
+          {/* mystical compute centerpiece + phase indicator */}
+          {running && (
+            <>
+              <MysticalCompute phase={currentPhase} expertState={expertState} />
+              <div style={{ padding: "12px 0", borderBottom: "var(--rule)", display: "flex", alignItems: "center", gap: 16 }}>
+                <span className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>当前 · PHASE</span>
+                <div style={{ flex: 1, fontFamily: "var(--serif-cn)", fontSize: 22, fontWeight: 600 }}>
+                  {currentPhase ? `${currentPhase.cn} · ${currentPhase.en}` : "..."}
+                </div>
+                {!done && <Spinner />}
+                {done && <span className="caps" style={{ fontSize: 10, color: "var(--jade)" }}>✓ 完成 · DONE</span>}
+              </div>
+            </>
+          )}
+
+          {/* experts grid */}
+          {running && (
+            <div style={{ marginTop: 40 }}>
+              <Rule label="八路并行 · 8 EXPERTS PARALLEL" />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14, marginTop: 24 }}>
+                {EXPERTS.map(ex => <ExpertCard key={ex.id} ex={ex} state={expertState[ex.id]} />)}
+              </div>
+            </div>
+          )}
+
+          {/* sub-synth */}
+          {synthEvents.length > 0 && (
+            <div style={{ marginTop: 40 }}>
+              <Rule label="中西小综合 · SUB-SYNTHESIS · 互不可见" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 24 }}>
+                {synthEvents.map((e, i) => (
+                  <SynthCard key={i} sys={e.payload.sys} text={e.payload.text} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* align */}
+          {align && <AlignBoard align={align} />}
+
+          {/* verdict */}
+          {verdict && (
+            <div style={{ marginTop: 40, padding: 32, border: "1.5px solid var(--cinnabar)", position: "relative" }}>
+              <div style={{ position: "absolute", top: -12, left: 24, background: "var(--paper)", padding: "0 12px" }}>
+                <span className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>综合判官 · SYNTHESIS JUDGE</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
+                <div>
+                  <div className="caps" style={{ fontSize: 9 }}>核心结论 · CORE</div>
+                  <div style={{ fontFamily: "var(--serif-cn)", fontSize: 26, fontWeight: 600, marginTop: 8 }}>{verdict.core}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div className="caps" style={{ fontSize: 9 }}>置信度 · CONFIDENCE</div>
+                  <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 36, color: "var(--cinnabar)" }}>{verdict.confidence}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* narrative */}
+          {reachedNarr && (
+            <div style={{ marginTop: 56 }}>
+              <Rule label="叙事 · NARRATIVE · C 端" />
+              <div style={{ marginTop: 32, padding: "0 0 0 32px", borderLeft: "2px solid var(--cinnabar)", maxWidth: 740 }}>
+                <div style={{ fontFamily: "var(--serif-cn)", fontSize: 19, lineHeight: 1.95, color: "var(--ink)", whiteSpace: "pre-wrap", textWrap: "pretty" }}>
+                  {NARRATIVE_TEXT.slice(0, narrCharCount)}
+                  {narrCharCount < NARRATIVE_TEXT.length && <span style={{ background: "var(--cinnabar)", display: "inline-block", width: 2, height: 18, verticalAlign: "middle", animation: "blink 0.8s infinite" }} />}
+                </div>
+                <style>{`@keyframes blink{50%{opacity:0}}`}</style>
+              </div>
+            </div>
+          )}
+
+          {done && narrCharCount >= NARRATIVE_TEXT.length && (
+            <div style={{ marginTop: 48, display: "flex", gap: 14, flexWrap: "wrap" }}>
+              <button className="btn" onClick={() => go("report")}>生成深度研报 · deep report <span className="arr">→</span></button>
+              <button className="btn btn-ghost" onClick={startRun}>↻ 重跑</button>
+            </div>
+          )}
+        </div>
+
+        {/* sidebar: live trace */}
+        <div style={{ position: "sticky", top: 100, alignSelf: "start", maxHeight: "calc(100vh - 120px)", display: "flex", flexDirection: "column" }}>
+          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>SSE TRACE · LIVE</div>
+          <div style={{ marginTop: 14, padding: 18, background: "color-mix(in oklch, var(--ink) 4%, transparent)", border: "var(--rule)", flex: 1, overflowY: "auto", fontFamily: "var(--mono)", fontSize: 11, lineHeight: 1.9 }}>
+            {events.length === 0 && <div style={{ color: "var(--ink-4)" }}>// awaiting run...</div>}
+            {events.map((e, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, color: e.type === "verdict" || e.type === "phase" ? "var(--cinnabar)" : "var(--ink-2)" }}>
+                <span style={{ color: "var(--ink-4)" }}>{(e.t / 1000).toFixed(2).padStart(6, "0")}</span>
+                <span style={{ flex: 1 }}>{e.type}{e.payload.id ? `:${e.payload.id}` : ""}{e.payload.status ? `·${e.payload.status}` : ""}</span>
+              </div>
+            ))}
+            {running && !done && (
+              <div style={{ color: "var(--cinnabar)", marginTop: 6 }}>▌ streaming...</div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Spinner() {
+  return <div style={{ width: 14, height: 14, border: "2px solid var(--cinnabar)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+  </div>;
+}
+
+function ExpertCard({ ex, state }) {
+  const stateColors = {
+    idle:     { ring: "color-mix(in oklch, var(--ink) 12%, transparent)", label: "待 · idle",      labelColor: "var(--ink-4)" },
+    thinking: { ring: "var(--cinnabar)",   label: "推 · thinking", labelColor: "var(--cinnabar)" },
+    done:     { ring: "var(--ink)",        label: "成 · done",     labelColor: "var(--jade)" },
+  };
+  const c = stateColors[state.status];
+  return (
+    <div style={{
+      padding: 20,
+      border: `1px solid ${c.ring}`,
+      background: state.status === "thinking" ? "color-mix(in oklch, var(--cinnabar) 3%, transparent)" : "transparent",
+      transition: "all .25s ease",
+      position: "relative",
+      minHeight: 120,
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <div>
+          <span style={{ fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 600 }}>{ex.cn}</span>
+          <span className="em" style={{ fontSize: 13, color: "var(--ink-3)", marginLeft: 8 }}>{ex.en}</span>
+        </div>
+        <span className="caps" style={{ fontSize: 9, color: c.labelColor }}>
+          {ex.sys === "cn" ? "中" : "西"} · {c.label}
+        </span>
+      </div>
+      {state.status === "thinking" && (
+        <div style={{ marginTop: 12, display: "flex", gap: 4 }}>
+          {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--cinnabar)", animation: `dot 1.2s ${i * 0.15}s infinite` }} />)}
+          <style>{`@keyframes dot{0%,80%,100%{opacity:0.3}40%{opacity:1}}`}</style>
+        </div>
+      )}
+      {state.claim && (
+        <div style={{ marginTop: 14, fontFamily: "var(--serif-cn)", fontSize: 14, lineHeight: 1.7, color: "var(--ink-2)", textWrap: "pretty" }}>
+          {state.claim}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SynthCard({ sys, text }) {
+  return (
+    <div style={{ padding: 24, border: "1px solid var(--ink)", position: "relative" }}>
+      <div className="caps" style={{ fontSize: 10, color: sys === "cn" ? "var(--cinnabar)" : "var(--ink-3)" }}>
+        {sys === "cn" ? "中式小综合 · CHINESE" : "西式小综合 · WESTERN"}
+      </div>
+      <div style={{ marginTop: 12, fontFamily: "var(--serif-cn)", fontSize: 16, lineHeight: 1.75 }}>{text}</div>
+    </div>
+  );
+}
+
+function AlignBoard({ align }) {
+  return (
+    <div style={{ marginTop: 40 }}>
+      <Rule label="中西交叉验证 · CROSS ALIGNER" />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, marginTop: 24, border: "1px solid var(--ink)" }}>
+        {[
+          { n: align.consensus,     cn: "共识",     en: "CONSENSUS",     hint: "双方点亮", color: "var(--cinnabar)" },
+          { n: align.divergence,    cn: "分歧",     en: "DIVERGENCE",    hint: "需要审思", color: "var(--ink)" },
+          { n: align.complementary, cn: "互补",     en: "COMPLEMENTARY", hint: "拼成一图", color: "var(--jade)" },
+        ].map((x, i) => (
+          <div key={i} style={{ padding: 28, borderRight: i < 2 ? "var(--rule)" : "none", textAlign: "center" }}>
+            <div className="caps" style={{ fontSize: 10, color: x.color }}>{x.en}</div>
+            <div style={{ fontFamily: "var(--serif-en)", fontSize: 88, fontWeight: 500, lineHeight: 1, color: x.color, marginTop: 6 }}>{x.n}</div>
+            <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 18, marginTop: 10 }}>{x.cn}</div>
+            <div className="em" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>{x.hint}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 18, padding: 20, background: "color-mix(in oklch, var(--cinnabar) 4%, transparent)", borderLeft: "2px solid var(--cinnabar)" }}>
+        <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>关键涌现 · EMERGENCE</div>
+        <div style={{ fontFamily: "var(--serif-cn)", fontSize: 16, lineHeight: 1.75, marginTop: 8 }}>
+          中式"火旺喜金水" × 西式"9 宫木火远方" → <strong>以教育为本，以科技为器，以学问为远方</strong>。
+        </div>
+      </div>
+    </div>
+  );
+}
+
+window.ChatScreen = ChatScreen;
+
+  </script>
+
+  <script type="text/babel">
+// Report — long-scroll deep research report
+function ReportScreen({ go }) {
+  return (
+    <div className="fade-in" style={{ position: "relative", background: "var(--paper)" }}>
+      {/* Cover */}
+      <ReportCover />
+
+      {/* TOC */}
+      <ReportTOC />
+
+      {/* Chapters */}
+      <ReportChapter no="01" cn="八字 · 子平派" en="Four Pillars · Ziping School" body={
+        <>
+          <p>日主丁火，生于丙申月，月令申金透干，财气清而旺。火无水制，喜用在木——能生火，又能疏土。</p>
+          <p>当前大运庚子，金水并行，与命局喜用相合，是十年中最宜立方向的一段。</p>
+        </>
+      } sidebar={
+        <BaziMiniGrid />
+      } />
+
+      <ReportChapter no="02" cn="紫微斗数" en="Zǐwēi Dǒushù" body={
+        <>
+          <p>水二局，命宫在巳，巨门化禄与太阳化权同入命宫——立身之本在言谈、文字、教研。</p>
+          <p>迁移宫文昌化忌，远行、出差、签约时，文书与合同需格外谨慎。</p>
+        </>
+      } sidebar={
+        <SidebarKVList items={[
+          { k: "命宫", v: "巳" }, { k: "身宫", v: "酉" }, { k: "局", v: "水二局" },
+          { k: "化禄", v: "巨门" }, { k: "化权", v: "太阳" }, { k: "化忌", v: "文昌" },
+        ]} />
+      } />
+
+      <ReportChapter no="03" cn="占星 · 现代心理派" en="Astrology · Psychological" body={
+        <>
+          <p>太阳狮子 21°、月亮天秤 14°、上升射手 9°。九宫狮子群星（日、水、木）指向学问与远方；六宫处女把它拉回到具体的工艺与服务。</p>
+          <p>两个核心相位：太阳与土星成刑——权威与自我之间的反复较量；金星与冥王对照——关系总与深度转化绑在一起。</p>
+        </>
+      } sidebar={
+        <SidebarKVList items={[
+          { k: "太阳", v: "狮子 21°", accent: true },
+          { k: "月亮", v: "天秤 14°" },
+          { k: "上升", v: "射手 9°" },
+          { k: "相位", v: "日土成刑" },
+          { k: "相位", v: "金冥对照" },
+          { k: "群星宫位", v: "9 宫" },
+        ]} />
+      } />
+
+      <ReportChapter no="04" cn="塔罗 · 韦特派" en="Tarot · RWS" body={
+        <>
+          <p>本次抽牌（凯尔特十字阵·六张）——现状 <strong>钱币三</strong>（协作精进）；挑战 <strong>逆位命运之轮</strong>（节奏自控）；远因 <strong>隐者</strong>；近因 <strong>圣杯侍从</strong>；未来 <strong>权杖八</strong>；终局 <strong>世界</strong>。</p>
+          <p>整体走向：从协作出发，经一段独处反思，回到外部行动。逆位的命运之轮在提醒——今年的节奏要自己定。</p>
+        </>
+      } sidebar={
+        <TarotMini />
+      } />
+
+      <ReportChapter no="05" cn="数字命理" en="Numerology" body={
+        <>
+          <p>生命数 7、表达数 1，内里求道，外在开创。今年个人年 6——责任之年，新事须长在已有结构之上。</p>
+        </>
+      } sidebar={
+        <SidebarKVList items={[
+          { k: "Life", v: "7" }, { k: "Expression", v: "1" }, { k: "Soul", v: "3" },
+          { k: "Personality", v: "7" }, { k: "Personal Year", v: "6", accent: true },
+        ]} />
+      } />
+
+      <ReportChapter no="06" cn="易经 · 京房纳甲" en="I Ching" body={
+        <>
+          <p>得风火家人，第三爻动，变水火既济。家人取"内顺外明"——先把内部立稳，再向外取。既济为"已渡"之象，古人警示既济之后即未济——故小成不可懈。</p>
+        </>
+      } sidebar={
+        <SidebarKVList items={[
+          { k: "本卦", v: "风火家人" }, { k: "之卦", v: "水火既济" },
+          { k: "动爻", v: "第三爻" }, { k: "卦象", v: "内顺外明" },
+        ]} />
+      } />
+
+      <ReportChapter no="07" cn="风水 · 玄空飞星" en="Feng Shui" body={
+        <>
+          <p>八运当令，命卦坐向以东为宜。办公位布震宫，以水器化七赤金气；忌正南动土与红色重器。</p>
+        </>
+      } sidebar={
+        <SidebarKVList items={[
+          { k: "运", v: "八运" }, { k: "命卦", v: "震卦" },
+          { k: "宜", v: "东向布水" }, { k: "忌", v: "正南动土" },
+        ]} />
+      } />
+
+      <ReportChapter no="08" cn="中西交叉验证" en="Cross-System Alignment" body={
+        <>
+          <p>26 标准 topic 中，本次问题命中 11 项。其中：</p>
+          <ul style={{ listStyle: "none", padding: 0, fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.95 }}>
+            <li>· <strong>共识 ×2</strong>：career_direction（双方一致指向"以现有专长为本"）；timing（双方一致指向"上半年定，下半年动"）。</li>
+            <li>· <strong>分歧 ×1</strong>：geography——中式"避急扩张"vs 西式"远方有利"；Aligner 综合为<strong>"远方可以去，但要带可重复方法论去"</strong>。</li>
+            <li>· <strong>互补 ×1</strong>：style——中式重技艺，西式重表达；二者拼合后即"可教可演的方法论产品"。</li>
+          </ul>
+        </>
+      } sidebar={
+        <CrossAlignmentBoard />
+      } />
+
+      {/* Verdict */}
+      <section style={{ padding: "100px var(--screen-pad)", background: "color-mix(in oklch, var(--cinnabar) 3%, transparent)", borderTop: "1px solid var(--ink)", borderBottom: "1px solid var(--ink)" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
+          <div className="caps" style={{ fontSize: 11, color: "var(--cinnabar)" }}>综合判官 · SYNTHESIS JUDGE</div>
+          <div style={{ fontFamily: "var(--serif-cn)", fontSize: 56, fontWeight: 700, lineHeight: 1.25, marginTop: 24, textWrap: "balance" }}>
+            以教育为本，<br />以科技为器，以学问为远方。
+          </div>
+          <div className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 22, color: "var(--ink-3)", marginTop: 28, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
+            Education at the core, technology as the instrument, scholarship as the distance.
+          </div>
+          <div style={{ marginTop: 48, display: "flex", justifyContent: "center", gap: 48 }}>
+            <BigStat label="CONFIDENCE" v="HIGH" />
+            <BigStat label="EXPERTS · 8" v="all aligned" />
+            <BigStat label="VRP CHECKS" v="42 / 42" />
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ padding: "60px var(--screen-pad)", display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 1400, margin: "0 auto", flexWrap: "wrap", gap: 24 }}>
+        <div>
+          <div className="caps" style={{ fontSize: 10 }}>EXPORT</div>
+          <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 24, marginTop: 6, color: "var(--ink-2)" }}>
+            Save this report as PDF, or share with a copilot.
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button className="btn btn-ghost" onClick={() => window.print()}>导出 PDF · save</button>
+          <button className="btn" onClick={() => go("copilot")}>转交命理师 · to copilot <span className="arr">→</span></button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ReportCover() {
+  return (
+    <section style={{ position: "relative", padding: "80px var(--screen-pad) 100px", borderBottom: "1px solid var(--ink)", overflow: "hidden" }}>
+      <WatermarkChar char="析" size={680} top={-100} right={-60} opacity={0.05} />
+      <div style={{ maxWidth: 1400, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr auto", gap: 60, alignItems: "end" }}>
+        <div>
+          <div className="caps" style={{ fontSize: 11, color: "var(--cinnabar)" }}>深度研报 · DEEP REPORT · NO. 0042</div>
+          <h1 style={{ fontFamily: "var(--serif-cn)", fontWeight: 700, fontSize: "clamp(56px, 7.5vw, 112px)", lineHeight: 1.05, margin: "24px 0 0", letterSpacing: "-0.01em", textWrap: "balance" }}>
+            事业方向之问<br /><span style={{ color: "var(--cinnabar)" }}>—— 陈书雅</span>
+          </h1>
+          <div className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 26, color: "var(--ink-2)", marginTop: 24 }}>
+            On the question of vocational direction · Chen Shuya
+          </div>
+          <div style={{ marginTop: 48, display: "flex", gap: 32, flexWrap: "wrap" }}>
+            <Meta cn="档号" en="RECORD" v="#4f2a91" />
+            <Meta cn="生于" en="BORN" v={SAMPLE_PROFILE.birth} />
+            <Meta cn="成稿" en="ISSUED" v="2026-05-08" />
+            <Meta cn="本数" en="EDITION" v="MMXXVI · 一" />
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+          <Seal char="壹" size={100} rotate={-4} />
+          <div className="caps" style={{ fontSize: 10, color: "var(--ink-3)" }}>SEAL OF ISSUE</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReportTOC() {
+  const chapters = [
+    "01 · 八字 · 子平派",
+    "02 · 紫微斗数 · 中州派",
+    "03 · 占星 · 现代心理派",
+    "04 · 塔罗 · 韦特派",
+    "05 · 数字命理 · 毕达哥拉斯",
+    "06 · 易经 · 京房纳甲",
+    "07 · 风水 · 玄空飞星",
+    "08 · 中西交叉验证",
+  ];
+  return (
+    <section style={{ padding: "80px var(--screen-pad)", maxWidth: 1400, margin: "0 auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 56 }}>
+        <Lockup cn="目录" en="CONTENTS" size="lg" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 40, rowGap: 0 }}>
+          {chapters.map((c, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "16px 0", borderBottom: "var(--rule)", fontFamily: "var(--serif-cn)", fontSize: 17 }}>
+              <span>{c}</span>
+              <span className="mono" style={{ color: "var(--ink-3)" }}>· · · {String((i + 1) * 4 + 8).padStart(3, "0")}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReportChapter({ no, cn, en, body, sidebar }) {
+  return (
+    <section style={{ padding: "60px var(--screen-pad)", maxWidth: 1400, margin: "0 auto", borderTop: "var(--rule)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 320px", gap: 40, alignItems: "start" }}>
+        {/* chapter no */}
+        <div>
+          <div style={{ fontFamily: "var(--serif-en)", fontSize: 64, fontWeight: 500, lineHeight: 1, color: "var(--cinnabar)" }}>{no}</div>
+          <div className="caps" style={{ fontSize: 9, marginTop: 8 }}>CHAPTER</div>
+        </div>
+        {/* body */}
+        <div>
+          <h2 style={{ fontFamily: "var(--serif-cn)", fontSize: 40, fontWeight: 700, margin: 0, lineHeight: 1.2 }}>{cn}</h2>
+          <div className="em" style={{ fontSize: 18, color: "var(--ink-3)", marginTop: 6 }}>{en}</div>
+          <div style={{ fontFamily: "var(--serif-cn)", fontSize: 18, lineHeight: 1.95, color: "var(--ink)", marginTop: 28, maxWidth: 680, textWrap: "pretty" }}>
+            {body}
+          </div>
+        </div>
+        {/* sidebar */}
+        <div style={{ paddingLeft: 24, borderLeft: "var(--rule)" }}>
+          {sidebar}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SidebarKVList({ items }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      {items.map((it, i) => (
+        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: i === items.length - 1 ? "none" : "var(--rule)" }}>
+          <span className="caps" style={{ fontSize: 9 }}>{it.k}</span>
+          <span style={{ fontFamily: "var(--serif-cn)", fontSize: 16, fontWeight: 600, color: it.accent ? "var(--cinnabar)" : "var(--ink)" }}>{it.v}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BaziMiniGrid() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4 }}>
+      {BAZI.pillars.map(p => (
+        <div key={p.label} style={{ textAlign: "center", padding: "12px 4px", border: p.master ? "1.5px solid var(--cinnabar)" : "1px solid color-mix(in oklch, var(--ink) 18%, transparent)" }}>
+          <div className="caps" style={{ fontSize: 8 }}>{p.labelEn}</div>
+          <div style={{ fontFamily: "var(--serif-cn)", fontSize: 26, fontWeight: 600, marginTop: 4, color: p.master ? "var(--cinnabar)" : "var(--ink)" }}>{p.stem}</div>
+          <div style={{ fontFamily: "var(--serif-cn)", fontSize: 26, marginTop: 2 }}>{p.branch}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 塔罗 mini 卡阵（升级版）— 按牌名配色 + ornate 双框 + 阴影 + hover 抬升
+function TarotMini() {
+  const cards = [
+    { num: "III",   suit: "pentacle", cn: "钱币三",   en: "Three of Pentacles", reversed: false },
+    { num: "X",     suit: "wheel",    cn: "命运之轮", en: "Wheel of Fortune",   reversed: true  },
+    { num: "IX",    suit: "lantern",  cn: "隐者",     en: "The Hermit",         reversed: false },
+    { num: "侍",    suit: "cup",      cn: "圣杯侍从", en: "Page of Cups",       reversed: false },
+    { num: "VIII",  suit: "wand",     cn: "权杖八",   en: "Eight of Wands",     reversed: false },
+    { num: "XXI",   suit: "world",    cn: "世界",     en: "The World",          reversed: false },
+  ];
+  // suit → 主题（背景 / 主线 / 辅色 / 内框 / 顶部 caps 标）
+  const THEME = {
+    pentacle: { bg: "linear-gradient(160deg, oklch(0.96 0.05 145) 0%, oklch(0.92 0.06 145) 100%)", main: "var(--jade)",      accent: "var(--gild)",     ink: "oklch(0.28 0.06 145)", caps: "PENTACLES · 土" },
+    wheel:    { bg: "linear-gradient(160deg, oklch(0.96 0.06 78)  0%, oklch(0.91 0.08 78)  100%)", main: "var(--gild)",      accent: "var(--cinnabar)", ink: "oklch(0.28 0.06 78)",  caps: "WHEEL · 旋" },
+    lantern:  { bg: "linear-gradient(160deg, oklch(0.95 0.02 80)  0%, oklch(0.88 0.03 80)  100%)", main: "oklch(0.30 0.04 80)", accent: "var(--gild)",  ink: "oklch(0.20 0.03 80)",  caps: "HERMIT · 隐" },
+    cup:      { bg: "linear-gradient(160deg, oklch(0.94 0.05 230) 0%, oklch(0.88 0.07 230) 100%)", main: "oklch(0.42 0.10 230)", accent: "var(--cinnabar)", ink: "oklch(0.24 0.06 230)", caps: "CUPS · 水" },
+    wand:     { bg: "linear-gradient(160deg, oklch(0.94 0.06 28)  0%, oklch(0.88 0.09 28)  100%)", main: "var(--cinnabar)",  accent: "var(--gild)",     ink: "oklch(0.28 0.07 28)",  caps: "WANDS · 火" },
+    world:    { bg: "linear-gradient(160deg, oklch(0.94 0.04 320) 0%, oklch(0.88 0.06 320) 100%)", main: "oklch(0.42 0.10 320)", accent: "var(--gild)",  ink: "oklch(0.22 0.06 320)", caps: "WORLD · 圆" },
+  };
+
+  return (
+    <>
+      <style>{`
+        @keyframes tarot-float-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .tm-card { transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease; }
+        .tm-card:hover { transform: translateY(-4px); box-shadow: 0 8px 22px -4px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08) !important; z-index: 2; }
+      `}</style>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+        {cards.map((c, i) => {
+          const t = THEME[c.suit] || THEME.lantern;
+          return (
+            <div key={i} className="tm-card" style={{
+              aspectRatio: "2/3",
+              background: t.bg,
+              border: `1.5px solid ${t.ink}`,
+              borderRadius: 4,
+              padding: 5,
+              position: "relative",
+              boxShadow: "0 2px 8px -2px rgba(0,0,0,0.08), inset 0 0 24px rgba(255,255,255,0.18)",
+              animation: `tarot-float-in 0.5s ${0.05 + i * 0.06}s ease-out both`,
+            }}>
+              {/* 朱砂内框 */}
+              <div style={{
+                position: "absolute", inset: 5,
+                border: `0.6px solid ${t.accent}`,
+                opacity: 0.55, borderRadius: 2,
+                pointerEvents: "none",
+              }} />
+              {/* 第二层细线 */}
+              <div style={{
+                position: "absolute", inset: 9,
+                border: `0.4px solid ${t.ink}`,
+                opacity: 0.18, borderRadius: 1,
+                pointerEvents: "none",
+              }} />
+
+              <div style={{
+                position: "relative", inset: 0, height: "100%",
+                display: "flex", flexDirection: "column",
+                transform: c.reversed ? "rotate(180deg)" : "none",
+              }}>
+                {/* 顶 suit caps */}
+                <div className="mono" style={{
+                  fontSize: 7.5, letterSpacing: "0.28em",
+                  color: t.ink, opacity: 0.55,
+                  textAlign: "center", padding: "5px 0 3px",
+                }}>{t.caps}</div>
+
+                {/* 罗马数字大字 */}
+                <div style={{
+                  fontFamily: "var(--serif-en)", fontStyle: "italic",
+                  fontSize: 18, color: t.accent,
+                  textAlign: "center", fontWeight: 500,
+                  letterSpacing: "0.04em",
+                }}>{c.num}</div>
+
+                {/* hairline */}
+                <div style={{
+                  width: "55%", height: 1, margin: "4px auto 6px",
+                  background: `linear-gradient(to right, transparent, ${t.accent}, transparent)`,
+                  opacity: 0.45,
+                }} />
+
+                {/* 中央 SVG glyph */}
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
+                  <TarotGlyph kind={c.suit} theme={t} />
+                </div>
+
+                {/* hairline */}
+                <div style={{
+                  width: "55%", height: 1, margin: "6px auto 4px",
+                  background: `linear-gradient(to right, transparent, ${t.accent}, transparent)`,
+                  opacity: 0.45,
+                }} />
+
+                {/* 底部双语牌名 */}
+                <div style={{ textAlign: "center", padding: "0 4px 6px" }}>
+                  <div style={{
+                    fontFamily: "var(--serif-cn)", fontWeight: 600,
+                    fontSize: 11, color: t.ink, letterSpacing: "0.08em",
+                    marginBottom: 1,
+                  }}>{c.cn}</div>
+                  <div style={{
+                    fontFamily: "var(--serif-en)", fontStyle: "italic",
+                    fontSize: 8.5, color: t.ink, opacity: 0.6,
+                    letterSpacing: "0.02em",
+                  }}>{c.en}</div>
+                </div>
+              </div>
+
+              {/* 逆位 ℞ 标 */}
+              {c.reversed && (
+                <div style={{
+                  position: "absolute", top: 3, right: 3,
+                  fontFamily: "var(--mono)", fontSize: 8,
+                  color: t.accent,
+                  padding: "1px 4px", background: "var(--paper)",
+                  border: `0.6px solid ${t.accent}`,
+                  borderRadius: 1, letterSpacing: 0,
+                }}>℞</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function TarotGlyph({ kind, theme }) {
+  // theme 可选；不传则用经典 ink/red/gild
+  const main = (theme && theme.main) || "var(--ink-2)";
+  const accent = (theme && theme.accent) || "var(--cinnabar)";
+  const ink = (theme && theme.ink) || "var(--ink-2)";
+
+  if (kind === "pentacle") return (
+    <svg viewBox="0 0 60 60" width="86%" style={{ maxWidth: 70 }}>
+      <defs>
+        <radialGradient id={`pg-${main}`}>
+          <stop offset="0%" stopColor={accent} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="30" cy="30" r="22" fill={`url(#pg-${main})`} />
+      <circle cx="30" cy="30" r="20" fill="none" stroke={main} strokeWidth="1.4" />
+      <circle cx="30" cy="30" r="16" fill="none" stroke={main} strokeOpacity="0.4" strokeWidth="0.5" strokeDasharray="1 2" />
+      {/* 五角星（朝上） */}
+      <path d="M30 14 L34.7 25.4 L46.5 26.5 L37.6 34.3 L40.4 46 L30 39.6 L19.6 46 L22.4 34.3 L13.5 26.5 L25.3 25.4 Z"
+        fill={accent} fillOpacity="0.16"
+        stroke={accent} strokeWidth="1.4" strokeLinejoin="round" />
+      <circle cx="30" cy="30" r="2.2" fill={accent} />
+    </svg>
+  );
+  if (kind === "wheel") return (
+    <svg viewBox="0 0 60 60" width="86%" style={{ maxWidth: 70 }}>
+      <circle cx="30" cy="30" r="22" fill="none" stroke={main} strokeWidth="1.2" />
+      <circle cx="30" cy="30" r="16" fill="none" stroke={main} strokeOpacity="0.5" strokeWidth="0.8" strokeDasharray="1 1.5" />
+      <circle cx="30" cy="30" r="9" fill={accent} fillOpacity="0.18" stroke={accent} strokeWidth="0.8" />
+      {/* 8 辐 */}
+      {Array.from({length: 8}).map((_, i) => {
+        const a = i * 45 * Math.PI / 180;
+        const isMain = i % 2 === 0;
+        return <line key={i}
+          x1={30+Math.cos(a)*9} y1={30+Math.sin(a)*9}
+          x2={30+Math.cos(a)*22} y2={30+Math.sin(a)*22}
+          stroke={isMain ? main : accent} strokeOpacity={isMain ? 0.85 : 0.55}
+          strokeWidth={isMain ? 1.1 : 0.7} />;
+      })}
+      <circle cx="30" cy="30" r="2.8" fill={accent} />
+    </svg>
+  );
+  if (kind === "lantern") return (
+    <svg viewBox="0 0 60 60" width="76%" style={{ maxWidth: 56 }}>
+      <defs>
+        <radialGradient id="lg" cx="50%" cy="40%">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.85" />
+          <stop offset="60%" stopColor={accent} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      {/* 灯笼 */}
+      <path d="M30 7 L34 16 L34.5 32 Q30 36 25.5 32 L26 16 Z"
+        fill="var(--paper)" stroke={main} strokeWidth="1.1" strokeLinejoin="round" />
+      {/* 灯火光晕 */}
+      <ellipse cx="30" cy="22" rx="9" ry="11" fill="url(#lg)" />
+      <circle cx="30" cy="22" r="3.2" fill={accent} />
+      {/* 灯顶细线 */}
+      <line x1="26" y1="11" x2="34" y2="11" stroke={main} strokeWidth="0.7" />
+      {/* 灯柄 */}
+      <line x1="30" y1="36" x2="30" y2="46" stroke={main} strokeWidth="1" />
+      <path d="M22 47 Q30 54 38 47" fill="none" stroke={main} strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M19 50 L41 50" stroke={main} strokeWidth="0.6" strokeOpacity="0.5" strokeDasharray="0.8 1.2" />
+    </svg>
+  );
+  if (kind === "cup") return (
+    <svg viewBox="0 0 60 60" width="78%" style={{ maxWidth: 56 }}>
+      <defs>
+        <linearGradient id="cup-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.45" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0.12" />
+        </linearGradient>
+      </defs>
+      {/* 杯体 */}
+      <path d="M16 17 Q30 23 44 17 L41 38 Q30 42 19 38 Z"
+        fill="url(#cup-fill)" stroke={main} strokeWidth="1.2" strokeLinejoin="round" />
+      {/* 杯口椭圆 */}
+      <ellipse cx="30" cy="17" rx="14" ry="3" fill="var(--paper)" stroke={main} strokeWidth="1" />
+      {/* 杯底 */}
+      <ellipse cx="30" cy="44" rx="13" ry="2.8" fill="none" stroke={main} strokeWidth="1" />
+      <path d="M30 44 L30 50 M22 50 L38 50" stroke={main} strokeWidth="1" strokeLinecap="round" />
+      {/* 中央心形 */}
+      <path d="M30 24 C 27.5 22, 24.5 25, 30 30 C 35.5 25, 32.5 22, 30 24 Z" fill={accent} />
+    </svg>
+  );
+  if (kind === "wand") return (
+    <svg viewBox="0 0 60 60" width="86%" style={{ maxWidth: 70 }}>
+      {/* 8 根权杖（4 横排 × 2 层），呈交错动感 */}
+      {[
+        {x:18,r:-22},{x:42,r:22},{x:24,r:-12},{x:36,r:12},
+        {x:21,r:0},{x:39,r:0},{x:30,r:-6},{x:30,r:6},
+      ].slice(0,8).map((w, i) => (
+        <g key={i} transform={`translate(${w.x} 30) rotate(${w.r})`}>
+          <line x1="0" y1="-18" x2="0" y2="18" stroke={main} strokeWidth="1.4" strokeLinecap="round" />
+          {/* 木纹 */}
+          <line x1="-1" y1="-10" x2="1" y2="-6" stroke={main} strokeOpacity="0.4" strokeWidth="0.5" />
+          <line x1="-1" y1="2" x2="1" y2="6" stroke={main} strokeOpacity="0.4" strokeWidth="0.5" />
+          {/* 顶端火苗 */}
+          <circle cx="0" cy="-19" r="2.2" fill={accent} />
+          <path d="M0 -22 q-2 -2 0 -4 q2 2 0 4 z" fill={accent} fillOpacity="0.7" />
+        </g>
+      ))}
+    </svg>
+  );
+  if (kind === "world") return (
+    <svg viewBox="0 0 60 60" width="86%" style={{ maxWidth: 70 }}>
+      {/* 桂冠椭圆 */}
+      <ellipse cx="30" cy="30" rx="22" ry="24" fill={accent} fillOpacity="0.10" />
+      <ellipse cx="30" cy="30" rx="22" ry="24" fill="none" stroke={main} strokeWidth="1.4" />
+      {/* 内圆 */}
+      <circle cx="30" cy="30" r="9" fill="var(--paper)" stroke={main} strokeWidth="0.8" />
+      <circle cx="30" cy="30" r="5" fill={accent} />
+      {/* 四角象征：风/水/土/火 */}
+      {[[12,12],[48,12],[12,48],[48,48]].map(([x,y], i) => (
+        <g key={i}>
+          <circle cx={x} cy={y} r="2.5" fill={main} />
+          <circle cx={x} cy={y} r="4" fill="none" stroke={main} strokeWidth="0.5" strokeOpacity="0.5" />
+        </g>
+      ))}
+      {/* 桂冠装饰 */}
+      <path d="M14 18 q-2 -3 0 -6" stroke={main} strokeWidth="0.7" fill="none" />
+      <path d="M46 18 q2 -3 0 -6" stroke={main} strokeWidth="0.7" fill="none" />
+      <path d="M14 42 q-2 3 0 6"  stroke={main} strokeWidth="0.7" fill="none" />
+      <path d="M46 42 q2 3 0 6"   stroke={main} strokeWidth="0.7" fill="none" />
+    </svg>
+  );
+  return null;
+}
+
+
+function CrossAlignmentBoard() {
+  const rows = [
+    { topic: "career_direction", cn: "中", wt: "西", state: "consensus" },
+    { topic: "timing",            cn: "中", wt: "西", state: "consensus" },
+    { topic: "geography",         cn: "中", wt: "西", state: "divergence" },
+    { topic: "style",             cn: "中", wt: "西", state: "complementary" },
+  ];
+  const stateMark = { consensus: "= ", divergence: "≠ ", complementary: "+ " };
+  const stateColor = { consensus: "var(--cinnabar)", divergence: "var(--ink)", complementary: "var(--jade)" };
+  return (
+    <div>
+      {rows.map((r, i) => (
+        <div key={i} style={{ display: "grid", gridTemplateColumns: "20px 1fr", gap: 10, padding: "10px 0", borderBottom: i === rows.length - 1 ? "none" : "var(--rule)", alignItems: "baseline" }}>
+          <span className="mono" style={{ fontSize: 14, color: stateColor[r.state] }}>{stateMark[r.state]}</span>
+          <div>
+            <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{r.topic}</div>
+            <div className="caps" style={{ fontSize: 9, color: stateColor[r.state], marginTop: 2 }}>{r.state}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BigStat({ label, v }) {
+  return (
+    <div>
+      <div className="caps" style={{ fontSize: 10 }}>{label}</div>
+      <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 38, color: "var(--cinnabar)", marginTop: 6 }}>{v}</div>
+    </div>
+  );
+}
+
+window.ReportScreen = ReportScreen;
+
+  </script>
+
+  <script type="text/babel">
+// Copilot — B-end practitioner workspace
+function CopilotScreen({ go }) {
+  const clients = [
+    { id: "4f2a91", name: "陈书雅", en: "Chen Shuya", scenario: "事业方向", date: "今日 14:32", status: "draft", flagged: true },
+    { id: "8e1b22", name: "李文渊", en: "Li Wenyuan", scenario: "婚配相合", date: "昨日 10:15", status: "sent" },
+    { id: "2a73d1", name: "周慕清", en: "Zhou Muqing", scenario: "流年财运", date: "5/6 09:20", status: "draft" },
+    { id: "6c08a4", name: "韩书宁", en: "Han Shuning", scenario: "学业方向", date: "5/4 16:40", status: "review" },
+    { id: "9d12fe", name: "赵北辰", en: "Zhao Beichen", scenario: "择吉问事", date: "5/2 11:08", status: "sent" },
+    { id: "3b55c8", name: "苏雨晴", en: "Su Yuqing", scenario: "健康问题", date: "4/29 15:55", status: "flagged", flagged: true },
+  ];
+  const [selected, setSelected] = useState("4f2a91");
+
+  return (
+    <div className="fade-in" style={{ padding: 0, position: "relative", height: "calc(100vh - 80px)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr 360px", height: "100%", borderTop: "1px solid var(--ink)" }}>
+        {/* Left: client list */}
+        <div style={{ borderRight: "1px solid var(--ink)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ padding: "20px 24px", borderBottom: "var(--rule)" }}>
+            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>司命台 · COPILOT</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 6 }}>
+              <span style={{ fontFamily: "var(--serif-cn)", fontSize: 22, fontWeight: 600 }}>客户档案</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{clients.length}</span>
+            </div>
+            <input placeholder="搜索 · search by 名字 / 档号" style={{ marginTop: 14, fontSize: 14 }} />
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {clients.map(c => (
+              <button key={c.id} onClick={() => setSelected(c.id)} style={{
+                display: "block", width: "100%", textAlign: "left",
+                padding: "16px 24px", border: "none",
+                borderBottom: "var(--rule)",
+                background: selected === c.id ? "color-mix(in oklch, var(--cinnabar) 5%, transparent)" : "transparent",
+                cursor: "pointer",
+                position: "relative",
+                borderLeft: selected === c.id ? "2px solid var(--cinnabar)" : "2px solid transparent",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 16 }}>{c.name}</span>
+                  <span className="caps" style={{ fontSize: 8, color: statusColor(c.status) }}>{statusLabel(c.status)}</span>
+                </div>
+                <div className="em" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>{c.en}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                  <span style={{ fontFamily: "var(--serif-cn)", fontSize: 12, color: "var(--ink-2)" }}>{c.scenario}</span>
+                  <span className="mono" style={{ fontSize: 10, color: "var(--ink-4)" }}>{c.date}</span>
+                </div>
+                {c.flagged && <div style={{ position: "absolute", top: 16, right: 16, width: 6, height: 6, borderRadius: "50%", background: "var(--cinnabar)" }} />}
+              </button>
+            ))}
+          </div>
+          <div style={{ padding: "16px 24px", borderTop: "1px solid var(--ink)" }}>
+            <button className="btn" style={{ width: "100%", justifyContent: "center" }}>+ 新立档案</button>
+          </div>
+        </div>
+
+        {/* Middle: draft editor */}
+        <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ padding: "20px 32px", borderBottom: "1px solid var(--ink)", display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16 }}>
+            <div>
+              <div className="caps" style={{ fontSize: 10 }}>草稿 · DRAFT · #{selected}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginTop: 4 }}>
+                <span style={{ fontFamily: "var(--serif-cn)", fontSize: 28, fontWeight: 700 }}>陈书雅 · 事业方向之问</span>
+                <Chip>auto-saved 14:32</Chip>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn-ghost" style={{ padding: "10px 16px", fontSize: 13 }}>预览</button>
+              <button className="btn" style={{ padding: "10px 16px", fontSize: 13 }}>发送 → 客户</button>
+            </div>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: "32px 56px" }}>
+            <DraftEditor />
+          </div>
+        </div>
+
+        {/* Right: knowledge quick-search + flags */}
+        <div style={{ borderLeft: "1px solid var(--ink)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ padding: "20px 24px", borderBottom: "var(--rule)" }}>
+            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>速查 · CLASSICS LOOKUP</div>
+            <input placeholder="如 · 丁火日主 / yong shen" style={{ marginTop: 14, fontSize: 14 }} />
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+            <ClassicSnippet src="《滴天髓》" cn="丁火柔中，内性昭融；抱乙而孝，合壬而忠。" en="Ding fire is gentle within, bright at core." />
+            <ClassicSnippet src="《三命通会》" cn="正财格者，宜身旺，喜见食伤；忌比劫夺财。" />
+            <ClassicSnippet src="《紫微斗数全书》" cn="巨门化禄入命宫，主以言谈文字得财，宜师宜匠。" />
+            <ClassicSnippet src="《子平真诠》" cn="用神不可伤，伤之则命浊。" />
+
+            <div style={{ marginTop: 24 }}>
+              <Rule label="VRP 反思镜 · 0 alerts" />
+              <div style={{ marginTop: 14, padding: 14, border: "1px dashed color-mix(in oklch, var(--jade) 50%, transparent)", color: "var(--jade)", fontSize: 13, fontFamily: "var(--mono)", letterSpacing: "0.05em" }}>
+                ✓ 0 FACT_VIOLATION<br />
+                ✓ 0 RULE_NOVEL<br />
+                ✓ 0 OVERCLAIM
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24 }}>
+              <Rule label="合规审查 · safety" />
+              <div style={{ marginTop: 14, fontSize: 13, color: "var(--ink-2)", lineHeight: 1.7 }}>
+                <div>· 红线词检查：<span style={{ color: "var(--jade)" }}>通过</span></div>
+                <div>· 强动作软化：<span style={{ color: "var(--jade)" }}>未触发</span></div>
+                <div>· 心理风险：<span style={{ color: "var(--jade)" }}>无</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function statusLabel(s) {
+  return ({ draft: "草稿", sent: "已发", review: "审核中", flagged: "复核" })[s];
+}
+function statusColor(s) {
+  return ({ draft: "var(--ink-3)", sent: "var(--jade)", review: "var(--gild)", flagged: "var(--cinnabar)" })[s];
+}
+
+function DraftEditor() {
+  return (
+    <div style={{ maxWidth: 720 }}>
+      <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>叙事 · NARRATIVE · B-END VOICE</div>
+      <h2 style={{ fontFamily: "var(--serif-cn)", fontSize: 36, fontWeight: 700, margin: "12px 0 0", lineHeight: 1.2 }}>事业方向：以教育为本，以科技为器</h2>
+      <div className="em" style={{ fontSize: 18, color: "var(--ink-3)", marginTop: 8 }}>For Chen Shuya · 1991-08-15 · Beijing</div>
+
+      <div style={{ marginTop: 32, fontFamily: "var(--serif-cn)", fontSize: 18, lineHeight: 1.95, color: "var(--ink)", textWrap: "pretty" }}>
+        <p>书雅你好。这次问的事业方向，是个好问题——好在不是问"我会发财吗"，而是问"该往哪走"。前者只能给一个数，后者可以给一条路。</p>
+        <p>四柱里你是<HighlightChip claim="bazi-1">丁火日主</HighlightChip>，火旺金弱，正财格成。我读到的第一层意思是：<strong>你天生该靠"技艺"生财，不是靠"押注"</strong>。这个技艺可以是教学，可以是工程，可以是写作——但一定是可重复、可演示的东西。</p>
+        <p>紫微里<HighlightChip claim="ziwei-1">巨门化禄入命</HighlightChip>，是言谈文字立身的强信号，与八字所言"技艺"叠合。占星上 9 宫狮子群星把这股能量推向"学问与远方"，但 6 宫处女又把它拉回"工艺与服务"——这就是中西交叉里我们标的<HighlightChip claim="cross-1">complementary</HighlightChip>那一项：把"教育"作为内核，把"科技"作为工具。</p>
+        <p>具体节奏：上半年至立秋前后宜定方向、签约慎；下半年丁火得禄，是动手的窗口。文昌化忌入迁移宫，远行签约务必带律师。</p>
+      </div>
+
+      <div style={{ marginTop: 40, padding: 20, background: "color-mix(in oklch, var(--cinnabar) 4%, transparent)", borderLeft: "2px solid var(--cinnabar)" }}>
+        <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>命理师备注 · MASTER NOTE · 不发送</div>
+        <div style={{ fontSize: 14, color: "var(--ink-2)", marginTop: 8, lineHeight: 1.7 }}>
+          客户提到"换方向"——情绪略焦虑。建议下次会面时先问一句"这个想法多久了"，再切入命盘。
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HighlightChip({ children, claim }) {
+  return (
+    <span style={{
+      background: "color-mix(in oklch, var(--cinnabar) 8%, transparent)",
+      borderBottom: "1px dashed var(--cinnabar)",
+      padding: "1px 4px",
+      cursor: "pointer",
+    }} title={`claim ref: ${claim}`}>{children}</span>
+  );
+}
+
+function ClassicSnippet({ src, cn, en }) {
+  return (
+    <div style={{ padding: "14px 0", borderBottom: "var(--rule)" }}>
+      <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)" }}>{src}</div>
+      <div style={{ fontFamily: "var(--serif-cn)", fontSize: 15, lineHeight: 1.7, color: "var(--ink)", marginTop: 6 }}>{cn}</div>
+      {en && <div className="em" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>{en}</div>}
+    </div>
+  );
+}
+
+window.CopilotScreen = CopilotScreen;
+
+  </script>
+
+  <script type="text/babel">
+// Root app — wires it all up
+function App() {
+  const [screen, setScreen] = useState("home");
+  const [hasProfile, setHasProfile] = useState(true); // pre-loaded sample
+  const [tweaks, setTweaks] = useTweaks(window.__TWEAK_DEFAULTS);
+
+  // sync body data attrs from tweaks
+  useEffect(() => {
+    document.body.dataset.mode    = tweaks.mode;
+    document.body.dataset.palette = tweaks.palette;
+    document.body.dataset.density = tweaks.density;
+  }, [tweaks.mode, tweaks.palette, tweaks.density]);
+
+  const go = (id) => {
+    setScreen(id);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
+  return (
+    <div style={{ minHeight: "100vh" }}>
+      <TopNav current={screen} setScreen={go} hasProfile={hasProfile} />
+
+      <main data-screen-label={({
+        home: "01 Landing", onboard: "02 Onboarding", chart: "03 Chart",
+        chat: "04 Consult", report: "05 Report", copilot: "06 Copilot",
+      })[screen]}>
+        {screen === "home"    && <LandingScreen go={go} />}
+        {screen === "onboard" && <OnboardingScreen go={go} onComplete={() => setHasProfile(true)} />}
+        {screen === "chart"   && <ChartScreen go={go} />}
+        {screen === "chat"    && <ChatScreen go={go} animSpeed={tweaks.animSpeed || 1} />}
+        {screen === "report"  && <ReportScreen go={go} />}
+        {screen === "copilot" && <CopilotScreen go={go} />}
+      </main>
+
+      {screen !== "copilot" && screen !== "chat" && <Footer />}
+
+      <TweaksPanel title="Tweaks · 调">
+        <TweakSection label="外观 · Appearance" />
+        <TweakRadio label="Mode" value={tweaks.mode}
+          options={[{ value: "light", label: "宣纸" }, { value: "dark", label: "黛" }]}
+          onChange={v => setTweaks({ mode: v })} />
+        <TweakRadio label="Accent" value={tweaks.palette}
+          options={[{ value: "cinnabar", label: "朱砂" }, { value: "ink-only", label: "纯墨" }]}
+          onChange={v => setTweaks({ palette: v })} />
+        <TweakRadio label="Density" value={tweaks.density}
+          options={[{ value: "airy", label: "疏" }, { value: "normal", label: "常" }, { value: "dense", label: "密" }]}
+          onChange={v => setTweaks({ density: v })} />
+        <TweakSection label="动效 · Motion" />
+        <TweakSlider label="Stream speed" min={0.5} max={3} step={0.25} value={tweaks.animSpeed} unit="×"
+          onChange={v => setTweaks({ animSpeed: v })} />
+        <TweakSection label="导航 · Go to screen" />
+        <TweakButton label="→ 起 home"     onClick={() => go("home")} />
+        <TweakButton label="→ 立 onboard"  onClick={() => go("onboard")} />
+        <TweakButton label="→ 盘 chart"    onClick={() => go("chart")} />
+        <TweakButton label="→ 问 consult"  onClick={() => go("chat")} />
+        <TweakButton label="→ 析 report"   onClick={() => go("report")} />
+        <TweakButton label="→ 司 copilot"  onClick={() => go("copilot")} />
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+  </script>
+</body>
+</html>
