@@ -126,6 +126,19 @@ async def run_planner_loop(state: AgentState, message_queue: asyncio.Queue,
 
         # 3) 执行动作
         try:
+            # ★ 硬保险：已 verdict 之后禁 ask_user；ask_user 全程最多 2 次
+            ask_user_count = sum(1 for h in history if h.get("action_type") == "ask_user_answered")
+            if action.type == "ask_user" and (state.verdict is not None or ask_user_count >= 2):
+                # 把 ask_user 改写成 finalize
+                yield await _evt("planner_thought",
+                                 step=step_no,
+                                 thought=f"硬保险触发：{'已有判官' if state.verdict else 'ask_user 已 2 次'}，强制 finalize 不再追问。",
+                                 action="finalize",
+                                 args={"style": "full"})
+                async for evt in _execute_finalize(state, history):
+                    yield evt
+                return
+
             if action.type == "ask_user":
                 # ★ 关键：暂停流，等用户回答（带心跳防 idle 断连）
                 question = (action.args or {}).get("question", "请补充更多信息。")
