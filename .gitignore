@@ -43,6 +43,10 @@ data/runs/
 # 保留 geo_cn.json 这种知识数据
 !data/geo_cn.json
 
+# ── 塔罗图（70MB，由 scripts/download_tarot.sh 拉取）─────────
+web/static/img/tarot/*.jpg
+!web/static/img/tarot/card-frame.svg
+
 # ── 日志 / 临时 ────────────────────────────────────────────
 *.log
 logs/

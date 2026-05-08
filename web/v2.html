@@ -3243,15 +3243,15 @@ function BaziMiniGrid() {
   );
 }
 
-// 塔罗 mini 卡阵（升级版）— 按牌名配色 + ornate 双框 + 阴影 + hover 抬升
+// 塔罗 mini 卡阵（真图版）— RWS 韦特公有领域扫描
 function TarotMini() {
   const cards = [
-    { num: "III",   suit: "pentacle", cn: "钱币三",   en: "Three of Pentacles", reversed: false },
-    { num: "X",     suit: "wheel",    cn: "命运之轮", en: "Wheel of Fortune",   reversed: true  },
-    { num: "IX",    suit: "lantern",  cn: "隐者",     en: "The Hermit",         reversed: false },
-    { num: "侍",    suit: "cup",      cn: "圣杯侍从", en: "Page of Cups",       reversed: false },
-    { num: "VIII",  suit: "wand",     cn: "权杖八",   en: "Eight of Wands",     reversed: false },
-    { num: "XXI",   suit: "world",    cn: "世界",     en: "The World",          reversed: false },
+    { num: "III",   suit: "pentacle", cn: "钱币三",   en: "Three of Pentacles", reversed: false, img: "/static/img/tarot/pents_03.jpg" },
+    { num: "X",     suit: "wheel",    cn: "命运之轮", en: "Wheel of Fortune",   reversed: true,  img: "/static/img/tarot/major_10_wheel.jpg" },
+    { num: "IX",    suit: "lantern",  cn: "隐者",     en: "The Hermit",         reversed: false, img: "/static/img/tarot/major_09_hermit.jpg" },
+    { num: "侍",    suit: "cup",      cn: "圣杯侍从", en: "Page of Cups",       reversed: false, img: "/static/img/tarot/cups_11.jpg" },
+    { num: "VIII",  suit: "wand",     cn: "权杖八",   en: "Eight of Wands",     reversed: false, img: "/static/img/tarot/wands_08.jpg" },
+    { num: "XXI",   suit: "world",    cn: "世界",     en: "The World",          reversed: false, img: "/static/img/tarot/major_21_world.jpg" },
   ];
   // suit → 主题（背景 / 主线 / 辅色 / 内框 / 顶部 caps 标）
   const THEME = {
@@ -3326,9 +3326,28 @@ function TarotMini() {
                   opacity: 0.45,
                 }} />
 
-                {/* 中央 SVG glyph */}
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
-                  <TarotGlyph kind={c.suit} theme={t} />
+                {/* 中央真图（首选 RWS 公有领域扫描；图缺则降级 SVG） */}
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2px", overflow: "hidden" }}>
+                  {c.img ? (
+                    <img src={c.img} alt={c.cn}
+                      onError={(e) => {
+                        // 图加载失败 → 隐藏 img，让兜底 SVG 显示
+                        e.target.style.display = "none";
+                        const sib = e.target.nextSibling;
+                        if (sib) sib.style.display = "flex";
+                      }}
+                      style={{
+                        width: "100%", height: "100%",
+                        objectFit: "cover", objectPosition: "center top",
+                        border: `0.5px solid ${t.accent}`,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                        background: "var(--paper)",
+                      }} />
+                  ) : null}
+                  {/* 兜底 SVG（图缺时显示）*/}
+                  <div style={{ display: c.img ? "none" : "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+                    <TarotGlyph kind={c.suit} theme={t} />
+                  </div>
                 </div>
 
                 {/* hairline */}
