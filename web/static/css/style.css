@@ -1,0 +1,827 @@
+/* ============================================================
+   suan · 中西命理 AI Agent
+   Design system — 东方水墨 + 现代极简
+   ============================================================ */
+
+:root {
+  /* ---------- Core palette ---------- */
+  --ink:           #1a1a1a;
+  --ink-soft:      #2c2c2c;
+  --ink-mute:      #4a4a4a;
+  --paper:         #faf6f0;
+  --paper-dark:    #ede5d3;
+  --paper-darker:  #d8cdb6;
+
+  /* Accents — used sparingly */
+  --vermilion:     #c8403c;       /* 朱砂 */
+  --vermilion-dim: #9c2f2c;
+  --celadon:       #4a6670;       /* 黛青 */
+  --gold:          #b89968;       /* 哑金 */
+  --gold-dim:      #8d7449;
+  --jade:          #5d7c6a;       /* 翠玉 */
+  --silver-grey:   #a09b94;
+  --silver-soft:   #c7c1b8;
+
+  /* Functional */
+  --line:          #2c2c2c1a;
+  --line-strong:   #2c2c2c33;
+  --shadow-soft:   0 1px 2px rgba(26,26,26,.04), 0 8px 24px rgba(26,26,26,.06);
+  --shadow-card:   0 1px 1px rgba(26,26,26,.03), 0 12px 36px rgba(26,26,26,.08);
+
+  /* Typography stacks */
+  --font-serif-cn: "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "STSong", "PingFang SC", serif;
+  --font-sans-cn:  "PingFang SC", "Source Han Sans SC", "Noto Sans CJK SC", "Helvetica Neue", system-ui, -apple-system, sans-serif;
+  --font-serif-en: "Lora", "Cormorant Garamond", Georgia, serif;
+  --font-sans-en:  "Inter", "Helvetica Neue", system-ui, -apple-system, sans-serif;
+  --font-mono:     "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans-en), var(--font-sans-cn);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: 0.005em;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(184,153,104,0.04) 0%, transparent 36%),
+    radial-gradient(circle at 82% 88%, rgba(74,102,112,0.04) 0%, transparent 40%);
+}
+
+::selection { background: var(--ink); color: var(--paper); }
+
+* { box-sizing: border-box; }
+
+a { color: inherit; text-decoration: none; transition: opacity 160ms ease; }
+a:hover { opacity: 0.7; }
+
+/* ============================================================
+   Typography
+   ============================================================ */
+.font-serif-cn { font-family: var(--font-serif-cn); font-weight: 500; }
+.font-sans-cn  { font-family: var(--font-sans-cn); }
+.font-serif-en { font-family: var(--font-serif-en); }
+.font-sans-en  { font-family: var(--font-sans-en); }
+.font-mono     { font-family: var(--font-mono); }
+
+.title-display {
+  font-family: var(--font-serif-cn);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.18;
+  color: var(--ink);
+}
+
+.title-eyebrow {
+  font-family: var(--font-sans-en);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--silver-grey);
+  font-weight: 500;
+}
+
+.body-prose {
+  font-family: var(--font-sans-cn);
+  font-size: 15px;
+  line-height: 1.78;
+  color: var(--ink-soft);
+}
+
+.body-prose p + p { margin-top: 1em; }
+
+.lede {
+  font-family: var(--font-serif-cn);
+  font-size: 22px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   Layout primitives
+   ============================================================ */
+.divider-thin {
+  height: 1px;
+  background: var(--line);
+}
+
+.divider-cn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--silver-grey);
+  font-family: var(--font-serif-cn);
+  font-size: 13px;
+  letter-spacing: 0.4em;
+}
+.divider-cn::before,
+.divider-cn::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ============================================================
+   Scroll paper card —— 宣纸质感
+   ============================================================ */
+.scroll-paper {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 32px;
+  box-shadow: var(--shadow-soft);
+  transition: box-shadow 240ms ease, transform 240ms ease;
+}
+.scroll-paper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0.04 0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.5'/></svg>");
+  border-radius: inherit;
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+.scroll-paper > * { position: relative; z-index: 1; }
+.scroll-paper:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+
+.scroll-paper--flat {
+  box-shadow: none;
+  background: transparent;
+  border-color: var(--line);
+}
+
+.scroll-paper--inverse {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.scroll-paper--inverse::before { display: none; }
+
+/* ============================================================
+   Seal (印章) —— 朱红方印
+   ============================================================ */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px; height: 52px;
+  background: var(--vermilion);
+  color: var(--paper);
+  font-family: var(--font-serif-cn);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 0;
+  border-radius: 4px;
+  position: relative;
+  box-shadow: 0 1px 0 rgba(0,0,0,.05);
+  user-select: none;
+}
+.seal::before {
+  content: '';
+  position: absolute; inset: 3px;
+  border: 1.5px solid rgba(255,250,240,.9);
+  border-radius: 2px;
+}
+.seal--sm { width: 36px; height: 36px; font-size: 16px; }
+.seal--lg { width: 72px; height: 72px; font-size: 30px; }
+.seal--ghost {
+  background: transparent;
+  color: var(--vermilion);
+  box-shadow: inset 0 0 0 1.5px var(--vermilion);
+}
+.seal--ghost::before { border-color: var(--vermilion); opacity: .35; }
+
+/* Seal at corner of card */
+.seal--corner {
+  position: absolute;
+  bottom: -10px; right: -10px;
+  transform: rotate(-4deg);
+}
+
+/* ============================================================
+   Citation (典籍引用)
+   ============================================================ */
+.citation {
+  position: relative;
+  padding: 14px 18px 14px 22px;
+  font-family: var(--font-serif-cn);
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--ink-soft);
+  background: rgba(184,153,104,0.05);
+  border-left: 2px solid var(--vermilion);
+  border-radius: 0 2px 2px 0;
+}
+.citation .citation-source {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-sans-cn);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--silver-grey);
+}
+.citation .citation-source::before { content: '— 《'; }
+.citation .citation-source::after { content: '》'; }
+
+/* ============================================================
+   Confidence tags
+   ============================================================ */
+.confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  font-family: var(--font-sans-en);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+  background: transparent;
+  user-select: none;
+}
+.confidence::before {
+  content: '';
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.confidence-high   { color: var(--jade); }
+.confidence-medium { color: var(--gold); }
+.confidence-low    { color: var(--silver-grey); }
+.confidence-warn   { color: var(--vermilion-dim); }
+
+/* ============================================================
+   Bazi 四柱表
+   ============================================================ */
+.chart-grid-bazi {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: var(--paper);
+  overflow: hidden;
+}
+.chart-grid-bazi .col {
+  padding: 16px 12px;
+  border-right: 1px solid var(--line);
+  text-align: center;
+}
+.chart-grid-bazi .col:last-child { border-right: none; }
+.chart-grid-bazi .col-head {
+  font-family: var(--font-serif-cn);
+  font-size: 12px;
+  letter-spacing: 0.32em;
+  color: var(--silver-grey);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.chart-grid-bazi .stem,
+.chart-grid-bazi .branch {
+  font-family: var(--font-serif-cn);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.chart-grid-bazi .branch { font-size: 26px; color: var(--ink-soft); margin-top: 4px; }
+.chart-grid-bazi .meta {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--silver-grey);
+  letter-spacing: 0.1em;
+  line-height: 1.6;
+}
+.chart-grid-bazi .day-master {
+  position: relative;
+}
+.chart-grid-bazi .day-master::after {
+  content: '日主';
+  position: absolute;
+  top: -6px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--vermilion);
+  background: var(--paper);
+  padding: 0 4px;
+}
+
+/* Five elements color hints */
+.elem-wood  { color: #5d7c6a; }
+.elem-fire  { color: #c8403c; }
+.elem-earth { color: #b89968; }
+.elem-metal { color: #8a8c8e; }
+.elem-water { color: #4a6670; }
+
+/* ============================================================
+   Ziwei 12 宫位田字格
+   ============================================================ */
+.chart-grid-ziwei {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  aspect-ratio: 1;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  font-family: var(--font-serif-cn);
+}
+.chart-grid-ziwei .palace {
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  transition: background 160ms ease;
+}
+.chart-grid-ziwei .palace:hover { background: rgba(184,153,104,0.06); }
+.chart-grid-ziwei .palace.center {
+  grid-column: 2 / 4;
+  grid-row: 2 / 4;
+  border: 1px solid var(--line-strong);
+  background: rgba(26,26,26,0.02);
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.chart-grid-ziwei .palace .palace-name {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  color: var(--silver-grey);
+}
+.chart-grid-ziwei .palace .palace-stars {
+  font-size: 12.5px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.chart-grid-ziwei .palace.is-ming {
+  background: rgba(200,64,60,0.06);
+}
+.chart-grid-ziwei .palace.is-ming .palace-name {
+  color: var(--vermilion);
+}
+
+/* ============================================================
+   Tarot card
+   ============================================================ */
+.tarot-card {
+  position: relative;
+  width: 120px;
+  height: 200px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 10px;
+  box-shadow: var(--shadow-card);
+  transition: transform 320ms cubic-bezier(.2,.8,.2,1);
+  user-select: none;
+  border: 1px solid #3a3a3a;
+}
+.tarot-card::before {
+  content: '';
+  position: absolute; inset: 6px;
+  border: 1px solid rgba(184,153,104,0.45);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.tarot-card .tarot-num {
+  font-family: var(--font-serif-en);
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+}
+.tarot-card .tarot-name {
+  font-family: var(--font-serif-cn);
+  font-size: 17px;
+  letter-spacing: 0.12em;
+  text-align: center;
+  color: var(--paper);
+}
+.tarot-card .tarot-name-en {
+  font-family: var(--font-serif-en);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--silver-soft);
+  text-align: center;
+}
+.tarot-card.reversed { transform: rotate(180deg); }
+.tarot-card.reversed:hover { transform: rotate(180deg) translateY(-4px); }
+.tarot-card:hover { transform: translateY(-4px); }
+
+.tarot-card--back {
+  background: linear-gradient(135deg, var(--ink) 0%, #2a2a2a 100%);
+}
+.tarot-card--back::after {
+  content: '算';
+  font-family: var(--font-serif-cn);
+  font-size: 36px;
+  color: var(--vermilion);
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* ============================================================
+   Astro aspect lines (relative to wheel)
+   ============================================================ */
+.aspect-line {
+  stroke-width: 1;
+  fill: none;
+  opacity: .5;
+}
+.aspect-trine     { stroke: var(--jade); }
+.aspect-square    { stroke: var(--vermilion); stroke-dasharray: 3 2; }
+.aspect-conjunct  { stroke: var(--gold); }
+.aspect-opposition{ stroke: var(--celadon); stroke-dasharray: 6 2; }
+
+/* ============================================================
+   Cross alignment bars (中西交叉验证)
+   ============================================================ */
+.alignment-row {
+  display: grid;
+  grid-template-columns: 1fr 90px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.alignment-row:last-child { border-bottom: none; }
+.alignment-cn, .alignment-west {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+.alignment-cn   { text-align: right; padding-right: 8px; }
+.alignment-west { text-align: left;  padding-left: 8px;  }
+
+.alignment-tag {
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  padding: 5px 6px;
+  border-radius: 2px;
+  border: 1px solid;
+  background: var(--paper);
+  white-space: nowrap;
+}
+.alignment-consensus     { color: var(--jade); border-color: var(--jade); }
+.alignment-divergence    { color: var(--vermilion-dim); border-color: var(--vermilion-dim); }
+.alignment-complementary { color: var(--gold); border-color: var(--gold); }
+
+.alignment-strength {
+  display: flex; gap: 3px; justify-content: center; margin-top: 4px;
+}
+.alignment-strength i {
+  width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .25;
+}
+.alignment-strength i.on { opacity: 1; }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-sans-cn);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  padding: 11px 22px;
+  border-radius: 2px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 200ms ease;
+  user-select: none;
+  background: transparent;
+  color: var(--ink);
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 2px; }
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.btn-primary:hover { background: var(--ink-soft); border-color: var(--ink-soft); }
+
+.btn-vermilion {
+  background: var(--vermilion);
+  color: var(--paper);
+  border-color: var(--vermilion);
+}
+.btn-vermilion:hover { background: var(--vermilion-dim); border-color: var(--vermilion-dim); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.btn-outline:hover { border-color: var(--ink); background: rgba(26,26,26,.03); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+}
+.btn-ghost:hover { background: rgba(26,26,26,.04); }
+
+.btn-sm { padding: 7px 14px; font-size: 12.5px; }
+.btn-lg { padding: 14px 28px; font-size: 15px; }
+
+/* ============================================================
+   Input
+   ============================================================ */
+.input, .select, .textarea {
+  width: 100%;
+  font-family: var(--font-sans-cn);
+  font-size: 14.5px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  padding: 10px 14px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.input::placeholder, .textarea::placeholder { color: var(--silver-grey); }
+.input:focus, .select:focus, .textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(26,26,26,.06);
+}
+.label {
+  display: block;
+  font-family: var(--font-sans-cn);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+/* ============================================================
+   Chat bubbles
+   ============================================================ */
+.bubble {
+  position: relative;
+  max-width: 78%;
+  padding: 16px 20px;
+  border-radius: 4px;
+  font-size: 14.5px;
+  line-height: 1.78;
+}
+.bubble-user {
+  background: var(--ink);
+  color: var(--paper);
+  margin-left: auto;
+  border-bottom-right-radius: 1px;
+}
+.bubble-agent {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 1px;
+  box-shadow: var(--shadow-soft);
+}
+.bubble-agent .bubble-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.bubble-agent .bubble-head .name {
+  font-family: var(--font-serif-cn);
+  font-size: 14px;
+  letter-spacing: 0.18em;
+}
+.bubble-agent .bubble-disclaimer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line-strong);
+  font-size: 11px;
+  color: var(--silver-grey);
+  line-height: 1.7;
+  letter-spacing: 0.06em;
+}
+
+/* ============================================================
+   Reasoning trace
+   ============================================================ */
+.trace-tree {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--ink-mute);
+}
+.trace-node {
+  position: relative;
+  padding-left: 18px;
+}
+.trace-node::before {
+  content: '';
+  position: absolute;
+  left: 4px; top: 10px;
+  width: 9px; height: 1px;
+  background: var(--line-strong);
+}
+.trace-node + .trace-node::after {
+  content: '';
+  position: absolute;
+  left: 4px; top: -8px;
+  width: 1px; height: 18px;
+  background: var(--line-strong);
+}
+.trace-key {
+  color: var(--celadon);
+  font-weight: 500;
+}
+.trace-val {
+  color: var(--ink);
+}
+.trace-cite {
+  color: var(--vermilion-dim);
+  font-style: italic;
+}
+
+/* ============================================================
+   Status pill / agent progress
+   ============================================================ */
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--paper);
+  font-size: 13px;
+}
+.agent-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--silver-soft);
+  flex-shrink: 0;
+}
+.agent-dot.is-running {
+  background: var(--gold);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.agent-dot.is-done   { background: var(--jade); }
+.agent-dot.is-error  { background: var(--vermilion); }
+.agent-dot.is-idle   { background: var(--silver-soft); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .4; transform: scale(0.8); }
+}
+
+.agent-bar {
+  flex: 1;
+  height: 2px;
+  background: var(--line);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.agent-bar-fill {
+  height: 100%;
+  background: var(--ink);
+  transition: width 400ms ease;
+}
+
+/* ============================================================
+   Quick chips
+   ============================================================ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  border-radius: 2px;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 160ms ease;
+  user-select: none;
+}
+.chip:hover { border-color: var(--ink); color: var(--ink); }
+.chip.is-active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* ============================================================
+   Animations — subtle entrance
+   ============================================================ */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: rise 360ms cubic-bezier(.2,.7,.2,1) both; }
+.rise-1 { animation-delay: 80ms; }
+.rise-2 { animation-delay: 160ms; }
+.rise-3 { animation-delay: 240ms; }
+.rise-4 { animation-delay: 320ms; }
+
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fade { animation: fade 280ms ease both; }
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--silver-soft);
+  border-radius: 4px;
+  border: 2px solid var(--paper);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--silver-grey); }
+
+/* ============================================================
+   Utility
+   ============================================================ */
+.hairline { border: 1px solid var(--line); }
+.hairline-strong { border: 1px solid var(--line-strong); }
+.text-ink { color: var(--ink); }
+.text-mute { color: var(--ink-mute); }
+.text-silver { color: var(--silver-grey); }
+.text-vermilion { color: var(--vermilion); }
+.text-gold { color: var(--gold); }
+.text-jade { color: var(--jade); }
+.text-celadon { color: var(--celadon); }
+.bg-paper { background: var(--paper); }
+.bg-paper-dark { background: var(--paper-dark); }
+.bg-ink { background: var(--ink); color: var(--paper); }
+
+/* Vertical chinese rune-style label */
+.vertical-label {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: var(--font-serif-cn);
+  letter-spacing: 0.4em;
+  color: var(--silver-grey);
+  font-size: 12px;
+}
+
+/* Index numerals like 壹貳叁 stylized */
+.numeral {
+  font-family: var(--font-serif-cn);
+  font-size: 13px;
+  color: var(--vermilion);
+  letter-spacing: 0.2em;
+}
+
+/* Print friendly */
+@media print {
+  body { background: white; }
+  .no-print { display: none !important; }
+  .scroll-paper { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+  .page-break { page-break-after: always; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .scroll-paper { padding: 20px; }
+  .lede { font-size: 18px; }
+  .chart-grid-bazi .stem { font-size: 22px; }
+  .chart-grid-bazi .branch { font-size: 20px; }
+  .alignment-row { grid-template-columns: 1fr; gap: 6px; }
+  .alignment-cn, .alignment-west { text-align: left; padding: 0; }
+  .alignment-tag { width: max-content; }
+}

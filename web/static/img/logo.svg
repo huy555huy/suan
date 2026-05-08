@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <style>
+      .seal-bg { fill: #c8403c; }
+      .seal-rim { fill: none; stroke: #faf6f0; stroke-width: 2; }
+      .seal-text { fill: #faf6f0; font-family: "Source Han Serif SC", "Noto Serif CJK SC", serif; font-weight: 600; font-size: 38px; letter-spacing: 0; }
+    </style>
+  </defs>
+  <rect class="seal-bg" x="2" y="2" width="60" height="60" rx="3" />
+  <rect class="seal-rim" x="6" y="6" width="52" height="52" rx="2" />
+  <text class="seal-text" x="32" y="46" text-anchor="middle">算</text>
+</svg>

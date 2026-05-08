@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 200" width="120" height="200">
+  <defs>
+    <style>
+      .frame-bg { fill: #1a1a1a; }
+      .frame-inner { fill: none; stroke: #b89968; stroke-width: 0.6; opacity: 0.6; }
+      .frame-name { font-family: "Source Han Serif SC", serif; font-size: 14px; fill: #faf6f0; letter-spacing: 0.16em; }
+      .frame-name-en { font-family: "Lora", serif; font-size: 8px; fill: #c7c1b8; letter-spacing: 0.28em; text-transform: uppercase; }
+      .frame-num { font-family: "Lora", serif; font-size: 11px; fill: #b89968; letter-spacing: 0.2em; }
+    </style>
+  </defs>
+  <rect class="frame-bg" width="120" height="200" rx="6" />
+  <rect class="frame-inner" x="6" y="6" width="108" height="188" rx="3" />
+  <text class="frame-num" x="60" y="32" text-anchor="middle">— · —</text>
+  <text class="frame-name" x="60" y="104" text-anchor="middle">牌名</text>
+  <text class="frame-name-en" x="60" y="120" text-anchor="middle">CARD NAME</text>
+  <text class="frame-num" x="60" y="178" text-anchor="middle">— · —</text>
+</svg>

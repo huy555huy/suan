@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <style>
+      .dot-outer { fill: #1a1a1a; }
+      .dot-soft { fill: #b89968; }
+      .ring { fill: none; stroke: #2c2c2c33; stroke-width: 0.6; }
+      .glyph { font-family: "Source Han Serif SC", "Noto Serif CJK SC", serif; font-size: 12px; fill: #4a4a4a; letter-spacing: 0.04em; }
+    </style>
+  </defs>
+  <circle cx="120" cy="120" r="100" class="ring" />
+  <circle cx="120" cy="120" r="72"  class="ring" />
+  <circle cx="120" cy="120" r="3"   class="dot-outer" />
+
+  <!-- 8 dots arranged at compass points; 干 -->
+  <g>
+    <circle cx="120" cy="20"  r="6" class="dot-outer" />
+    <circle cx="190" cy="50"  r="6" class="dot-outer" />
+    <circle cx="220" cy="120" r="6" class="dot-outer" />
+    <circle cx="190" cy="190" r="6" class="dot-outer" />
+    <circle cx="120" cy="220" r="6" class="dot-outer" />
+    <circle cx="50"  cy="190" r="6" class="dot-outer" />
+    <circle cx="20"  cy="120" r="6" class="dot-outer" />
+    <circle cx="50"  cy="50"  r="6" class="dot-outer" />
+  </g>
+
+  <!-- 8 trigram names (use simple chinese characters, no taiji) -->
+  <g class="glyph" text-anchor="middle">
+    <text x="120" y="46" >乾</text>
+    <text x="180" y="74" >巽</text>
+    <text x="194" y="124">坎</text>
+    <text x="180" y="174">艮</text>
+    <text x="120" y="200">坤</text>
+    <text x="60"  y="174">震</text>
+    <text x="46"  y="124">离</text>
+    <text x="60"  y="74" >兑</text>
+  </g>
+
+  <!-- subtle gold accent dots in inner -->
+  <g>
+    <circle cx="120" cy="64"  r="2" class="dot-soft" opacity="0.5" />
+    <circle cx="176" cy="120" r="2" class="dot-soft" opacity="0.5" />
+    <circle cx="120" cy="176" r="2" class="dot-soft" opacity="0.5" />
+    <circle cx="64"  cy="120" r="2" class="dot-soft" opacity="0.5" />
+  </g>
+</svg>

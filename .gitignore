@@ -1,0 +1,67 @@
+# ── 敏感配置（绝不入库）────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+credentials/
+
+# ── Python ─────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+
+# ── 虚拟环境 ───────────────────────────────────────────────
+venv/
+env/
+ENV/
+.venv/
+.virtualenv/
+
+# ── 数据 / 缓存（用户运行产生）─────────────────────────────
+data/*.db
+data/*.db-journal
+data/*.db-shm
+data/*.db-wal
+data/cache/
+data/runs/
+
+# 保留 geo_cn.json 这种知识数据
+!data/geo_cn.json
+
+# ── 日志 / 临时 ────────────────────────────────────────────
+*.log
+logs/
+*.tmp
+*.bak
+*.swp
+*~
+
+# ── IDE / OS ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# ── jupyter ───────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── 服务器临时 ─────────────────────────────────────────────
+/tmp/
+*.pid
+.PID

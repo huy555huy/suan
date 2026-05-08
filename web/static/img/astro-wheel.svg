@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
+  <defs>
+    <style>
+      .wheel-stroke { fill: none; stroke: #2c2c2c; stroke-width: 0.8; }
+      .wheel-stroke-soft { fill: none; stroke: #2c2c2c33; stroke-width: 0.6; }
+      .sign-text { font-family: "Lora", "Source Han Serif SC", serif; font-size: 12px; fill: #4a4a4a; letter-spacing: 0.06em; }
+      .num-text { font-family: "Lora", serif; font-size: 9px; fill: #a09b94; letter-spacing: 0.08em; }
+      .axis-stroke { stroke: #c8403c; stroke-width: 0.6; opacity: 0.5; }
+    </style>
+  </defs>
+  <!-- Outer rings -->
+  <circle cx="160" cy="160" r="148" class="wheel-stroke" />
+  <circle cx="160" cy="160" r="126" class="wheel-stroke-soft" />
+  <circle cx="160" cy="160" r="98"  class="wheel-stroke-soft" />
+  <circle cx="160" cy="160" r="56"  class="wheel-stroke" />
+  <circle cx="160" cy="160" r="2"   fill="#1a1a1a" />
+
+  <!-- 12 sign divisions -->
+  <g class="wheel-stroke">
+    <line x1="160" y1="12"  x2="160" y2="56"  />
+    <line x1="160" y1="264" x2="160" y2="308" />
+    <line x1="12"  y1="160" x2="56"  y2="160" />
+    <line x1="264" y1="160" x2="308" y2="160" />
+
+    <line x1="86"  y1="32"  x2="123" y2="92"  />
+    <line x1="234" y1="32"  x2="197" y2="92"  />
+    <line x1="86"  y1="288" x2="123" y2="228" />
+    <line x1="234" y1="288" x2="197" y2="228" />
+
+    <line x1="32"  y1="86"  x2="92"  y2="123" />
+    <line x1="32"  y1="234" x2="92"  y2="197" />
+    <line x1="288" y1="86"  x2="228" y2="123" />
+    <line x1="288" y1="234" x2="228" y2="197" />
+  </g>
+
+  <!-- Sign labels (12, clockwise from 9 o'clock = Aries asc) -->
+  <g class="sign-text" text-anchor="middle">
+    <text x="22"  y="164">白羊</text>
+    <text x="50"  y="92" >金牛</text>
+    <text x="116" y="42" >双子</text>
+    <text x="204" y="42" >巨蟹</text>
+    <text x="270" y="92" >狮子</text>
+    <text x="298" y="164">处女</text>
+    <text x="270" y="232">天秤</text>
+    <text x="204" y="288">天蝎</text>
+    <text x="116" y="288">射手</text>
+    <text x="50"  y="232">摩羯</text>
+    <text x="22"  y="200">水瓶</text>
+    <text x="22"  y="128">双鱼</text>
+  </g>
+
+  <!-- Axis lines (Asc-Desc, MC-IC) -->
+  <line x1="0"   y1="160" x2="320" y2="160" class="axis-stroke" />
+  <line x1="160" y1="0"   x2="160" y2="320" class="axis-stroke" />
+
+  <!-- House numbers in inner ring (Roman / lightweight) -->
+  <g class="num-text" text-anchor="middle">
+    <text x="68"  y="164">I</text>
+    <text x="84"  y="116">II</text>
+    <text x="118" y="86" >III</text>
+    <text x="160" y="74" >IV</text>
+    <text x="202" y="86" >V</text>
+    <text x="236" y="116">VI</text>
+    <text x="252" y="164">VII</text>
+    <text x="236" y="208">VIII</text>
+    <text x="202" y="238">IX</text>
+    <text x="160" y="252">X</text>
+    <text x="118" y="238">XI</text>
+    <text x="84"  y="208">XII</text>
+  </g>
+
+  <!-- Sample planet glyphs as small dots (placeholder positions) -->
+  <g>
+    <circle cx="260" cy="124" r="3" fill="#c8403c" />
+    <circle cx="200" cy="80"  r="3" fill="#b89968" />
+    <circle cx="100" cy="92"  r="3" fill="#4a6670" />
+    <circle cx="60"  cy="180" r="3" fill="#5d7c6a" />
+    <circle cx="140" cy="240" r="3" fill="#1a1a1a" />
+  </g>
+</svg>
