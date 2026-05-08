@@ -1895,7 +1895,7 @@ function TopNav({ current, setScreen, hasProfile }) {
     { id: "chart",     cn: "盘",  en: "chart"     },
     { id: "chat",      cn: "问",  en: "consult"   },
     { id: "report",    cn: "析",  en: "report"    },
-    { id: "copilot",   cn: "司",  en: "copilot"   },
+    { id: "archive",   cn: "档",  en: "archive"   },
   ];
   const today = new Date().toLocaleDateString("en-US", { year:"numeric", month:"short", day:"2-digit" });
   return (
@@ -3112,12 +3112,12 @@ function ReportScreen({ go }) {
         <div>
           <div className="caps" style={{ fontSize: 10 }}>EXPORT</div>
           <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 24, marginTop: 6, color: "var(--ink-2)" }}>
-            Save this report as PDF, or share with a copilot.
+            Save this report as PDF, or seal it into your archive.
           </div>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
           <button className="btn btn-ghost" onClick={() => window.print()}>导出 PDF · save</button>
-          <button className="btn" onClick={() => go("copilot")}>转交命理师 · to copilot <span className="arr">→</span></button>
+          <button className="btn" onClick={() => go("archive")}>归档 · seal &amp; archive <span className="arr">→</span></button>
         </div>
       </section>
     </div>
@@ -3465,109 +3465,105 @@ window.ReportScreen = ReportScreen;
   </script>
 
   <script type="text/babel">
-// Copilot — B-end practitioner workspace
-function CopilotScreen({ go }) {
-  const clients = [
-    { id: "4f2a91", name: "陈书雅", en: "Chen Shuya", scenario: "事业方向", date: "今日 14:32", status: "draft", flagged: true },
-    { id: "8e1b22", name: "李文渊", en: "Li Wenyuan", scenario: "婚配相合", date: "昨日 10:15", status: "sent" },
-    { id: "2a73d1", name: "周慕清", en: "Zhou Muqing", scenario: "流年财运", date: "5/6 09:20", status: "draft" },
-    { id: "6c08a4", name: "韩书宁", en: "Han Shuning", scenario: "学业方向", date: "5/4 16:40", status: "review" },
-    { id: "9d12fe", name: "赵北辰", en: "Zhao Beichen", scenario: "择吉问事", date: "5/2 11:08", status: "sent" },
-    { id: "3b55c8", name: "苏雨晴", en: "Su Yuqing", scenario: "健康问题", date: "4/29 15:55", status: "flagged", flagged: true },
+// Archive — single-column profile + past readings, editorial style
+function ArchiveScreen({ go }) {
+  const p = SAMPLE_PROFILE;
+  const [date, time] = (p.birth || "").split(" ");
+  const sealedAt = "2026-05-09 14:32";
+  const archiveId = "4f2a91";
+
+  const sessions = [
+    { id: "s-001", date: "2026-05-09", topic: "事业方向之问",  scenarioCn: "事业", scenarioEn: "career",   current: true  },
+    { id: "s-002", date: "2026-04-21", topic: "流年财运之问",  scenarioCn: "财运", scenarioEn: "fortune",  current: false },
+    { id: "s-003", date: "2026-03-15", topic: "关系合相之问",  scenarioCn: "关系", scenarioEn: "relation", current: false },
   ];
-  const [selected, setSelected] = useState("4f2a91");
 
   return (
-    <div className="fade-in" style={{ padding: 0, position: "relative", height: "calc(100vh - 80px)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr 360px", height: "100%", borderTop: "1px solid var(--ink)" }}>
-        {/* Left: client list */}
-        <div style={{ borderRight: "1px solid var(--ink)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div style={{ padding: "20px 24px", borderBottom: "var(--rule)" }}>
-            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>司命台 · COPILOT</div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 6 }}>
-              <span style={{ fontFamily: "var(--serif-cn)", fontSize: 22, fontWeight: 600 }}>客户档案</span>
-              <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{clients.length}</span>
-            </div>
-            <input placeholder="搜索 · search by 名字 / 档号" style={{ marginTop: 14, fontSize: 14 }} />
+    <div className="fade-in screen" style={{ position: "relative", minHeight: "calc(100vh - 80px)" }}>
+      <WatermarkChar char="档" size={620} top={40} right={-60} opacity={0.05} />
+
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "60px 24px 100px" }}>
+        <Lockup cn="档案" en="ARCHIVE" size="lg" />
+        <p style={{ fontFamily: "var(--serif-cn)", fontSize: 14, color: "var(--ink-3)", lineHeight: 1.7, marginTop: 16, maxWidth: 520 }}>
+          一人一档。本命盘已封存，可随时回望；每一次问答按时序入卷。
+        </p>
+
+        {/* Identity */}
+        <div style={{ marginTop: 56, paddingTop: 32, borderTop: "1px solid var(--ink)" }}>
+          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>本命 · NATIVE CHART</div>
+          <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 700, fontSize: 56, lineHeight: 1.05, marginTop: 12, letterSpacing: "-0.005em" }}>
+            {p.name}
           </div>
-          <div style={{ flex: 1, overflowY: "auto" }}>
-            {clients.map(c => (
-              <button key={c.id} onClick={() => setSelected(c.id)} style={{
-                display: "block", width: "100%", textAlign: "left",
-                padding: "16px 24px", border: "none",
-                borderBottom: "var(--rule)",
-                background: selected === c.id ? "color-mix(in oklch, var(--cinnabar) 5%, transparent)" : "transparent",
-                cursor: "pointer",
-                position: "relative",
-                borderLeft: selected === c.id ? "2px solid var(--cinnabar)" : "2px solid transparent",
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                  <span style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 16 }}>{c.name}</span>
-                  <span className="caps" style={{ fontSize: 8, color: statusColor(c.status) }}>{statusLabel(c.status)}</span>
+          <div className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 22, color: "var(--ink-3)", marginTop: 6 }}>
+            {p.en} · born {date} · {p.placeEn}
+          </div>
+        </div>
+
+        {/* Detail rows */}
+        <div style={{ marginTop: 40 }}>
+          <ArchiveRow cn="生辰"   en="DATE OF BIRTH" v={date}     sub="辛未年 · 丙申月 · 丁巳日" first />
+          <ArchiveRow cn="时辰"   en="HOUR"          v={time}     sub="未时 · 真太阳时" />
+          <ArchiveRow cn="出生地" en="BIRTHPLACE"    v={p.place}  sub={p.placeEn} />
+          <ArchiveRow cn="性别"   en="GENDER"        v={p.gender} />
+          <ArchiveRow cn="历法"   en="CALENDAR"      v="阳历"     sub="gregorian · auto-converted" />
+          <ArchiveRow cn="情境"   en="SCENARIO"      v="事业"     sub="career" />
+        </div>
+
+        {/* Seal */}
+        <div style={{ marginTop: 48, paddingTop: 28, borderTop: "1px solid var(--ink)", display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 16 }}>
+          <div>
+            <div className="caps" style={{ fontSize: 10 }}>立档时 · SEALED AT</div>
+            <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 22, marginTop: 4, color: "var(--ink-2)" }}>{sealedAt}</div>
+          </div>
+          <div className="mono" style={{ fontSize: 12, color: "var(--ink-3)", letterSpacing: "0.18em" }}>
+            档号 · #{archiveId}
+          </div>
+        </div>
+
+        {/* Past readings */}
+        <div style={{ marginTop: 80 }}>
+          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>过往 · PAST READINGS</div>
+          <div style={{ fontFamily: "var(--serif-cn)", fontSize: 14, color: "var(--ink-3)", marginTop: 6 }}>
+            {sessions.length} 卷 · {sessions.length} readings
+          </div>
+          <div style={{ marginTop: 20 }}>
+            {sessions.map((s, i) => (
+              <button
+                key={s.id}
+                onClick={() => s.current ? go("chat") : go("report")}
+                style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  padding: "22px 0",
+                  borderTop: i === 0 ? "1px solid var(--ink)" : "none",
+                  borderBottom: "var(--rule)",
+                  background: "transparent", border: "none",
+                  borderTopWidth: i === 0 ? 1 : 0, borderTopStyle: "solid", borderTopColor: "var(--ink)",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16 }}>
+                  <span style={{ fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>{s.topic}</span>
+                  <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em" }}>{s.date}</span>
                 </div>
-                <div className="em" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>{c.en}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                  <span style={{ fontFamily: "var(--serif-cn)", fontSize: 12, color: "var(--ink-2)" }}>{c.scenario}</span>
-                  <span className="mono" style={{ fontSize: 10, color: "var(--ink-4)" }}>{c.date}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 6 }}>
+                  <span className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 13, color: "var(--ink-3)" }}>
+                    {s.scenarioCn} · {s.scenarioEn}
+                  </span>
+                  {s.current
+                    ? <span className="caps" style={{ fontSize: 9, color: "var(--cinnabar)" }}>本次 · current</span>
+                    : <span className="caps" style={{ fontSize: 9, color: "var(--ink-3)" }}>已封 · sealed →</span>}
                 </div>
-                {c.flagged && <div style={{ position: "absolute", top: 16, right: 16, width: 6, height: 6, borderRadius: "50%", background: "var(--cinnabar)" }} />}
               </button>
             ))}
           </div>
-          <div style={{ padding: "16px 24px", borderTop: "1px solid var(--ink)" }}>
-            <button className="btn" style={{ width: "100%", justifyContent: "center" }}>+ 新立档案</button>
-          </div>
         </div>
 
-        {/* Middle: draft editor */}
-        <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div style={{ padding: "20px 32px", borderBottom: "1px solid var(--ink)", display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16 }}>
-            <div>
-              <div className="caps" style={{ fontSize: 10 }}>草稿 · DRAFT · #{selected}</div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginTop: 4 }}>
-                <span style={{ fontFamily: "var(--serif-cn)", fontSize: 28, fontWeight: 700 }}>陈书雅 · 事业方向之问</span>
-                <Chip>auto-saved 14:32</Chip>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn btn-ghost" style={{ padding: "10px 16px", fontSize: 13 }}>预览</button>
-              <button className="btn" style={{ padding: "10px 16px", fontSize: 13 }}>发送 → 客户</button>
-            </div>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: "32px 56px" }}>
-            <DraftEditor />
-          </div>
-        </div>
-
-        {/* Right: knowledge quick-search + flags */}
-        <div style={{ borderLeft: "1px solid var(--ink)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div style={{ padding: "20px 24px", borderBottom: "var(--rule)" }}>
-            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>速查 · CLASSICS LOOKUP</div>
-            <input placeholder="如 · 丁火日主 / yong shen" style={{ marginTop: 14, fontSize: 14 }} />
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
-            <ClassicSnippet src="《滴天髓》" cn="丁火柔中，内性昭融；抱乙而孝，合壬而忠。" en="Ding fire is gentle within, bright at core." />
-            <ClassicSnippet src="《三命通会》" cn="正财格者，宜身旺，喜见食伤；忌比劫夺财。" />
-            <ClassicSnippet src="《紫微斗数全书》" cn="巨门化禄入命宫，主以言谈文字得财，宜师宜匠。" />
-            <ClassicSnippet src="《子平真诠》" cn="用神不可伤，伤之则命浊。" />
-
-            <div style={{ marginTop: 24 }}>
-              <Rule label="VRP 反思镜 · 0 alerts" />
-              <div style={{ marginTop: 14, padding: 14, border: "1px dashed color-mix(in oklch, var(--jade) 50%, transparent)", color: "var(--jade)", fontSize: 13, fontFamily: "var(--mono)", letterSpacing: "0.05em" }}>
-                ✓ 0 FACT_VIOLATION<br />
-                ✓ 0 RULE_NOVEL<br />
-                ✓ 0 OVERCLAIM
-              </div>
-            </div>
-
-            <div style={{ marginTop: 24 }}>
-              <Rule label="合规审查 · safety" />
-              <div style={{ marginTop: 14, fontSize: 13, color: "var(--ink-2)", lineHeight: 1.7 }}>
-                <div>· 红线词检查：<span style={{ color: "var(--jade)" }}>通过</span></div>
-                <div>· 强动作软化：<span style={{ color: "var(--jade)" }}>未触发</span></div>
-                <div>· 心理风险：<span style={{ color: "var(--jade)" }}>无</span></div>
-              </div>
-            </div>
+        {/* Actions */}
+        <div style={{ marginTop: 80, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <button className="btn btn-ghost" onClick={() => go("home")}>← 回首页</button>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button className="btn btn-ghost" onClick={() => go("chart")}>看本命盘 · view chart</button>
+            <button className="btn" onClick={() => go("onboard")}>重立档 · re-establish <span className="arr">→</span></button>
           </div>
         </div>
       </div>
@@ -3575,59 +3571,28 @@ function CopilotScreen({ go }) {
   );
 }
 
-function statusLabel(s) {
-  return ({ draft: "草稿", sent: "已发", review: "审核中", flagged: "复核" })[s];
-}
-function statusColor(s) {
-  return ({ draft: "var(--ink-3)", sent: "var(--jade)", review: "var(--gild)", flagged: "var(--cinnabar)" })[s];
-}
-
-function DraftEditor() {
+function ArchiveRow({ cn, en, v, sub, first }) {
   return (
-    <div style={{ maxWidth: 720 }}>
-      <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>叙事 · NARRATIVE · B-END VOICE</div>
-      <h2 style={{ fontFamily: "var(--serif-cn)", fontSize: 36, fontWeight: 700, margin: "12px 0 0", lineHeight: 1.2 }}>事业方向：以教育为本，以科技为器</h2>
-      <div className="em" style={{ fontSize: 18, color: "var(--ink-3)", marginTop: 8 }}>For Chen Shuya · 1991-08-15 · Beijing</div>
-
-      <div style={{ marginTop: 32, fontFamily: "var(--serif-cn)", fontSize: 18, lineHeight: 1.95, color: "var(--ink)", textWrap: "pretty" }}>
-        <p>书雅你好。这次问的事业方向，是个好问题——好在不是问"我会发财吗"，而是问"该往哪走"。前者只能给一个数，后者可以给一条路。</p>
-        <p>四柱里你是<HighlightChip claim="bazi-1">丁火日主</HighlightChip>，火旺金弱，正财格成。我读到的第一层意思是：<strong>你天生该靠"技艺"生财，不是靠"押注"</strong>。这个技艺可以是教学，可以是工程，可以是写作——但一定是可重复、可演示的东西。</p>
-        <p>紫微里<HighlightChip claim="ziwei-1">巨门化禄入命</HighlightChip>，是言谈文字立身的强信号，与八字所言"技艺"叠合。占星上 9 宫狮子群星把这股能量推向"学问与远方"，但 6 宫处女又把它拉回"工艺与服务"——这就是中西交叉里我们标的<HighlightChip claim="cross-1">complementary</HighlightChip>那一项：把"教育"作为内核，把"科技"作为工具。</p>
-        <p>具体节奏：上半年至立秋前后宜定方向、签约慎；下半年丁火得禄，是动手的窗口。文昌化忌入迁移宫，远行签约务必带律师。</p>
+    <div style={{
+      display: "grid", gridTemplateColumns: "180px 1fr", gap: 24,
+      padding: "18px 0",
+      borderTop: first ? "1px solid var(--ink)" : "none",
+      borderBottom: "var(--rule)",
+      alignItems: "baseline",
+    }}>
+      <div>
+        <div style={{ fontFamily: "var(--serif-cn)", fontSize: 15, color: "var(--ink-2)" }}>{cn}</div>
+        <div className="caps" style={{ fontSize: 9, marginTop: 2 }}>{en}</div>
       </div>
-
-      <div style={{ marginTop: 40, padding: 20, background: "color-mix(in oklch, var(--cinnabar) 4%, transparent)", borderLeft: "2px solid var(--cinnabar)" }}>
-        <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>命理师备注 · MASTER NOTE · 不发送</div>
-        <div style={{ fontSize: 14, color: "var(--ink-2)", marginTop: 8, lineHeight: 1.7 }}>
-          客户提到"换方向"——情绪略焦虑。建议下次会面时先问一句"这个想法多久了"，再切入命盘。
-        </div>
+      <div>
+        <div style={{ fontFamily: "var(--serif-cn)", fontSize: 18, fontWeight: 500, color: "var(--ink)" }}>{v}</div>
+        {sub && <div className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 13, color: "var(--ink-3)", marginTop: 3 }}>{sub}</div>}
       </div>
     </div>
   );
 }
 
-function HighlightChip({ children, claim }) {
-  return (
-    <span style={{
-      background: "color-mix(in oklch, var(--cinnabar) 8%, transparent)",
-      borderBottom: "1px dashed var(--cinnabar)",
-      padding: "1px 4px",
-      cursor: "pointer",
-    }} title={`claim ref: ${claim}`}>{children}</span>
-  );
-}
-
-function ClassicSnippet({ src, cn, en }) {
-  return (
-    <div style={{ padding: "14px 0", borderBottom: "var(--rule)" }}>
-      <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)" }}>{src}</div>
-      <div style={{ fontFamily: "var(--serif-cn)", fontSize: 15, lineHeight: 1.7, color: "var(--ink)", marginTop: 6 }}>{cn}</div>
-      {en && <div className="em" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>{en}</div>}
-    </div>
-  );
-}
-
-window.CopilotScreen = CopilotScreen;
+window.ArchiveScreen = ArchiveScreen;
 
   </script>
 
@@ -3656,17 +3621,17 @@ function App() {
 
       <main data-screen-label={({
         home: "01 Landing", onboard: "02 Onboarding", chart: "03 Chart",
-        chat: "04 Consult", report: "05 Report", copilot: "06 Copilot",
+        chat: "04 Consult", report: "05 Report", archive: "06 Archive",
       })[screen]}>
         {screen === "home"    && <LandingScreen go={go} />}
         {screen === "onboard" && <OnboardingScreen go={go} onComplete={() => setHasProfile(true)} />}
         {screen === "chart"   && <ChartScreen go={go} />}
         {screen === "chat"    && <ChatScreen go={go} animSpeed={tweaks.animSpeed || 1} />}
         {screen === "report"  && <ReportScreen go={go} />}
-        {screen === "copilot" && <CopilotScreen go={go} />}
+        {screen === "archive" && <ArchiveScreen go={go} />}
       </main>
 
-      {screen !== "copilot" && screen !== "chat" && <Footer />}
+      {screen !== "chat" && <Footer />}
 
       <TweaksPanel title="Tweaks · 调">
         <TweakSection label="外观 · Appearance" />
@@ -3688,7 +3653,7 @@ function App() {
         <TweakButton label="→ 盘 chart"    onClick={() => go("chart")} />
         <TweakButton label="→ 问 consult"  onClick={() => go("chat")} />
         <TweakButton label="→ 析 report"   onClick={() => go("report")} />
-        <TweakButton label="→ 司 copilot"  onClick={() => go("copilot")} />
+        <TweakButton label="→ 档 archive"  onClick={() => go("archive")} />
       </TweaksPanel>
     </div>
   );
