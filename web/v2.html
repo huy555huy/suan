@@ -1992,12 +1992,7 @@ function LandingScreen({ go }) {
               <button className="btn" onClick={() => go("onboard")}>立档 · 开始 <span className="arr">→</span></button>
               <button className="btn btn-ghost" onClick={() => go("chat")}>直接发问 · ask without a chart</button>
             </div>
-            <div style={{ marginTop: 56, display: "flex", gap: 36, flexWrap: "wrap" }}>
-              <Stat n="8" label="Expert agents · 路推理" />
-              <Stat n="26" label="Topic alignment · 标准对齐" />
-              <Stat n="81" label="Classics · 公有领域典籍" />
-              <Stat n="61" label="Rules · 规则" />
-            </div>
+            {/* stats 已删 — 数字陈列像 SaaS 仪表盘，与编辑设计气质冲突 */}
           </div>
           {/* right: vertical seal column — quiet, brand-forward */}
           <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 0, padding: "20px 0" }}>
@@ -2076,25 +2071,23 @@ function LandingScreen({ go }) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 0, position: "relative" }}>
           {[
-            { cn: "分类",   en: "Classify",     ms: "60ms" },
-            { cn: "起盘",   en: "Compute",      ms: "142ms" },
-            { cn: "推理",   en: "8 Experts",    ms: "~70s" },
-            { cn: "校验",   en: "Verifier",     ms: "~10s" },
-            { cn: "小综",   en: "Sub-synth",    ms: "~6s" },
-            { cn: "对齐",   en: "Align",        ms: "~5s" },
-            { cn: "判官",   en: "Judge",        ms: "~4s" },
+            { cn: "分类",   en: "Classify"   },
+            { cn: "起盘",   en: "Compute"    },
+            { cn: "推理",   en: "8 Experts"  },
+            { cn: "校验",   en: "Verifier"   },
+            { cn: "小综",   en: "Sub-synth"  },
+            { cn: "对齐",   en: "Align"      },
+            { cn: "判官",   en: "Judge"      },
           ].map((p, i) => (
             <div key={i} style={{
-              padding: "24px 16px",
+              padding: "28px 16px",
               borderLeft: i === 0 ? "1px solid var(--ink)" : "var(--rule)",
               borderRight: i === 6 ? "1px solid var(--ink)" : "none",
               borderTop: "1px solid var(--ink)", borderBottom: "1px solid var(--ink)",
               position: "relative",
             }}>
-              <div className="mono" style={{ fontSize: 9, color: "var(--ink-4)", letterSpacing: "0.18em" }}>L{i + 1}</div>
-              <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 22, marginTop: 8 }}>{p.cn}</div>
-              <div className="em" style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 2 }}>{p.en}</div>
-              <div className="mono" style={{ fontSize: 10, color: "var(--cinnabar)", marginTop: 12 }}>{p.ms}</div>
+              <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 22 }}>{p.cn}</div>
+              <div className="em" style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 4 }}>{p.en}</div>
             </div>
           ))}
         </div>
@@ -3108,10 +3101,8 @@ function ReportScreen({ go }) {
           <div className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 22, color: "var(--ink-3)", marginTop: 28, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
             Education at the core, technology as the instrument, scholarship as the distance.
           </div>
-          <div style={{ marginTop: 48, display: "flex", justifyContent: "center", gap: 48 }}>
-            <BigStat label="CONFIDENCE" v="HIGH" />
-            <BigStat label="EXPERTS · 8" v="all aligned" />
-            <BigStat label="VRP CHECKS" v="42 / 42" />
+          <div style={{ marginTop: 36, fontFamily: "var(--serif-cn)", fontSize: 14, color: "var(--ink-3)", letterSpacing: "0.18em" }}>
+            置信 · 高　·　八路皆指　·　VRP 全过
           </div>
         </div>
       </section>
