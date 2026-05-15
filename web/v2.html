@@ -1888,8 +1888,9 @@ function FrameBox({ children, style }) {
 }
 
 // Top nav
-function TopNav({ current, setScreen, hasProfile }) {
-  const links = [
+function TopNav({ current, setScreen, hasProfile, profile }) {
+  // Before 立档: only home + onboard visible. After: full nav.
+  const allLinks = [
     { id: "home",      cn: "起",  en: "home"      },
     { id: "onboard",   cn: "立",  en: "onboard"   },
     { id: "chart",     cn: "盘",  en: "chart"     },
@@ -1897,6 +1898,7 @@ function TopNav({ current, setScreen, hasProfile }) {
     { id: "report",    cn: "析",  en: "report"    },
     { id: "archive",   cn: "档",  en: "archive"   },
   ];
+  const links = hasProfile ? allLinks : allLinks.slice(0, 2);
   const today = new Date().toLocaleDateString("en-US", { year:"numeric", month:"short", day:"2-digit" });
   return (
     <div className="topnav">
@@ -1919,7 +1921,7 @@ function TopNav({ current, setScreen, hasProfile }) {
         <div className="stamp" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
           <span>{today}</span>
           <span style={{ color: hasProfile ? "var(--cinnabar)" : "var(--ink-4)" }}>
-            {hasProfile ? `· 档 ${SAMPLE_PROFILE.name}` : "· 未立档"}
+            {hasProfile ? `· 档 ${profile?.name || ""}` : "· 未立档"}
           </span>
         </div>
       </div>
@@ -1958,7 +1960,7 @@ Object.assign(window, {
 
   <script type="text/babel">
 // Landing screen — animated centerpiece + bold type
-function LandingScreen({ go }) {
+function LandingScreen({ go, hasProfile, profile }) {
   return (
     <div className="fade-in">
       <section style={{ position: "relative", padding: "40px var(--screen-pad) 80px", overflow: "hidden", minHeight: "88vh" }}>
@@ -1989,10 +1991,24 @@ function LandingScreen({ go }) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 14, marginTop: 44, flexWrap: "wrap" }}>
-              <button className="btn" onClick={() => go("onboard")}>立档 · 开始 <span className="arr">→</span></button>
-              <button className="btn btn-ghost" onClick={() => go("chat")}>直接发问 · ask without a chart</button>
+              {hasProfile ? (
+                <>
+                  <button className="btn" onClick={() => go("chart")}>看本命盘 · view chart <span className="arr">→</span></button>
+                  <button className="btn btn-ghost" onClick={() => go("chat")}>问 · consult</button>
+                  <button className="btn btn-ghost" onClick={() => go("archive")}>档 · archive</button>
+                </>
+              ) : (
+                <>
+                  <button className="btn" onClick={() => go("onboard")}>立档 · 开始 <span className="arr">→</span></button>
+                  <button className="btn btn-ghost" onClick={() => go("onboard")}>看示例 · see demo</button>
+                </>
+              )}
             </div>
-            {/* stats 已删 — 数字陈列像 SaaS 仪表盘，与编辑设计气质冲突 */}
+            {hasProfile && profile?.name && (
+              <div className="em" style={{ marginTop: 28, fontSize: 14, color: "var(--ink-3)" }}>
+                · 已立档 · {profile.name} · {(profile.birth || "").split(" ")[0]} · {profile.place}
+              </div>
+            )}
           </div>
           {/* right: vertical seal column — quiet, brand-forward */}
           <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 0, padding: "20px 0" }}>
@@ -2143,18 +2159,38 @@ window.LandingScreen = LandingScreen;
 
   <script type="text/babel">
 // Onboarding — birth chart entry, 3 steps
-function OnboardingScreen({ go, onComplete }) {
+function OnboardingScreen({ go, sealProfile, initialProfile, initialQuestion }) {
   const [step, setStep] = useState(1);
-  const [data, setData] = useState({
-    name: "", gender: "女", date: "", time: "", place: "", scenario: "general",
-    calendar: "solar", trueSolar: true,
+  const [data, setData] = useState(() => {
+    // Pre-fill from existing profile if user is re-立档ing
+    const [d = "", t = ""] = (initialProfile?.birth || "").split(" ");
+    return {
+      name:     initialProfile?.name === "陈书雅" ? "" : (initialProfile?.name || ""),
+      gender:   initialProfile?.gender || "女",
+      date:     initialProfile?.name === "陈书雅" ? "" : d,
+      time:     initialProfile?.name === "陈书雅" ? "" : t,
+      place:    initialProfile?.name === "陈书雅" ? "" : (initialProfile?.place || ""),
+      scenario: initialProfile?.scenario || "general",
+      calendar: "solar", trueSolar: true,
+      question: initialQuestion === SAMPLE_QUESTION ? "" : (initialQuestion || ""),
+    };
   });
 
   const fillSample = () => {
     setData({
       name: "陈书雅", gender: "女", date: "1991-08-15", time: "14:30",
       place: "北京", scenario: "career", calendar: "solar", trueSolar: true,
+      question: SAMPLE_QUESTION,
     });
+  };
+
+  // Validation: 立档 requires at least name + date + time + place + a question.
+  const canSeal = data.name.trim() && data.date && data.time && data.place.trim() && data.question.trim();
+
+  const onSeal = () => {
+    if (!canSeal) return;
+    sealProfile(data);
+    go("chart");
   };
 
   const stepLabels = [
@@ -2263,8 +2299,10 @@ function OnboardingScreen({ go, onComplete }) {
           {step === 3 && (
             <div>
               <Field label="本次议题" en="QUESTION FOR THIS SESSION" full>
-                <textarea rows={4} placeholder="如 · 今年事业怎么走？我想换一个方向，但不确定该走科技还是教育。"
-                  defaultValue={SAMPLE_QUESTION}
+                <textarea rows={4}
+                  placeholder="如 · 今年事业怎么走？我想换一个方向，但不确定该走科技还是教育。"
+                  value={data.question}
+                  onChange={e => setData({ ...data, question: e.target.value })}
                   style={{ resize: "none", fontSize: 17, lineHeight: 1.6 }} />
               </Field>
               <div style={{ marginTop: 32, padding: 20, background: "color-mix(in oklch, var(--cinnabar) 4%, transparent)", border: "1px dashed color-mix(in oklch, var(--cinnabar) 30%, transparent)" }}>
@@ -2273,6 +2311,11 @@ function OnboardingScreen({ go, onComplete }) {
                   涉及医疗、法律、自残相关的问题，系统会自动切换到专业建议或心理援助热线。这不是限制，是边界。
                 </div>
               </div>
+              {!canSeal && (
+                <div className="em" style={{ marginTop: 20, fontSize: 13, color: "var(--ink-3)" }}>
+                  · 请补全：姓名 / 生日 / 时辰 / 出生地 / 本次议题
+                </div>
+              )}
             </div>
           )}
 
@@ -2286,8 +2329,8 @@ function OnboardingScreen({ go, onComplete }) {
                 继 · next <span className="arr">→</span>
               </button>
             ) : (
-              <button className="btn" onClick={() => { onComplete(); go("chart"); }}>
-                成档 · seal & continue <span className="arr">→</span>
+              <button className="btn" onClick={onSeal} disabled={!canSeal} style={{ opacity: canSeal ? 1 : 0.45, cursor: canSeal ? "pointer" : "not-allowed" }}>
+                成档 · seal &amp; continue <span className="arr">→</span>
               </button>
             )}
           </div>
@@ -2336,8 +2379,10 @@ window.OnboardingScreen = OnboardingScreen;
 
   <script type="text/babel">
 // Chart visualization — BaZi pillars + ZiWei + astrology + numerology
-function ChartScreen({ go }) {
+function ChartScreen({ go, profile }) {
   const [tab, setTab] = useState("bazi");
+  const p = profile || SAMPLE_PROFILE;
+  const placeLine = p.placeEn && p.placeEn !== p.place ? `${p.place} · ${p.placeEn}` : p.place;
 
   return (
     <div className="fade-in screen" style={{ position: "relative" }}>
@@ -2345,18 +2390,18 @@ function ChartScreen({ go }) {
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "end", borderBottom: "1px solid var(--ink)", paddingBottom: 24 }}>
           <div>
-            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>盘 · CHART · {SAMPLE_PROFILE.scenario.toUpperCase()}</div>
+            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>盘 · CHART · {(p.scenario || "general").toUpperCase()}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 24, marginTop: 14, flexWrap: "wrap" }}>
               <h1 style={{ fontFamily: "var(--serif-cn)", fontWeight: 700, fontSize: 64, margin: 0, letterSpacing: "0.04em" }}>
-                {SAMPLE_PROFILE.name}
+                {p.name}
               </h1>
-              <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 28, color: "var(--ink-3)" }}>{SAMPLE_PROFILE.en}</div>
-              <div className="mono" style={{ fontSize: 12, color: "var(--ink-3)", letterSpacing: "0.18em" }}>{SAMPLE_PROFILE.pinyin}</div>
+              {p.en && p.en !== p.name && <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 28, color: "var(--ink-3)" }}>{p.en}</div>}
+              {p.pinyin && <div className="mono" style={{ fontSize: 12, color: "var(--ink-3)", letterSpacing: "0.18em" }}>{p.pinyin}</div>}
             </div>
             <div style={{ display: "flex", gap: 32, marginTop: 18, flexWrap: "wrap" }}>
-              <Meta cn="生于" en="BORN" v={SAMPLE_PROFILE.birth} />
-              <Meta cn="出生地" en="PLACE" v={`${SAMPLE_PROFILE.place} · ${SAMPLE_PROFILE.placeEn}`} />
-              <Meta cn="性别" en="GENDER" v={SAMPLE_PROFILE.gender} />
+              <Meta cn="生于" en="BORN" v={p.birth} />
+              <Meta cn="出生地" en="PLACE" v={placeLine} />
+              <Meta cn="性别" en="GENDER" v={p.gender} />
               <Meta cn="计算" en="COMPUTE" v="142ms · pure python" />
             </div>
           </div>
@@ -2387,7 +2432,7 @@ function ChartScreen({ go }) {
 
       <div style={{ maxWidth: 1400, margin: "40px auto 0" }}>
         {tab === "bazi" && <BaziView />}
-        {tab === "ziwei" && <ZiweiView />}
+        {tab === "ziwei" && <ZiweiView profile={p} />}
         {tab === "astro" && <AstroView />}
         {tab === "numero" && <NumeroView />}
         {tab === "all" && <AllView />}
@@ -2499,7 +2544,7 @@ function KV({ k, en, v, accent }) {
   );
 }
 
-function ZiweiView() {
+function ZiweiView({ profile }) {
   // simplified 12-palace grid (4x4 with center 2x2 info)
   const palaces = [
     "命宫","父母","福德","田宅",
@@ -2530,7 +2575,7 @@ function ZiweiView() {
                 {i === 5 ? (
                   <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", alignItems: "center", gap: 8 }}>
                     <div className="caps" style={{ fontSize: 9 }}>命主 · CENTER</div>
-                    <div style={{ fontFamily: "var(--serif-cn)", fontSize: 36, fontWeight: 700 }}>{SAMPLE_PROFILE.name}</div>
+                    <div style={{ fontFamily: "var(--serif-cn)", fontSize: 36, fontWeight: 700 }}>{profile?.name || SAMPLE_PROFILE.name}</div>
                     <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{ZIWEI.局}</div>
                     <div className="hairline" style={{ width: "60%", margin: "8px 0" }} />
                     <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>命: {ZIWEI.ming} · 身: {ZIWEI.shen}</div>
@@ -2708,11 +2753,32 @@ window.ChartScreen = ChartScreen;
 
   <script type="text/babel">
 // Chat — animated SSE streaming consultation
-function ChatScreen({ go, animSpeed = 1 }) {
+function ChatScreen({ go, animSpeed = 1, profile, question }) {
+  const p = profile || SAMPLE_PROFILE;
+  const q = question || SAMPLE_QUESTION;
+  const [, time] = (p.birth || "").split(" ");
+  const sc = SCENARIO_MAP[p.scenario] || SCENARIO_MAP.general;
+
   const [tick, setTick] = useState(0);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
   const [narrCharCount, setNarrCharCount] = useState(0);
+
+  // multi-turn follow-up state
+  const [followUps, setFollowUps] = useState([]);
+  const [followUp, setFollowUp] = useState("");
+  const sendFollowUp = () => {
+    const txt = followUp.trim();
+    if (!txt) return;
+    const idx = followUps.length;
+    setFollowUps(prev => [...prev, { q: txt, a: null }]);
+    setFollowUp("");
+    setTimeout(() => {
+      setFollowUps(prev => prev.map((fu, i) => i === idx
+        ? { ...fu, a: `这个追问指向「${txt.slice(0, 20)}${txt.length > 20 ? "…" : ""}」。按现在的盘相，先回到核心结论——${verdict?.core || "正在重读"}。再细化要看流月，可在「盘 · 八字」里查月度推演；若想换一个角度，可以「重跑」一次。` }
+        : fu));
+    }, 1200 / animSpeed);
+  };
 
   // events that have fired
   const events = useMemo(() => STREAM.filter(e => e.t <= tick), [tick]);
@@ -2774,13 +2840,13 @@ function ChatScreen({ go, animSpeed = 1 }) {
         <div>
           {/* ask */}
           <div style={{ borderBottom: "1px solid var(--ink)", paddingBottom: 32 }}>
-            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>问 · CONSULT · session #4f2a91</div>
+            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>问 · CONSULT · session #{p.name?.slice(0, 4) || "demo"}</div>
             <div style={{ display: "flex", gap: 20, marginTop: 18, alignItems: "flex-start" }}>
               <Seal char="问" size={48} rotate={-3} />
               <div style={{ flex: 1 }}>
-                <div className="caps" style={{ fontSize: 9 }}>{SAMPLE_PROFILE.name} · 14:30 · 北京 · career</div>
+                <div className="caps" style={{ fontSize: 9 }}>{p.name} · {time || "—"} · {p.place} · {sc.en}</div>
                 <div style={{ fontFamily: "var(--serif-cn)", fontSize: 30, fontWeight: 500, lineHeight: 1.4, marginTop: 10, color: "var(--ink)" }}>
-                  {SAMPLE_QUESTION}
+                  {q}
                 </div>
               </div>
             </div>
@@ -2870,10 +2936,47 @@ function ChatScreen({ go, animSpeed = 1 }) {
           )}
 
           {done && narrCharCount >= NARRATIVE_TEXT.length && (
-            <div style={{ marginTop: 48, display: "flex", gap: 14, flexWrap: "wrap" }}>
-              <button className="btn" onClick={() => go("report")}>生成深度研报 · deep report <span className="arr">→</span></button>
-              <button className="btn btn-ghost" onClick={startRun}>↻ 重跑</button>
-            </div>
+            <>
+              {/* follow-up thread */}
+              {followUps.map((fu, i) => (
+                <div key={i} style={{ marginTop: 32, paddingTop: 28, borderTop: "var(--rule)" }}>
+                  <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)" }}>追问 · FOLLOW-UP {String(i + 1).padStart(2, "0")}</div>
+                  <div style={{ fontFamily: "var(--serif-cn)", fontSize: 22, fontWeight: 500, lineHeight: 1.45, marginTop: 10, color: "var(--ink)" }}>{fu.q}</div>
+                  {fu.a ? (
+                    <div style={{ marginTop: 16, paddingLeft: 24, borderLeft: "2px solid var(--cinnabar)", fontFamily: "var(--serif-cn)", fontSize: 16, lineHeight: 1.9, color: "var(--ink-2)", maxWidth: 740 }}>
+                      {fu.a}
+                    </div>
+                  ) : (
+                    <div className="em" style={{ marginTop: 12, fontSize: 13, color: "var(--ink-3)", display: "flex", alignItems: "center", gap: 10 }}>
+                      <Spinner /> 正在重新调度
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* follow-up input */}
+              <div style={{ marginTop: 48, paddingTop: 28, borderTop: "1px solid var(--ink)" }}>
+                <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>追问 · ASK FOLLOW-UP</div>
+                <textarea
+                  rows={3}
+                  value={followUp}
+                  onChange={e => setFollowUp(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendFollowUp(); }}
+                  placeholder="如 · 这个判词里说的「下半年宜动手」具体几月？"
+                  style={{ marginTop: 12, width: "100%", fontSize: 16, lineHeight: 1.65, resize: "none" }}
+                />
+                <div style={{ marginTop: 12, display: "flex", gap: 14, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
+                  <span className="em" style={{ fontSize: 12, color: "var(--ink-4)" }}>⌘/Ctrl + Enter 发送</span>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <button className="btn btn-ghost" onClick={startRun}>↻ 重跑</button>
+                    <button className="btn btn-ghost" onClick={() => go("report")}>生成深度研报 · deep report</button>
+                    <button className="btn" onClick={sendFollowUp} disabled={!followUp.trim()} style={{ opacity: followUp.trim() ? 1 : 0.45, cursor: followUp.trim() ? "pointer" : "not-allowed" }}>
+                      发送 · ask <span className="arr">→</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -2989,11 +3092,11 @@ window.ChatScreen = ChatScreen;
 
   <script type="text/babel">
 // Report — long-scroll deep research report
-function ReportScreen({ go }) {
+function ReportScreen({ go, profile }) {
   return (
     <div className="fade-in" style={{ position: "relative", background: "var(--paper)" }}>
       {/* Cover */}
-      <ReportCover />
+      <ReportCover profile={profile} />
 
       {/* TOC */}
       <ReportTOC />
@@ -3124,7 +3227,12 @@ function ReportScreen({ go }) {
   );
 }
 
-function ReportCover() {
+function ReportCover({ profile }) {
+  const p = profile || SAMPLE_PROFILE;
+  const sc = SCENARIO_MAP[p.scenario] || SCENARIO_MAP.general;
+  const titleCn = `${sc.cn}方向之问`;
+  const titleEn = `On the question of ${sc.en} direction`;
+  const archiveId = (p.name || "demo").slice(0, 4).toLowerCase() + "·" + (p.birth || "").slice(0, 4);
   return (
     <section style={{ position: "relative", padding: "80px var(--screen-pad) 100px", borderBottom: "1px solid var(--ink)", overflow: "hidden" }}>
       <WatermarkChar char="析" size={680} top={-100} right={-60} opacity={0.05} />
@@ -3132,15 +3240,15 @@ function ReportCover() {
         <div>
           <div className="caps" style={{ fontSize: 11, color: "var(--cinnabar)" }}>深度研报 · DEEP REPORT · NO. 0042</div>
           <h1 style={{ fontFamily: "var(--serif-cn)", fontWeight: 700, fontSize: "clamp(56px, 7.5vw, 112px)", lineHeight: 1.05, margin: "24px 0 0", letterSpacing: "-0.01em", textWrap: "balance" }}>
-            事业方向之问<br /><span style={{ color: "var(--cinnabar)" }}>—— 陈书雅</span>
+            {titleCn}<br /><span style={{ color: "var(--cinnabar)" }}>—— {p.name}</span>
           </h1>
           <div className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 26, color: "var(--ink-2)", marginTop: 24 }}>
-            On the question of vocational direction · Chen Shuya
+            {titleEn}{p.en && p.en !== p.name ? ` · ${p.en}` : ""}
           </div>
           <div style={{ marginTop: 48, display: "flex", gap: 32, flexWrap: "wrap" }}>
-            <Meta cn="档号" en="RECORD" v="#4f2a91" />
-            <Meta cn="生于" en="BORN" v={SAMPLE_PROFILE.birth} />
-            <Meta cn="成稿" en="ISSUED" v="2026-05-08" />
+            <Meta cn="档号" en="RECORD" v={`#${archiveId}`} />
+            <Meta cn="生于" en="BORN" v={p.birth} />
+            <Meta cn="成稿" en="ISSUED" v={new Date().toISOString().slice(0, 10)} />
             <Meta cn="本数" en="EDITION" v="MMXXVI · 一" />
           </div>
         </div>
@@ -3466,17 +3574,15 @@ window.ReportScreen = ReportScreen;
 
   <script type="text/babel">
 // Archive — single-column profile + past readings, editorial style
-function ArchiveScreen({ go }) {
-  const p = SAMPLE_PROFILE;
+function ArchiveScreen({ go, profile, sessions, hasProfile }) {
+  const p = profile || SAMPLE_PROFILE;
   const [date, time] = (p.birth || "").split(" ");
-  const sealedAt = "2026-05-09 14:32";
-  const archiveId = "4f2a91";
-
-  const sessions = [
-    { id: "s-001", date: "2026-05-09", topic: "事业方向之问",  scenarioCn: "事业", scenarioEn: "career",   current: true  },
-    { id: "s-002", date: "2026-04-21", topic: "流年财运之问",  scenarioCn: "财运", scenarioEn: "fortune",  current: false },
-    { id: "s-003", date: "2026-03-15", topic: "关系合相之问",  scenarioCn: "关系", scenarioEn: "relation", current: false },
-  ];
+  const sealedAt = hasProfile
+    ? (sessions?.[0]?.date || new Date().toISOString().slice(0, 10))
+    : "2026-05-09 14:32";
+  const archiveId = ((p.name || "demo").slice(0, 4).toLowerCase() + "·" + (p.birth || "").slice(0, 4)) || "demo";
+  const sc = SCENARIO_MAP[p.scenario] || SCENARIO_MAP.general;
+  const sessionList = sessions || [];
 
   return (
     <div className="fade-in screen" style={{ position: "relative", minHeight: "calc(100vh - 80px)" }}>
@@ -3495,18 +3601,18 @@ function ArchiveScreen({ go }) {
             {p.name}
           </div>
           <div className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 22, color: "var(--ink-3)", marginTop: 6 }}>
-            {p.en} · born {date} · {p.placeEn}
+            {p.en && p.en !== p.name ? `${p.en} · ` : ""}born {date} · {p.placeEn || p.place}
           </div>
         </div>
 
         {/* Detail rows */}
         <div style={{ marginTop: 40 }}>
-          <ArchiveRow cn="生辰"   en="DATE OF BIRTH" v={date}     sub="辛未年 · 丙申月 · 丁巳日" first />
-          <ArchiveRow cn="时辰"   en="HOUR"          v={time}     sub="未时 · 真太阳时" />
-          <ArchiveRow cn="出生地" en="BIRTHPLACE"    v={p.place}  sub={p.placeEn} />
+          <ArchiveRow cn="生辰"   en="DATE OF BIRTH" v={date}     sub={p.name === "陈书雅" ? "辛未年 · 丙申月 · 丁巳日" : null} first />
+          <ArchiveRow cn="时辰"   en="HOUR"          v={time}     sub="真太阳时已校正" />
+          <ArchiveRow cn="出生地" en="BIRTHPLACE"    v={p.place}  sub={p.placeEn !== p.place ? p.placeEn : null} />
           <ArchiveRow cn="性别"   en="GENDER"        v={p.gender} />
           <ArchiveRow cn="历法"   en="CALENDAR"      v="阳历"     sub="gregorian · auto-converted" />
-          <ArchiveRow cn="情境"   en="SCENARIO"      v="事业"     sub="career" />
+          <ArchiveRow cn="情境"   en="SCENARIO"      v={sc.cn}    sub={sc.en} />
         </div>
 
         {/* Seal */}
@@ -3524,10 +3630,10 @@ function ArchiveScreen({ go }) {
         <div style={{ marginTop: 80 }}>
           <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>过往 · PAST READINGS</div>
           <div style={{ fontFamily: "var(--serif-cn)", fontSize: 14, color: "var(--ink-3)", marginTop: 6 }}>
-            {sessions.length} 卷 · {sessions.length} readings
+            {sessionList.length} 卷 · {sessionList.length} readings
           </div>
           <div style={{ marginTop: 20 }}>
-            {sessions.map((s, i) => (
+            {sessionList.map((s, i) => (
               <button
                 key={s.id}
                 onClick={() => s.current ? go("chat") : go("report")}
@@ -3597,11 +3703,50 @@ window.ArchiveScreen = ArchiveScreen;
   </script>
 
   <script type="text/babel">
+// scenario code → bilingual labels
+const SCENARIO_MAP = {
+  general:  { cn: "通览", en: "general" },
+  career:   { cn: "事业", en: "career" },
+  relation: { cn: "关系", en: "relation" },
+  study:    { cn: "学业", en: "study" },
+  health:   { cn: "安康", en: "health" },
+};
+
 // Root app — wires it all up
 function App() {
   const [screen, setScreen] = useState("home");
-  const [hasProfile, setHasProfile] = useState(true); // pre-loaded sample
+
+  // Persisted state (localStorage). Default = SAMPLE so a fresh visitor sees
+  // the full demo without an empty shell. Once user 立档s, their data wins.
+  const [profile, setProfile] = useState(() => {
+    try { const s = localStorage.getItem("suan_profile"); if (s) return JSON.parse(s); } catch {}
+    return SAMPLE_PROFILE;
+  });
+  const [question, setQuestion] = useState(() => {
+    try { const s = localStorage.getItem("suan_question"); if (s) return s; } catch {}
+    return SAMPLE_QUESTION;
+  });
+  const [sessions, setSessions] = useState(() => {
+    try { const s = localStorage.getItem("suan_sessions"); if (s) return JSON.parse(s); } catch {}
+    return [
+      { id: "s-001", date: "2026-05-09", topic: "事业方向之问", scenarioCn: "事业", scenarioEn: "career",   current: true  },
+      { id: "s-002", date: "2026-04-21", topic: "流年财运之问", scenarioCn: "财运", scenarioEn: "fortune",  current: false },
+      { id: "s-003", date: "2026-03-15", topic: "关系合相之问", scenarioCn: "关系", scenarioEn: "relation", current: false },
+    ];
+  });
+
+  // hasProfile = user has explicitly 立档 (not just viewing demo)
+  const [hasProfile, setHasProfile] = useState(() => {
+    try { return localStorage.getItem("suan_sealed") === "1"; } catch { return false; }
+  });
+
   const [tweaks, setTweaks] = useTweaks(window.__TWEAK_DEFAULTS);
+
+  // persist
+  useEffect(() => { try { localStorage.setItem("suan_profile", JSON.stringify(profile)); } catch {} }, [profile]);
+  useEffect(() => { try { localStorage.setItem("suan_question", question); } catch {} }, [question]);
+  useEffect(() => { try { localStorage.setItem("suan_sessions", JSON.stringify(sessions)); } catch {} }, [sessions]);
+  useEffect(() => { try { localStorage.setItem("suan_sealed", hasProfile ? "1" : "0"); } catch {} }, [hasProfile]);
 
   // sync body data attrs from tweaks
   useEffect(() => {
@@ -3615,20 +3760,55 @@ function App() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
+  // Called when user clicks 成档 in onboarding. data = full form snapshot.
+  const sealProfile = (data) => {
+    const newProfile = {
+      name:    data.name?.trim() || "未署名",
+      pinyin:  "",
+      en:      data.name?.trim() || "—",
+      gender:  data.gender || "",
+      birth:   `${data.date} ${data.time}`,
+      place:   data.place?.trim() || "—",
+      placeEn: data.place?.trim() || "—",
+      scenario: data.scenario || "general",
+    };
+    setProfile(newProfile);
+    if (data.question) setQuestion(data.question);
+    // prepend new session, mark old current ones as sealed
+    const today = new Date().toISOString().slice(0, 10);
+    const topic = (data.question || question || "").slice(0, 18) + (data.question?.length > 18 ? "…" : "");
+    const sc = SCENARIO_MAP[data.scenario] || SCENARIO_MAP.general;
+    setSessions(prev => [
+      { id: "s-" + Date.now().toString(36), date: today, topic: topic || "立档", scenarioCn: sc.cn, scenarioEn: sc.en, current: true },
+      ...prev.map(s => ({ ...s, current: false })),
+    ]);
+    setHasProfile(true);
+  };
+
+  const resetAll = () => {
+    try {
+      localStorage.removeItem("suan_profile");
+      localStorage.removeItem("suan_question");
+      localStorage.removeItem("suan_sessions");
+      localStorage.removeItem("suan_sealed");
+    } catch {}
+    window.location.reload();
+  };
+
   return (
     <div style={{ minHeight: "100vh" }}>
-      <TopNav current={screen} setScreen={go} hasProfile={hasProfile} />
+      <TopNav current={screen} setScreen={go} hasProfile={hasProfile} profile={profile} />
 
       <main data-screen-label={({
         home: "01 Landing", onboard: "02 Onboarding", chart: "03 Chart",
         chat: "04 Consult", report: "05 Report", archive: "06 Archive",
       })[screen]}>
-        {screen === "home"    && <LandingScreen go={go} />}
-        {screen === "onboard" && <OnboardingScreen go={go} onComplete={() => setHasProfile(true)} />}
-        {screen === "chart"   && <ChartScreen go={go} />}
-        {screen === "chat"    && <ChatScreen go={go} animSpeed={tweaks.animSpeed || 1} />}
-        {screen === "report"  && <ReportScreen go={go} />}
-        {screen === "archive" && <ArchiveScreen go={go} />}
+        {screen === "home"    && <LandingScreen go={go} hasProfile={hasProfile} profile={profile} />}
+        {screen === "onboard" && <OnboardingScreen go={go} sealProfile={sealProfile} initialProfile={profile} initialQuestion={question} />}
+        {screen === "chart"   && <ChartScreen go={go} profile={profile} />}
+        {screen === "chat"    && <ChatScreen go={go} animSpeed={tweaks.animSpeed || 1} profile={profile} question={question} />}
+        {screen === "report"  && <ReportScreen go={go} profile={profile} />}
+        {screen === "archive" && <ArchiveScreen go={go} profile={profile} sessions={sessions} hasProfile={hasProfile} />}
       </main>
 
       {screen !== "chat" && <Footer />}
@@ -3647,13 +3827,8 @@ function App() {
         <TweakSection label="动效 · Motion" />
         <TweakSlider label="Stream speed" min={0.5} max={3} step={0.25} value={tweaks.animSpeed} unit="×"
           onChange={v => setTweaks({ animSpeed: v })} />
-        <TweakSection label="导航 · Go to screen" />
-        <TweakButton label="→ 起 home"     onClick={() => go("home")} />
-        <TweakButton label="→ 立 onboard"  onClick={() => go("onboard")} />
-        <TweakButton label="→ 盘 chart"    onClick={() => go("chart")} />
-        <TweakButton label="→ 问 consult"  onClick={() => go("chat")} />
-        <TweakButton label="→ 析 report"   onClick={() => go("report")} />
-        <TweakButton label="→ 档 archive"  onClick={() => go("archive")} />
+        <TweakSection label="数据 · Data" />
+        <TweakButton label="↻ 清档案 · reset all" onClick={resetAll} />
       </TweaksPanel>
     </div>
   );
