@@ -2753,85 +2753,270 @@ window.ChartScreen = ChartScreen;
 
   <script type="text/babel">
 // Chat — animated SSE streaming consultation
+// Map backend action types → UI phase {id, cn, en}
+const PHASE_MAP = {
+  planner_start:    { id: "start",    cn: "起 · 立档读题", en: "Start" },
+  planner_thinking: { id: "thinking", cn: "思 · 思考下一步", en: "Thinking" },
+  compute_chart:    { id: "compute",  cn: "排盘 · 本地纯算法", en: "Compute charts" },
+  auto_compute:    { id: "compute",  cn: "排盘 · 自动补算", en: "Auto-compute" },
+  consult_expert:  { id: "expert",   cn: "请教 · 单专家深算", en: "Consult expert" },
+  cross_link:      { id: "cross",    cn: "联 · 中西交叉", en: "Cross-link" },
+  reflect:         { id: "reflect",  cn: "镜 · VRP 反思", en: "Reflect" },
+  synthesize:      { id: "synth",    cn: "综 · 小综合 / 对齐", en: "Synthesize" },
+  ask_user:        { id: "ask",      cn: "问 · 反问澄清", en: "Clarify" },
+  narrative_start: { id: "narr",     cn: "述 · 撰写叙事", en: "Narrative" },
+};
+
+// Map backend expert names → UI EXPERTS id
+const EXPERT_ID_MAP = { numerology: "numero" };
+const normExpertId = (e) => EXPERT_ID_MAP[e] || e;
+
+const initExpertState = () => {
+  const out = {};
+  EXPERTS.forEach(ex => { out[ex.id] = { status: "idle", claim: null }; });
+  return out;
+};
+
 function ChatScreen({ go, animSpeed = 1, profile, question }) {
   const p = profile || SAMPLE_PROFILE;
   const q = question || SAMPLE_QUESTION;
   const [, time] = (p.birth || "").split(" ");
   const sc = SCENARIO_MAP[p.scenario] || SCENARIO_MAP.general;
 
-  const [tick, setTick] = useState(0);
-  const [running, setRunning] = useState(false);
-  const [done, setDone] = useState(false);
-  const [narrCharCount, setNarrCharCount] = useState(0);
+  const [running, setRunning]       = useState(false);
+  const [done, setDone]             = useState(false);
+  const [error, setError]           = useState(null);
+  const [sessionId, setSessionId]   = useState(null);
+
+  const [currentPhase, setCurrentPhase] = useState(null);
+  const [expertState, setExpertState]   = useState(initExpertState);
+  const [synthList, setSynthList]       = useState([]); // [{sys: "cn"|"wt", text}]
+  const [align, setAlign]               = useState(null); // {consensus, divergence, complementary}
+  const [verdict, setVerdict]           = useState(null); // {core, confidence}
+  const [narrative, setNarrative]       = useState("");
+  const [caveats, setCaveats]           = useState([]);
+  const [askUserPrompt, setAskUserPrompt] = useState(null); // {question, why}
+  const [askUserReply, setAskUserReply]   = useState("");
+  const [eventLog, setEventLog]         = useState([]);   // raw events for sidebar trace
 
   // multi-turn follow-up state
-  const [followUps, setFollowUps] = useState([]);
-  const [followUp, setFollowUp] = useState("");
-  const sendFollowUp = () => {
-    const txt = followUp.trim();
-    if (!txt) return;
-    const idx = followUps.length;
-    setFollowUps(prev => [...prev, { q: txt, a: null }]);
-    setFollowUp("");
-    setTimeout(() => {
-      setFollowUps(prev => prev.map((fu, i) => i === idx
-        ? { ...fu, a: `这个追问指向「${txt.slice(0, 20)}${txt.length > 20 ? "…" : ""}」。按现在的盘相，先回到核心结论——${verdict?.core || "正在重读"}。再细化要看流月，可在「盘 · 八字」里查月度推演；若想换一个角度，可以「重跑」一次。` }
-        : fu));
-    }, 1200 / animSpeed);
+  const [followUps, setFollowUps] = useState([]);   // [{q, status, narrative, verdict}]
+  const [followUp, setFollowUp]   = useState("");
+  const eventSourceRef = useRef(null);
+  const activeFollowupIdxRef = useRef(-1); // -1 = main run; >=0 = follow-up index
+
+  // Cleanup on unmount
+  useEffect(() => () => { if (eventSourceRef.current) eventSourceRef.current.close(); }, []);
+
+  // Push narrative chunk into the right target (main or follow-up)
+  const appendNarrative = (chunk) => {
+    const idx = activeFollowupIdxRef.current;
+    if (idx < 0) {
+      setNarrative(prev => prev + chunk);
+    } else {
+      setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, narrative: (fu.narrative || "") + chunk } : fu));
+    }
+  };
+  const replaceNarrative = (text) => {
+    const idx = activeFollowupIdxRef.current;
+    if (idx < 0) setNarrative(text);
+    else setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, narrative: text } : fu));
+  };
+  const setRunVerdict = (v) => {
+    const idx = activeFollowupIdxRef.current;
+    if (idx < 0) setVerdict(v);
+    else setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, verdict: v } : fu));
   };
 
-  // events that have fired
-  const events = useMemo(() => STREAM.filter(e => e.t <= tick), [tick]);
-  const phases = events.filter(e => e.type === "phase");
-  const currentPhase = phases.length ? phases[phases.length - 1].payload : null;
-  const expertEvents = events.filter(e => e.type === "expert");
-  const synthEvents = events.filter(e => e.type === "synth");
-  const align = events.find(e => e.type === "align")?.payload;
-  const verdict = events.find(e => e.type === "verdict")?.payload;
-  const reachedNarr = events.some(e => e.type === "phase" && e.payload.id === "narr");
+  // Listen to all known event types on the EventSource
+  const wireEvents = (es) => {
+    const log = (type, data) => setEventLog(prev => [...prev.slice(-200), { type, ...data, _t: Date.now() }]);
+    const handlers = {
+      planner_start:   (d) => { log("planner_start", d); setCurrentPhase(PHASE_MAP.planner_start); },
+      input_caveats:   (d) => { log("input_caveats", d); setCaveats(d.caveats || []); },
+      planner_thinking:(d) => { log("planner_thinking", d); setCurrentPhase(PHASE_MAP.planner_thinking); },
+      planner_thought: (d) => { log("planner_thought", d); },
+      planner_executing: (d) => {
+        log("planner_executing", d);
+        const phase = PHASE_MAP[d.action] || { id: d.action, cn: d.action, en: d.action };
+        setCurrentPhase(phase);
+        if (d.action === "consult_expert" && d.expert) {
+          const eid = normExpertId(d.expert);
+          setExpertState(prev => ({ ...prev, [eid]: { status: "thinking", claim: prev[eid]?.claim || null } }));
+        }
+      },
+      chart_ready:     (d) => log("chart_ready", d),
+      charts_summary:  (d) => log("charts_summary", d),
+      expert_done: (d) => {
+        log("expert_done", d);
+        const eid = normExpertId(d.expert);
+        setExpertState(prev => ({ ...prev, [eid]: { status: "done", claim: d.headline || d.summary || null } }));
+      },
+      cross_link_insight: (d) => log("cross_link_insight", d),
+      reflection:         (d) => log("reflection", d),
+      synth_done: (d) => {
+        log("synth_done", d);
+        if (d.is_skipped) return;
+        const sys = d.group === "chinese" ? "cn" : "wt";
+        setSynthList(prev => {
+          if (prev.some(s => s.sys === sys)) return prev.map(s => s.sys === sys ? { sys, text: d.headline } : s);
+          return [...prev, { sys, text: d.headline }];
+        });
+      },
+      aligner_done: (d) => {
+        log("aligner_done", d);
+        const nT = d.n_topics || 0;
+        const consensus = Math.round((d.consensus_score || 0) * nT);
+        const divergence = Math.round((d.divergence_score || 0) * nT);
+        setAlign({
+          consensus,
+          divergence,
+          complementary: Math.max(0, nT - consensus - divergence),
+          summary: d.summary,
+        });
+      },
+      verdict_done: (d) => {
+        log("verdict_done", d);
+        const conf = (d.confidence || "").toString().toUpperCase();
+        setRunVerdict({
+          core: d.summary || (d.consensus || []).join("、") || "已合议",
+          confidence: conf || "—",
+        });
+      },
+      narrative_start: (d) => { log("narrative_start", d); setCurrentPhase(PHASE_MAP.narrative_start); },
+      narrative_chunk: (d) => { log("narrative_chunk", { textLen: (d.text || "").length }); appendNarrative(d.text || ""); },
+      narrative:       (d) => { log("narrative", { len: (d.text || "").length }); if (d.replaced) replaceNarrative(d.text || ""); },
+      ask_user: (d) => {
+        log("ask_user", d);
+        setAskUserPrompt({ question: d.question || "请补充更多信息。", why: d.why || "" });
+        setCurrentPhase(PHASE_MAP.ask_user);
+      },
+      waiting_user: (d) => log("waiting_user", d),
+      user_replied: (d) => { log("user_replied", d); setAskUserPrompt(null); setAskUserReply(""); },
+      done: (d) => {
+        log("done", d);
+        setDone(true);
+        if (eventSourceRef.current) { eventSourceRef.current.close(); eventSourceRef.current = null; }
+        // mark follow-up as done if active
+        const idx = activeFollowupIdxRef.current;
+        if (idx >= 0) setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, status: "done" } : fu));
+      },
+      error: (d) => {
+        log("error", d);
+        setError(d.message || "未知错误");
+        if (eventSourceRef.current) { eventSourceRef.current.close(); eventSourceRef.current = null; }
+      },
+      action_error: (d) => log("action_error", d),
+      planner_max_steps: (d) => log("planner_max_steps", d),
+    };
+    Object.keys(handlers).forEach(type => {
+      es.addEventListener(type, (msgEvent) => {
+        try { handlers[type](JSON.parse(msgEvent.data)); }
+        catch (err) { console.error("SSE handler", type, err); }
+      });
+    });
+    es.onerror = () => {
+      if (es.readyState === EventSource.CLOSED) return; // normal close
+      console.error("SSE connection error");
+      setError("连接中断");
+    };
+  };
 
-  // expert state map
-  const expertState = {};
-  EXPERTS.forEach(ex => { expertState[ex.id] = { status: "idle", claim: null }; });
-  expertEvents.forEach(e => {
-    expertState[e.payload.id] = { status: e.payload.status, claim: e.payload.claim || expertState[e.payload.id].claim };
+  // Convert UI profile shape → backend session shape
+  const buildSessionPayload = () => ({
+    id: sessionId || undefined,
+    name: p.name,
+    gender: p.gender === "女" ? "female" : p.gender === "男" ? "male" : "other",
+    date: (p.birth || "").split(" ")[0] || "",
+    time: (p.birth || "").split(" ")[1] || "",
+    unknownTime: false,
+    place: p.place,
+    timezone_offset: 8.0,
+    scenario: "chat",
+    question: q,
   });
 
-  // run animation
-  useEffect(() => {
-    if (!running) return;
-    const start = Date.now();
-    const total = STREAM[STREAM.length - 1].t;
-    let raf;
-    const step = () => {
-      const elapsed = (Date.now() - start) * animSpeed;
-      setTick(elapsed);
-      if (elapsed < total + 800) {
-        raf = requestAnimationFrame(step);
-      } else {
-        setTick(total + 800);
-        setDone(true);
-      }
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [running, animSpeed]);
+  // First run: create session + post initial question + open stream
+  const startRun = async () => {
+    setRunning(true); setDone(false); setError(null);
+    setCurrentPhase(null); setExpertState(initExpertState());
+    setSynthList([]); setAlign(null); setVerdict(null); setNarrative("");
+    setCaveats([]); setAskUserPrompt(null); setAskUserReply("");
+    setEventLog([]); setFollowUps([]);
+    activeFollowupIdxRef.current = -1;
 
-  // narrative typewriter
-  useEffect(() => {
-    if (!reachedNarr) return;
-    let i = 0;
-    const id = setInterval(() => {
-      i += Math.max(1, Math.floor(2 * animSpeed));
-      setNarrCharCount(Math.min(NARRATIVE_TEXT.length, i));
-      if (i >= NARRATIVE_TEXT.length) clearInterval(id);
-    }, 28 / animSpeed);
-    return () => clearInterval(id);
-  }, [reachedNarr, animSpeed]);
+    try {
+      const sres = await fetch("/api/v1/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildSessionPayload()),
+      });
+      const sjson = await sres.json();
+      const sid = sjson.session_id;
+      setSessionId(sid);
 
-  const startRun = () => {
-    setTick(0); setNarrCharCount(0); setDone(false); setRunning(true);
+      const es = new EventSource(`/api/v1/sessions/${sid}/stream`);
+      eventSourceRef.current = es;
+      wireEvents(es);
+
+      // Post initial question (after stream opens so backend's queue.get is awaiting)
+      await fetch(`/api/v1/sessions/${sid}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: q }),
+      });
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "启动失败");
+      setRunning(false);
+    }
   };
+
+  // Mid-cycle: user answers an ask_user prompt
+  const submitAskUserReply = async () => {
+    const txt = askUserReply.trim();
+    if (!txt || !sessionId) return;
+    try {
+      await fetch(`/api/v1/sessions/${sessionId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: txt }),
+      });
+      // ask_user UI clears on user_replied event
+    } catch (err) {
+      console.error(err);
+      setError("回复失败");
+    }
+  };
+
+  // Post-done follow-up: post new question + re-open stream for another full cycle
+  const sendFollowUp = async () => {
+    const txt = followUp.trim();
+    if (!txt || !sessionId) return;
+    const idx = followUps.length;
+    setFollowUps(prev => [...prev, { q: txt, status: "running", narrative: "", verdict: null }]);
+    setFollowUp("");
+    activeFollowupIdxRef.current = idx;
+    setDone(false); setAskUserPrompt(null);
+
+    try {
+      const es = new EventSource(`/api/v1/sessions/${sessionId}/stream`);
+      eventSourceRef.current = es;
+      wireEvents(es);
+      await fetch(`/api/v1/sessions/${sessionId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: txt }),
+      });
+    } catch (err) {
+      console.error(err);
+      setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, status: "error", narrative: "（连接失败）" } : fu));
+    }
+  };
+
+  // For sidebar SSE trace
+  const events = eventLog;
+  const reachedNarr = narrative.length > 0;
 
   return (
     <div className="fade-in screen" style={{ position: "relative" }}>
@@ -2854,11 +3039,61 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
 
           {/* run controls */}
           {!running && (
-            <div style={{ marginTop: 40, display: "flex", gap: 14, alignItems: "center" }}>
+            <div style={{ marginTop: 40, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
               <button className="btn" onClick={startRun}>
                 请教 · run consultation <span className="arr">→</span>
               </button>
-              <span className="em" style={{ fontSize: 14, color: "var(--ink-3)" }}>30 events · ~12s simulated stream</span>
+              <span className="em" style={{ fontSize: 14, color: "var(--ink-3)" }}>八路并行 · 真实 LLM 流（DeepSeek）· 约 60–90 秒</span>
+            </div>
+          )}
+
+          {/* error banner */}
+          {error && (
+            <div style={{ marginTop: 24, padding: 16, border: "1px solid var(--cinnabar)", background: "color-mix(in oklch, var(--cinnabar) 5%, transparent)" }}>
+              <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>错 · ERROR</div>
+              <div style={{ fontFamily: "var(--serif-cn)", fontSize: 14, marginTop: 6, color: "var(--ink-2)" }}>{error}</div>
+              <button className="btn btn-ghost" style={{ marginTop: 12, fontSize: 12, padding: "8px 14px" }} onClick={startRun}>↻ 重试</button>
+            </div>
+          )}
+
+          {/* caveats banner */}
+          {caveats.length > 0 && (
+            <div style={{ marginTop: 24, padding: 16, border: "1px dashed color-mix(in oklch, var(--gild) 60%, transparent)", background: "color-mix(in oklch, var(--gild) 4%, transparent)" }}>
+              <div className="caps" style={{ fontSize: 10, color: "var(--gild)" }}>注 · INPUT CAVEATS</div>
+              <ul style={{ margin: "8px 0 0", paddingLeft: 20, fontFamily: "var(--serif-cn)", fontSize: 13, color: "var(--ink-2)", lineHeight: 1.7 }}>
+                {caveats.map((c, i) => <li key={i}>{c}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {/* ask_user dialog */}
+          {askUserPrompt && (
+            <div style={{ marginTop: 32, padding: 24, border: "1.5px solid var(--cinnabar)", background: "color-mix(in oklch, var(--cinnabar) 4%, transparent)", position: "relative" }}>
+              <div style={{ position: "absolute", top: -12, left: 20, background: "var(--paper)", padding: "0 12px" }}>
+                <span className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>反问澄清 · CLARIFY</span>
+              </div>
+              <div style={{ fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 500, lineHeight: 1.5, color: "var(--ink)" }}>
+                {askUserPrompt.question}
+              </div>
+              {askUserPrompt.why && (
+                <div className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 13, color: "var(--ink-3)", marginTop: 8 }}>
+                  {askUserPrompt.why}
+                </div>
+              )}
+              <textarea
+                rows={2}
+                value={askUserReply}
+                onChange={e => setAskUserReply(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitAskUserReply(); }}
+                placeholder="回复 · reply (⌘/Ctrl + Enter 发送)"
+                style={{ marginTop: 16, width: "100%", fontSize: 15, lineHeight: 1.6, resize: "none" }}
+              />
+              <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
+                <button className="btn" disabled={!askUserReply.trim()} onClick={submitAskUserReply}
+                  style={{ opacity: askUserReply.trim() ? 1 : 0.45, cursor: askUserReply.trim() ? "pointer" : "not-allowed" }}>
+                  回复 · reply <span className="arr">→</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -2921,39 +3156,46 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
             </div>
           )}
 
-          {/* narrative */}
+          {/* narrative (streaming from backend) */}
           {reachedNarr && (
             <div style={{ marginTop: 56 }}>
               <Rule label="叙事 · NARRATIVE · C 端" />
               <div style={{ marginTop: 32, padding: "0 0 0 32px", borderLeft: "2px solid var(--cinnabar)", maxWidth: 740 }}>
                 <div style={{ fontFamily: "var(--serif-cn)", fontSize: 19, lineHeight: 1.95, color: "var(--ink)", whiteSpace: "pre-wrap", textWrap: "pretty" }}>
-                  {NARRATIVE_TEXT.slice(0, narrCharCount)}
-                  {narrCharCount < NARRATIVE_TEXT.length && <span style={{ background: "var(--cinnabar)", display: "inline-block", width: 2, height: 18, verticalAlign: "middle", animation: "blink 0.8s infinite" }} />}
+                  {narrative}
+                  {!done && narrative.length > 0 && <span style={{ background: "var(--cinnabar)", display: "inline-block", width: 2, height: 18, verticalAlign: "middle", animation: "blink 0.8s infinite" }} />}
                 </div>
                 <style>{`@keyframes blink{50%{opacity:0}}`}</style>
               </div>
             </div>
           )}
 
-          {done && narrCharCount >= NARRATIVE_TEXT.length && (
-            <>
-              {/* follow-up thread */}
-              {followUps.map((fu, i) => (
-                <div key={i} style={{ marginTop: 32, paddingTop: 28, borderTop: "var(--rule)" }}>
-                  <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)" }}>追问 · FOLLOW-UP {String(i + 1).padStart(2, "0")}</div>
-                  <div style={{ fontFamily: "var(--serif-cn)", fontSize: 22, fontWeight: 500, lineHeight: 1.45, marginTop: 10, color: "var(--ink)" }}>{fu.q}</div>
-                  {fu.a ? (
-                    <div style={{ marginTop: 16, paddingLeft: 24, borderLeft: "2px solid var(--cinnabar)", fontFamily: "var(--serif-cn)", fontSize: 16, lineHeight: 1.9, color: "var(--ink-2)", maxWidth: 740 }}>
-                      {fu.a}
-                    </div>
-                  ) : (
-                    <div className="em" style={{ marginTop: 12, fontSize: 13, color: "var(--ink-3)", display: "flex", alignItems: "center", gap: 10 }}>
-                      <Spinner /> 正在重新调度
-                    </div>
-                  )}
+          {/* follow-up thread (real backend re-stream) */}
+          {followUps.map((fu, i) => (
+            <div key={i} style={{ marginTop: 48, paddingTop: 32, borderTop: "1px solid var(--ink)" }}>
+              <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)" }}>追问 · FOLLOW-UP {String(i + 1).padStart(2, "0")}</div>
+              <div style={{ fontFamily: "var(--serif-cn)", fontSize: 22, fontWeight: 500, lineHeight: 1.45, marginTop: 10, color: "var(--ink)" }}>{fu.q}</div>
+              {fu.verdict && (
+                <div style={{ marginTop: 18, padding: "14px 18px", border: "1px solid var(--cinnabar)" }}>
+                  <span className="caps" style={{ fontSize: 9, color: "var(--cinnabar)" }}>核心 · CORE</span>
+                  <div style={{ fontFamily: "var(--serif-cn)", fontSize: 18, fontWeight: 500, marginTop: 4 }}>{fu.verdict.core}</div>
                 </div>
-              ))}
+              )}
+              {fu.narrative ? (
+                <div style={{ marginTop: 18, paddingLeft: 24, borderLeft: "2px solid var(--cinnabar)", fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.9, color: "var(--ink-2)", maxWidth: 740, whiteSpace: "pre-wrap" }}>
+                  {fu.narrative}
+                  {fu.status === "running" && <span style={{ background: "var(--cinnabar)", display: "inline-block", width: 2, height: 16, verticalAlign: "middle", animation: "blink 0.8s infinite" }} />}
+                </div>
+              ) : fu.status === "running" ? (
+                <div className="em" style={{ marginTop: 12, fontSize: 13, color: "var(--ink-3)", display: "flex", alignItems: "center", gap: 10 }}>
+                  <Spinner /> 八路重启 · re-routing experts
+                </div>
+              ) : null}
+            </div>
+          ))}
 
+          {done && narrative.length > 0 && (followUps.length === 0 || followUps[followUps.length - 1].status === "done") && (
+            <>
               {/* follow-up input */}
               <div style={{ marginTop: 48, paddingTop: 28, borderTop: "1px solid var(--ink)" }}>
                 <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>追问 · ASK FOLLOW-UP</div>
@@ -2966,7 +3208,7 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
                   style={{ marginTop: 12, width: "100%", fontSize: 16, lineHeight: 1.65, resize: "none" }}
                 />
                 <div style={{ marginTop: 12, display: "flex", gap: 14, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
-                  <span className="em" style={{ fontSize: 12, color: "var(--ink-4)" }}>⌘/Ctrl + Enter 发送</span>
+                  <span className="em" style={{ fontSize: 12, color: "var(--ink-4)" }}>⌘/Ctrl + Enter 发送 · 真八路重跑</span>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <button className="btn btn-ghost" onClick={startRun}>↻ 重跑</button>
                     <button className="btn btn-ghost" onClick={() => go("report")}>生成深度研报 · deep report</button>
@@ -2985,12 +3227,23 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
           <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>SSE TRACE · LIVE</div>
           <div style={{ marginTop: 14, padding: 18, background: "color-mix(in oklch, var(--ink) 4%, transparent)", border: "var(--rule)", flex: 1, overflowY: "auto", fontFamily: "var(--mono)", fontSize: 11, lineHeight: 1.9 }}>
             {events.length === 0 && <div style={{ color: "var(--ink-4)" }}>// awaiting run...</div>}
-            {events.map((e, i) => (
-              <div key={i} style={{ display: "flex", gap: 8, color: e.type === "verdict" || e.type === "phase" ? "var(--cinnabar)" : "var(--ink-2)" }}>
-                <span style={{ color: "var(--ink-4)" }}>{(e.t / 1000).toFixed(2).padStart(6, "0")}</span>
-                <span style={{ flex: 1 }}>{e.type}{e.payload.id ? `:${e.payload.id}` : ""}{e.payload.status ? `·${e.payload.status}` : ""}</span>
-              </div>
-            ))}
+            {events.map((e, i) => {
+              const t0 = events[0]?._t || e._t;
+              const sec = ((e._t - t0) / 1000).toFixed(2).padStart(6, "0");
+              const accent = e.type === "verdict_done" || e.type === "planner_thought" || e.type === "ask_user";
+              const detail =
+                e.type === "planner_executing" ? `:${e.action || ""}${e.expert ? "/" + e.expert : ""}` :
+                e.type === "expert_done" ? `:${e.expert || ""}` :
+                e.type === "synth_done" ? `:${e.group || ""}` :
+                e.type === "chart_ready" ? `:${e.chart_type || ""}` :
+                "";
+              return (
+                <div key={i} style={{ display: "flex", gap: 8, color: accent ? "var(--cinnabar)" : "var(--ink-2)" }}>
+                  <span style={{ color: "var(--ink-4)" }}>{sec}</span>
+                  <span style={{ flex: 1 }}>{e.type}{detail}</span>
+                </div>
+              );
+            })}
             {running && !done && (
               <div style={{ color: "var(--cinnabar)", marginTop: 6 }}>▌ streaming...</div>
             )}
