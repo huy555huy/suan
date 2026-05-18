@@ -82,6 +82,19 @@ PLANNER_SYSTEM = """你是「算」研判合议的 **Planner Agent**。
   此时只能 finalize 或 stop —— 用户已经看到主综合，再问会让他觉得啰嗦。
 - 已 ask_user 过 2 次的情况下，下一步必须是 synthesize 或 finalize，不能再 ask_user。
 
+【多轮对话 — 跨轮记忆处理】
+- 如果状态摘要里有【上一轮已答】section，说明这是**追问**，不是首问。
+- 你的核心任务：用最少的步数回答 NEW 问题，**建立在上轮答案之上，不要从头重做**。
+- 决策启发：
+  · 新问题是上轮答案的**引申 / 细化**（"那具体几月？" "为什么不能去远方？"）
+    → 直接 `consult_expert` 1-2 个最相关的专家深挖 → `synthesize(judge)` → `finalize`。**3-4 步内收束**。
+  · 新问题是**完全新主题**（首问"事业"，追问"婚姻怎么样"）
+    → 可以走原 5-7 步流程，但**保留前轮 verdict 作背景**，在 narrative 里桥接两个话题。
+  · 新问题是**确认 / 复述**（"你说的'下半年得禄'是几月开始？"）
+    → 不需要 consult 专家，直接 `finalize(brief)` 把已有信息精确化即可。**1 步收束**。
+- 在 narrative 里**不要重复**说"丁火日主 / 正财格 / 9 宫狮子群星"等用户上轮已看过的盘面背景。专注新问题。
+- 如果发现上轮判断和新问题/新信息有矛盾，先 `reflect`，再 `finalize` 给修订版结论。
+
 【cross_link 启发 — 涌现性是产品差异化】
 - 至少咨询 1 路西式专家（astrology / tarot / numerology），让中西能交叉。
   纯中式 3 路也能做 cross_link，但带上西式才有"两灯互照"。
@@ -139,6 +152,22 @@ def _summarize_state_for_planner(state: AgentState, history: list[dict],
     if state.caveats:
         lines.append(f"【输入不确定性】" + " | ".join(state.caveats))
 
+    # ★ 跨轮记忆 — 让 planner 知道上次说过什么，避免重复
+    if state.prior_round:
+        pr = state.prior_round
+        lines.append("【上一轮已答】")
+        lines.append(f"  · 上轮问：{pr.question[:200]}")
+        if pr.verdict_summary:
+            lines.append(f"  · 上轮答（置信 {pr.verdict_confidence}）：{pr.verdict_summary[:300]}")
+        if pr.consensus_points:
+            lines.append(f"  · 双重共识：" + " / ".join(c[:60] for c in pr.consensus_points[:4]))
+        if pr.expert_headlines:
+            lines.append(f"  · 上轮 expert 已说：" +
+                         " | ".join(f"{e}「{h[:50]}」" for e, h in list(pr.expert_headlines.items())[:5]))
+        if pr.emergent_insights:
+            lines.append(f"  · 上轮涌现：" + " / ".join(ei[:60] for ei in pr.emergent_insights[:3]))
+        lines.append('  ↑ **本次是追问，不要从头重做。按 prompt 里「多轮对话」段执行。**')
+
     # 用户问答历史
     if user_messages:
         lines.append("【对话历史】")
@@ -180,11 +209,25 @@ def _summarize_state_for_planner(state: AgentState, history: list[dict],
         nu = state.charts.numerology
         lines.append(f"  numerology: 生命数{nu.life_path} 个人年{nu.personal_year}")
 
-    # 已咨询的专家
+    # 已咨询的专家（含 verifier flags 让 planner 看到自己输出的薄弱点）
     if state.expert_opinions:
         lines.append("【已咨询专家】")
         for op in state.expert_opinions:
-            lines.append(f"  · {op.expert}({op.confidence}): {op.headline} | {op.summary[:140]}")
+            flag_str = ""
+            if op.flags:
+                # 突出真的有问题的 flag
+                serious = [f for f in op.flags if any(k in f.upper() for k in
+                          ["FACT_VIOLATION", "OVERCLAIM", "RULE_NOVEL", "SOURCE_SYNTHESIZED", "SEMANTIC_WEAK"])]
+                if serious:
+                    flag_str = f"  [⚠ verifier flags: {','.join(serious[:3])}]"
+            lines.append(f"  · {op.expert}({op.confidence}): {op.headline}{flag_str}")
+            lines.append(f"    {op.summary[:160]}")
+
+    # 涌现性洞察（auto-emergent，不经 planner 决定）
+    if state.emergent_insights:
+        lines.append("【自动涌现】")
+        for ei in state.emergent_insights[-3:]:
+            lines.append(f"  · {ei.get('headline','')}（强度 {ei.get('strength','')}）")
 
     # 综合状态
     if state.cn_synth and not state.cn_synth.is_skipped:

@@ -278,6 +278,20 @@ class ReasoningTrace(BaseModel):
     steps: list[TraceStep] = Field(default_factory=list)
 
 
+# ── 跨轮记忆：上一轮的精炼快照 ──────────────────────────────
+class PriorRound(BaseModel):
+    """上一轮 planner-executor 收束后的快照，注入到下一轮的 state，
+    让 Planner 能基于"已答过的内容"做 delta 推理，不再每次重新走 8 步。"""
+    question: str = ""
+    verdict_summary: str = ""               # weighted_summary
+    verdict_confidence: str = "medium"
+    narrative: str = ""                      # full safety-checked narrative (capped)
+    expert_headlines: dict[str, str] = Field(default_factory=dict)  # {expert: headline}
+    emergent_insights: list[str] = Field(default_factory=list)      # 自动涌现的洞察 headline
+    consensus_points: list[str] = Field(default_factory=list)
+    asked_at_iso: str = ""                   # 上一轮提问时间，给 planner 看"多久前问的"
+
+
 # ── 顶层 AgentState ─────────────────────────────────────────
 class AgentState(BaseModel):
     session_id: str
@@ -303,6 +317,12 @@ class AgentState(BaseModel):
     # Verifier 产物
     verifier_log: dict = Field(default_factory=dict)
     requires_expert_retry: bool = False
+
+    # 跨轮记忆 — 让 agent 真的"记得上次说过什么"
+    prior_round: PriorRound | None = None
+
+    # 涌现性洞察（aligner.by_topic 自动触发，不经 Planner 决定）
+    emergent_insights: list[dict] = Field(default_factory=list)
 
     # 终态
     narrative: str = ""

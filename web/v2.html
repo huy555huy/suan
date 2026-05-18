@@ -2955,6 +2955,8 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
   const [expertState, setExpertState]   = useState(initExpertState);
   const [synthList, setSynthList]       = useState([]); // [{sys: "cn"|"wt", text}]
   const [align, setAlign]               = useState(null); // {consensus, divergence, complementary}
+  const [emergence, setEmergence]       = useState([]);   // ★ 自动涌现洞察
+  const [priorAnswer, setPriorAnswer]   = useState(null); // 上一轮的 verdict + question（后端 prior_round）
   const [verdict, setVerdict]           = useState(null); // {core, confidence}
   const [narrative, setNarrative]       = useState("");
   const [caveats, setCaveats]           = useState([]);
@@ -2990,6 +2992,11 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
     if (idx < 0) setVerdict(v);
     else setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, verdict: v } : fu));
   };
+  const appendEmergence = (ins) => {
+    const idx = activeFollowupIdxRef.current;
+    if (idx < 0) setEmergence(prev => [...prev, ins]);
+    else setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, emergence: [...(fu.emergence || []), ins] } : fu));
+  };
 
   // Listen to all known event types on the EventSource
   const wireEvents = (es) => {
@@ -3016,6 +3023,10 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
         setExpertState(prev => ({ ...prev, [eid]: { status: "done", claim: d.headline || d.summary || null } }));
       },
       cross_link_insight: (d) => log("cross_link_insight", d),
+      emergent_insight: (d) => {
+        log("emergent_insight", d);
+        appendEmergence(d);
+      },
       reflection:         (d) => log("reflection", d),
       synth_done: (d) => {
         log("synth_done", d);
@@ -3105,7 +3116,7 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
     setCurrentPhase(null); setExpertState(initExpertState());
     setSynthList([]); setAlign(null); setVerdict(null); setNarrative("");
     setCaveats([]); setAskUserPrompt(null); setAskUserReply("");
-    setEventLog([]); setFollowUps([]);
+    setEventLog([]); setFollowUps([]); setEmergence([]);
     activeFollowupIdxRef.current = -1;
 
     try {
@@ -3299,6 +3310,40 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
 
           {/* align */}
           {align && <AlignBoard align={align} />}
+
+          {/* ★ 自动涌现的跨系统强信号 */}
+          {emergence.length > 0 && (
+            <div style={{ marginTop: 40 }}>
+              <Rule label="涌现 · EMERGENT INSIGHTS · 算法自发现 · 非 Planner 拍脑袋" />
+              <div style={{ display: "grid", gridTemplateColumns: emergence.length > 1 ? "1fr 1fr" : "1fr", gap: 16, marginTop: 24 }}>
+                {emergence.map((ins, i) => (
+                  <div key={i} style={{
+                    padding: 22,
+                    border: `1.5px solid ${ins.strength === "strong" ? "var(--cinnabar)" : "color-mix(in oklch, var(--cinnabar) 50%, transparent)"}`,
+                    background: ins.strength === "strong" ? "color-mix(in oklch, var(--cinnabar) 4%, transparent)" : "transparent",
+                    position: "relative",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                      <span className="caps" style={{ fontSize: 9, color: "var(--cinnabar)", letterSpacing: "0.2em" }}>
+                        {ins.topic || "TOPIC"} · {(ins.strength || "moderate").toUpperCase()}
+                      </span>
+                    </div>
+                    <div style={{ fontFamily: "var(--serif-cn)", fontSize: 18, fontWeight: 600, lineHeight: 1.45, color: "var(--ink)" }}>
+                      {ins.headline}
+                    </div>
+                    <div style={{ marginTop: 10, fontFamily: "var(--serif-cn)", fontSize: 14, lineHeight: 1.85, color: "var(--ink-2)" }}>
+                      {ins.narrative}
+                    </div>
+                    {ins.implication && (
+                      <div className="em" style={{ marginTop: 10, fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 13, color: "var(--cinnabar)" }}>
+                        → {ins.implication}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* verdict */}
           {verdict && (

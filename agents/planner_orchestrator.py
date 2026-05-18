@@ -23,7 +23,7 @@ from core.schemas import (
 )
 from core.config import settings
 from agents.planner import planner_step, PlannerAction
-from agents.insights import run_cross_link, run_reflect
+from agents.insights import run_cross_link, run_reflect, run_auto_emergent
 from agents.expert import run_expert
 from agents.synth import run_synth
 from agents.aligner import run_aligner
@@ -324,6 +324,9 @@ async def run_planner_loop(state: AgentState, message_queue: asyncio.Queue,
                                      summary=state.cross_alignment.overall_summary,
                                      by_topic={k: v.model_dump() for k, v in
                                                list(state.cross_alignment.by_topic.items())[:6]})
+                    # ★ 真涌现：扫 by_topic 找 consensus / complementary 强信号
+                    async for ev in _auto_emergent_after_aligner(state):
+                        yield ev
 
                 if scope in ("judge", "all"):
                     if not state.cn_synth:
@@ -341,6 +344,8 @@ async def run_planner_loop(state: AgentState, message_queue: asyncio.Queue,
                                          summary=state.cross_alignment.overall_summary,
                                          by_topic={k: v.model_dump() for k, v in
                                                    list(state.cross_alignment.by_topic.items())[:6]})
+                        async for ev in _auto_emergent_after_aligner(state):
+                            yield ev
                     state.verdict = await run_judge(state)
                     yield await _evt("verdict_done",
                                      confidence=state.verdict.overall_confidence,
@@ -433,6 +438,8 @@ async def _execute_finalize(state: AgentState, history: list[dict]) -> AsyncIter
                          summary=state.cross_alignment.overall_summary,
                          by_topic={k: v.model_dump() for k, v in
                                    list(state.cross_alignment.by_topic.items())[:6]})
+        async for ev in _auto_emergent_after_aligner(state):
+            yield ev
     if not state.verdict:
         state.verdict = await run_judge(state)
         yield await _evt("verdict_done",
@@ -467,6 +474,25 @@ async def _execute_finalize(state: AgentState, history: list[dict]) -> AsyncIter
                      session_id=state.session_id,
                      narrative_len=len(state.narrative),
                      n_experts=len(state.expert_opinions))
+
+
+async def _auto_emergent_after_aligner(state: AgentState) -> AsyncIterator[dict]:
+    """★ 真涌现：Aligner 算完后自动扫 by_topic，挑出 consensus / complementary
+    强信号写成 emergent_insight 事件给前端展示。不经 Planner 决定。
+
+    与 Planner-driven `cross_link` 动作的区别：
+    - cross_link: Planner 自己声明"我看到 X+Y 同时点亮 Z"，observation 是 Planner 写的
+    - 这里: 由 Aligner 的 by_topic.alignment_type 算出来，是"算法发现"，不是 LLM 演的
+    """
+    try:
+        emergent = await run_auto_emergent(state)
+    except Exception as e:
+        yield await _evt("action_error", action="auto_emergent", error=str(e))
+        return
+    for ins in emergent:
+        # 保存到 state，下一轮 prior_round 能看到 + narrative 能用
+        state.emergent_insights.append(ins)
+        yield await _evt("emergent_insight", **ins)
 
 
 def _chart_brief(charts, chart_type: str) -> str:

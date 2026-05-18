@@ -27,6 +27,36 @@ def _build_user_input(state: AgentState) -> str:
         f"【整体置信度】{verdict.overall_confidence}",
     ]
 
+    # ★ 跨轮：如果有上一轮，narrative 不要重复上轮已说过的盘面背景
+    if state.prior_round and state.prior_round.verdict_summary:
+        pr = state.prior_round
+        parts.append(
+            "【★ 这是追问，不是首问】\n"
+            f"上轮问：{pr.question[:200]}\n"
+            f"上轮答：{pr.verdict_summary[:300]}\n"
+            f"上轮置信：{pr.verdict_confidence}\n\n"
+            "**重要：**\n"
+            "- 不要在这次回应里重复说\"丁火日主 / 9 宫狮子 / 正财格\"等用户上轮已看过的盘面背景\n"
+            "- 直接针对本次新问题作答，可在开头一句话桥接上轮（如\"承上次事业方向之问，关于具体几月动手……\"）\n"
+            "- 如果新问题是对上轮的引申/细化，**只回答 delta**，全文 400-700 字即可，不必再走 1500 字模板\n"
+            "- 如果你的本轮结论与上轮有矛盾，明确说出来：\"上次我说 X，但加入新信息后修订为 Y\"\n"
+        )
+
+    # ★ 涌现洞察 — 自动从 aligner 找出的强信号，narrative 必须显式呈现
+    if state.emergent_insights:
+        parts.append(
+            "【★ 自动涌现的跨系统强信号（必须在 narrative 里显式呈现至少 1-2 条）】\n" +
+            "\n".join(
+                f"- 【{ei.get('strength','')}】{ei.get('headline','')}\n"
+                f"  {ei.get('narrative','')}\n"
+                f"  → {ei.get('implication','')}"
+                for ei in state.emergent_insights[:3]
+            ) +
+            "\n\n** 这些是 Aligner 算法在 26-topic 上算出来的真实双重共识 / 互补点，"
+            "不是 planner 拍脑袋的。在 narrative 里用「我注意到 X 系统的 A + Y 系统的 B 都指向 Z」"
+            "这种带来源的句式呈现。**"
+        )
+
     # ★ 输入不确定性 caveats — 必须显式带入回应
     if state.caveats:
         parts.append(

@@ -26,6 +26,7 @@ class LLMUsage:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
+    finish_reason: str = ""
 
 
 _client: AsyncOpenAI | None = None
@@ -140,11 +141,13 @@ async def chat(
             if response_json:
                 kwargs["response_format"] = {"type": "json_object"}
             resp = await cli.chat.completions.create(**kwargs)
-            text = resp.choices[0].message.content or ""
+            choice = resp.choices[0]
+            text = choice.message.content or ""
             usage = LLMUsage(
                 prompt_tokens=getattr(resp.usage, "prompt_tokens", 0) or 0,
                 completion_tokens=getattr(resp.usage, "completion_tokens", 0) or 0,
                 total_tokens=getattr(resp.usage, "total_tokens", 0) or 0,
+                finish_reason=getattr(choice, "finish_reason", "") or "",
             )
             _record_llm_success()
             return text, usage
@@ -159,7 +162,11 @@ async def chat(
                 raise
             if attempt < settings.max_retries:
                 await asyncio.sleep(0.6 * (attempt + 1))
-                if response_json and attempt == 0:
+                # 只在端点明确不支持 response_format 时才降级；超时/限流等重试
+                # 必须保留 JSON mode，否则结构化节点会偶发输出非严格 JSON。
+                if (response_json and attempt == 0 and "response_format" in err_str
+                    and ("unsupported" in err_str.lower()
+                         or "not support" in err_str.lower())):
                     response_json = False
             else:
                 _record_llm_failure(err_str[:200])
@@ -184,6 +191,11 @@ async def chat_json(
         response_json=True,
         tier=tier,
     )
+    if usage.finish_reason == "length":
+        raise RuntimeError(
+            f"LLM JSON 输出被截断：finish_reason=length, "
+            f"completion_tokens={usage.completion_tokens}, max_tokens={max_tokens}"
+        )
     parsed = _extract_json(text)
     return parsed, text, usage
 

@@ -253,6 +253,15 @@ async def stream_session(session_id: str, request: Request):
         state = _new_state(session_id, birth, question, scenario, profile.get("name"))
         state.caveats = caveats
 
+        # ★ 跨轮记忆：上一轮的 PriorRound 快照如果存在，注入到 state
+        prior = SESSION_REGISTRY.get(session_id, {}).get("__prior_round__")
+        if prior:
+            from core.schemas import PriorRound
+            try:
+                state.prior_round = PriorRound(**prior) if isinstance(prior, dict) else prior
+            except Exception:
+                state.prior_round = None
+
         try:
             async for evt in run_planner_loop(state, queue, question):
                 if await request.is_disconnected():
@@ -276,6 +285,27 @@ async def stream_session(session_id: str, request: Request):
                     if state.trace:
                         await save_trace(state.trace.trace_id, session_id,
                                           state.trace.model_dump())
+
+                    # ★ 把本轮快照存进 SESSION_REGISTRY，让下一轮 planner 看见
+                    from core.schemas import PriorRound
+                    from datetime import datetime as _dt
+                    try:
+                        snap = PriorRound(
+                            question=state.question or "",
+                            verdict_summary=(state.verdict.weighted_summary or "") if state.verdict else "",
+                            verdict_confidence=(state.verdict.overall_confidence or "medium") if state.verdict else "medium",
+                            narrative=(state.narrative or "")[:1800],   # cap to keep prompt size sane
+                            expert_headlines={op.expert: op.headline for op in state.expert_opinions if op.headline},
+                            emergent_insights=[ei.get("headline", "") for ei in (state.emergent_insights or []) if ei.get("headline")],
+                            consensus_points=(state.verdict.consensus or [])[:5] if state.verdict else [],
+                            asked_at_iso=_dt.utcnow().isoformat(),
+                        )
+                        if session_id not in SESSION_REGISTRY:
+                            SESSION_REGISTRY[session_id] = {}
+                        SESSION_REGISTRY[session_id]["__prior_round__"] = snap.model_dump()
+                    except Exception:
+                        pass  # 记忆失败不影响主流程
+
                     break  # planner 收束 → 关流
         except Exception as e:
             import traceback

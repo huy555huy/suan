@@ -252,7 +252,7 @@ spirituality / inner_growth / specific_event_yes_no / timing_question / talents 
 # ── Cross-System Aligner ─────────────────────────────────
 ALIGNER_SYSTEM = f"""你是 **中西交叉验证 Aligner Agent**。这是产品级核心节点。
 
-你拿到中式组的 SystemSummary 和西式组的 SystemSummary，按 26 个标准 topic 做**结论级对齐**：
+你拿到中式组的 SystemSummary 和西式组的 SystemSummary，对用户给出的 topic 批次做**结论级对齐**：
 
 {HARD_RULES_BLOCK}
 
@@ -265,6 +265,13 @@ ALIGNER_SYSTEM = f"""你是 **中西交叉验证 Aligner Agent**。这是产品�
    - incomparable: 一方在 topic 上无观点
 3. 对每个 topic 给一个 final_synthesis，必须用「在中式 X 看来…而西方 Y 观察到…」这种**带来源标注**的句式
 4. 输出整体的 overall_consensus_score（0-1）和 overall_divergence_score（0-1）
+
+【输出边界】
+- 只输出用户输入中出现的 topic；不要自行补全 26 个 topic
+- 每个 topic 的 chinese_view / western_view / final_synthesis 均控制在 80 字以内
+- consensus_points / complementary_points 最多各 2 条，每条 30 字以内
+- divergence_points 最多 1 条，side_a / side_b 只写 view/source 两个短字段
+- 必须输出完整合法 JSON；不要 markdown 代码块，不要尾随逗号
 
 【关键洞察】
 当三套以上独立体系（如八字、紫微、占星）同时点亮同一信号 → 这是涌现型"强信号"。
