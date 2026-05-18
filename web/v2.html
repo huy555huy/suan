@@ -983,7 +983,128 @@ const NARRATIVE_TEXT = `你这一问，问得正当其时。
 
 最后一句不入命理，只是常识：换方向是大事，不必一次想完。`;
 
-Object.assign(window, { SAMPLE_PROFILE, BAZI, ZIWEI, ASTRO, NUMER, EXPERTS, SAMPLE_QUESTION, STREAM, NARRATIVE_TEXT });
+// ── Backend → v2 chart shape adapters ─────────────────────────────
+const STEM_PINYIN = { 甲:"jiǎ", 乙:"yǐ", 丙:"bǐng", 丁:"dīng", 戊:"wù", 己:"jǐ", 庚:"gēng", 辛:"xīn", 壬:"rén", 癸:"guǐ" };
+const BRANCH_PINYIN = { 子:"zǐ", 丑:"chǒu", 寅:"yín", 卯:"mǎo", 辰:"chén", 巳:"sì", 午:"wǔ", 未:"wèi", 申:"shēn", 酉:"yǒu", 戌:"xū", 亥:"hài" };
+const FIVE_PHASES_EN = { 木:"wood", 火:"fire", 土:"earth", 金:"metal", 水:"water" };
+const STEM_YIN_YANG = { 甲:"yang", 乙:"yin", 丙:"yang", 丁:"yin", 戊:"yang", 己:"yin", 庚:"yang", 辛:"yin", 壬:"yang", 癸:"yin" };
+const PLANET_NAME_CN = { sun:"Sun", moon:"Moon", mercury:"Mercury", venus:"Venus", mars:"Mars", jupiter:"Jupiter", saturn:"Saturn", uranus:"Uranus", neptune:"Neptune", pluto:"Pluto", north_node:"N.Node", south_node:"S.Node", chiron:"Chiron" };
+const PLANET_GLYPH_MAP = { sun:"☉", moon:"☾", mercury:"☿", venus:"♀", mars:"♂", jupiter:"♃", saturn:"♄", uranus:"♅", neptune:"♆", pluto:"♇", north_node:"☊", south_node:"☋", chiron:"⚷" };
+const SIGN_EN = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+const PATTERN_EN_MAP = { "正财格":"Direct Wealth", "偏财格":"Indirect Wealth", "正官格":"Direct Officer", "七杀格":"Seven Killings", "正印格":"Direct Resource", "偏印格":"Indirect Resource", "食神格":"Eating God", "伤官格":"Hurting Officer", "比肩格":"Companion", "劫财格":"Rob Wealth", "建禄格":"Establishing Salary", "羊刃格":"Goat Blade", "从财格":"Following Wealth", "化气格":"Transformation", "杂气格":"Mixed Qi" };
+const NUMER_NOTES = { 1:"开创者 · initiator", 2:"调和者 · diplomat", 3:"表达者 · communicator", 4:"建造者 · builder", 5:"冒险者 · adventurer", 6:"守护者 · caretaker", 7:"求道者 · seeker", 8:"掌权者 · powerhouse", 9:"人道者 · humanitarian", 11:"灵感者 · inspirer", 22:"建筑师 · master builder", 33:"师者 · master teacher" };
+const SIGN_GLYPH_MAP = { "白羊座":"♈", "金牛座":"♉", "双子座":"♊", "巨蟹座":"♋", "狮子座":"♌", "处女座":"♍", "天秤座":"♎", "天蝎座":"♏", "射手座":"♐", "摩羯座":"♑", "水瓶座":"♒", "双鱼座":"♓" };
+
+function adaptBazi(b) {
+  if (!b) return null;
+  const keys = ["year", "month", "day", "hour"];
+  const labelsCn = ["年柱", "月柱", "日柱", "时柱"];
+  const labelsEn = ["Year", "Month", "Day", "Hour"];
+  const pillars = keys.map((k, i) => {
+    const p = b[`${k}_pillar`] || {};
+    const yy = STEM_YIN_YANG[p.stem] || "";
+    const elEn = FIVE_PHASES_EN[p.wuxing_stem] || "";
+    return {
+      label: labelsCn[i], labelEn: labelsEn[i],
+      stem: p.stem || "?", branch: p.branch || "?",
+      stemPinyin: STEM_PINYIN[p.stem] || "", branchPinyin: BRANCH_PINYIN[p.branch] || "",
+      element: p.wuxing_stem || "?",
+      phase: `${yy} ${elEn}${k === "day" ? " · day master" : ""}`.trim(),
+      hidden: (b.hidden_stems || {})[k] || [],
+      master: k === "day",
+    };
+  });
+  const cur = new Date().getFullYear();
+  const daYun = (b.da_yun || []).slice(0, 6).map(d => ({
+    age: String(Math.round(d.age_start || 0)),
+    ganzhi: d.ganzhi || `${d.stem || ""}${d.branch || ""}`,
+    current: cur >= (d.year_start || 0) && cur < (d.year_end || 0),
+  }));
+  const dmEl = b.day_pillar?.wuxing_stem || "";
+  return {
+    pillars, daYun,
+    master: `${b.day_master || ""}${dmEl}`,
+    pattern: b.pattern || "—",
+    patternEn: PATTERN_EN_MAP[b.pattern] || "",
+    yongShen: b.yong_shen || "—",
+    yongShenEn: (FIVE_PHASES_EN[b.yong_shen] || "").replace(/^./, c => c.toUpperCase()),
+    shenSha: (b.shen_sha || []).slice(0, 6),
+    fiveElements: b.five_elements || { 木:0, 火:0, 土:0, 金:0, 水:0 },
+  };
+}
+
+function adaptZiwei(z) {
+  if (!z) return null;
+  const lifeP = (z.palaces || []).find(p => p?.name === z.life_palace) || (z.palaces || [])[0] || {};
+  const bodyP = (z.palaces || []).find(p => p?.name === z.body_palace) || {};
+  return {
+    局: z.five_element_bureau || "—",
+    ming: lifeP.branch ? `${lifeP.branch}宫` : (z.life_palace || "—"),
+    shen: bodyP.branch ? `${bodyP.branch}宫` : (z.body_palace || "—"),
+    zhuxing: (lifeP.stars || []).slice(0, 3),
+    bihua: {
+      禄: z.si_hua?.["化禄"] || "—",
+      权: z.si_hua?.["化权"] || "—",
+      科: z.si_hua?.["化科"] || "—",
+      忌: z.si_hua?.["化忌"] || "—",
+    },
+    palaces: z.palaces || [],
+    lifePalaceName: z.life_palace || "命宫",
+  };
+}
+
+function adaptAstro(a) {
+  if (!a) return null;
+  const angles = a.angles || {};
+  const planets = a.planets || {};
+  const order = ["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"];
+  const bodies = order
+    .filter(k => planets[k])
+    .map(k => {
+      const p = planets[k];
+      return {
+        name: PLANET_NAME_CN[k] || k,
+        glyph: PLANET_GLYPH_MAP[k] || "",
+        sign: p.sign_en || (p.sign || "").replace("座", ""),
+        deg: p.sign_degree || 0,
+        house: p.house || 1,
+        longitude: p.longitude || 0,
+      };
+    });
+  const sunB = bodies.find(b => b.name === "Sun");
+  const moonB = bodies.find(b => b.name === "Moon");
+  const ascSignIdx = Math.floor(((angles.ASC || 0) % 360) / 30);
+  const mcSignIdx = Math.floor(((angles.MC || 0) % 360) / 30);
+  return {
+    sun:  sunB  || { sign:"—", deg:0, glyph:"☉" },
+    moon: moonB || { sign:"—", deg:0, glyph:"☾" },
+    asc:  { sign: SIGN_EN[ascSignIdx] || "—", deg: (angles.ASC || 0) % 30, glyph: "⇧" },
+    mc:   { sign: SIGN_EN[mcSignIdx]  || "—", deg: (angles.MC  || 0) % 30, glyph: "⇧" },
+    phase: a.moon_phase || "—",
+    bodies,
+    aspects: (a.aspects || []).slice(0, 6).map(asp => ({
+      a: PLANET_NAME_CN[asp.planet_a] || asp.planet_a || "",
+      b: PLANET_NAME_CN[asp.planet_b] || asp.planet_b || "",
+      type: asp.aspect_type || asp.type || "",
+      orb: Number((asp.orb || 0).toFixed(1)),
+    })),
+  };
+}
+
+function adaptNumer(n) {
+  if (!n) return null;
+  return {
+    life: n.life_path || 0,
+    expression: n.expression || 0,
+    soul: n.soul_urge || 0,
+    personality: n.personality || 0,
+    year: n.personal_year || 0,
+    notes: NUMER_NOTES,
+  };
+}
+
+Object.assign(window, { SAMPLE_PROFILE, BAZI, ZIWEI, ASTRO, NUMER, EXPERTS, SAMPLE_QUESTION, STREAM, NARRATIVE_TEXT,
+  adaptBazi, adaptZiwei, adaptAstro, adaptNumer });
 
   </script>
 
@@ -991,7 +1112,8 @@ Object.assign(window, { SAMPLE_PROFILE, BAZI, ZIWEI, ASTRO, NUMER, EXPERTS, SAMP
 // Animated visuals — SVG-based, no external assets
 
 // 占星轮（升级版）— 黄道带按元素染色 + 行星按属性配色 + 相位线分色
-function AnimatedAstroWheel({ size = 460 }) {
+function AnimatedAstroWheel({ size = 460, astro }) {
+  const ASTRO_DATA = astro || ASTRO;
   const r = size / 2, cx = r, cy = r;
   const rOuterEdge = r - 4;
   const rZodiacOuter = r - 8;       // 黄道带外圈
@@ -1132,9 +1254,9 @@ function AnimatedAstroWheel({ size = 460 }) {
 
         {/* 相位线（按类型分色 + 入场动画） */}
         <g style={{ animation: "fade-in 2s ease both" }}>
-          {ASTRO.aspects.map((asp, i) => {
-            const A = ASTRO.bodies.find(b => b.name === asp.a);
-            const B = ASTRO.bodies.find(b => b.name === asp.b);
+          {ASTRO_DATA.aspects.map((asp, i) => {
+            const A = ASTRO_DATA.bodies.find(b => b.name === asp.a);
+            const B = ASTRO_DATA.bodies.find(b => b.name === asp.b);
             if (!A || !B) return null;
             const aa = (A.longitude - 90) * Math.PI / 180;
             const ab = (B.longitude - 90) * Math.PI / 180;
@@ -1151,7 +1273,7 @@ function AnimatedAstroWheel({ size = 460 }) {
         </g>
 
         {/* 行星 — 按真实经度位置 + 各自旋转 */}
-        {ASTRO.bodies.map((b, i) => {
+        {ASTRO_DATA.bodies.map((b, i) => {
           const dur = 70 + i * 22;
           const color = PLANET_COLOR[b.name] || "var(--ink)";
           return (
@@ -2379,10 +2501,20 @@ window.OnboardingScreen = OnboardingScreen;
 
   <script type="text/babel">
 // Chart visualization — BaZi pillars + ZiWei + astrology + numerology
-function ChartScreen({ go, profile }) {
+function ChartScreen({ go, profile, charts, chartsLoading, chartsError }) {
   const [tab, setTab] = useState("bazi");
   const p = profile || SAMPLE_PROFILE;
   const placeLine = p.placeEn && p.placeEn !== p.place ? `${p.place} · ${p.placeEn}` : p.place;
+
+  // Adapt backend charts → v2 view shapes. Falls back to demo BAZI/ZIWEI/ASTRO/NUMER
+  // when no real charts available (e.g. while loading on first visit).
+  const raw = charts?.charts;
+  const bazi  = useMemo(() => adaptBazi(raw?.bazi)  || BAZI,  [raw]);
+  const ziwei = useMemo(() => adaptZiwei(raw?.ziwei) || ZIWEI, [raw]);
+  const astro = useMemo(() => adaptAstro(raw?.natal_astro) || ASTRO, [raw]);
+  const numer = useMemo(() => adaptNumer(raw?.numerology) || NUMER, [raw]);
+  const isDemo = p.name === SAMPLE_PROFILE.name;
+  const caveats = charts?.caveats || [];
 
   return (
     <div className="fade-in screen" style={{ position: "relative" }}>
@@ -2402,11 +2534,30 @@ function ChartScreen({ go, profile }) {
               <Meta cn="生于" en="BORN" v={p.birth} />
               <Meta cn="出生地" en="PLACE" v={placeLine} />
               <Meta cn="性别" en="GENDER" v={p.gender} />
-              <Meta cn="计算" en="COMPUTE" v="142ms · pure python" />
+              <Meta cn="计算" en="COMPUTE" v={chartsLoading ? "排盘中…" : chartsError ? "失败" : "本地纯算法 · ready"} />
             </div>
           </div>
           <Seal char="档" size={64} rotate={3} />
         </div>
+
+        {/* caveats from /charts endpoint */}
+        {caveats.length > 0 && (
+          <div style={{ marginTop: 18, padding: 14, border: "1px dashed color-mix(in oklch, var(--gild) 60%, transparent)", background: "color-mix(in oklch, var(--gild) 4%, transparent)" }}>
+            <div className="caps" style={{ fontSize: 10, color: "var(--gild)" }}>注 · INPUT CAVEATS</div>
+            <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontFamily: "var(--serif-cn)", fontSize: 13, color: "var(--ink-2)", lineHeight: 1.7 }}>
+              {caveats.map((c, i) => <li key={i}>{c}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {chartsError && (
+          <div style={{ marginTop: 18, padding: 14, border: "1px solid var(--cinnabar)", background: "color-mix(in oklch, var(--cinnabar) 5%, transparent)" }}>
+            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>排盘失败 · ERROR</div>
+            <div style={{ fontFamily: "var(--serif-cn)", fontSize: 13, marginTop: 6, color: "var(--ink-2)" }}>
+              {chartsError} —— 暂以示例盘代替（陈书雅 · 1991-08-15）
+            </div>
+          </div>
+        )}
 
         {/* tab nav */}
         <div style={{ display: "flex", gap: 0, marginTop: 32, borderBottom: "var(--rule)" }}>
@@ -2431,11 +2582,11 @@ function ChartScreen({ go, profile }) {
       </div>
 
       <div style={{ maxWidth: 1400, margin: "40px auto 0" }}>
-        {tab === "bazi" && <BaziView />}
-        {tab === "ziwei" && <ZiweiView profile={p} />}
-        {tab === "astro" && <AstroView />}
-        {tab === "numero" && <NumeroView />}
-        {tab === "all" && <AllView />}
+        {tab === "bazi"  && <BaziView bazi={bazi} isDemo={isDemo} />}
+        {tab === "ziwei" && <ZiweiView profile={p} ziwei={ziwei} />}
+        {tab === "astro" && <AstroView astro={astro} />}
+        {tab === "numero"&& <NumeroView numer={numer} />}
+        {tab === "all"   && <AllView bazi={bazi} ziwei={ziwei} astro={astro} numer={numer} />}
       </div>
 
       {/* CTA */}
@@ -2467,66 +2618,73 @@ function Meta({ cn, en, v }) {
   );
 }
 
-function BaziView() {
+function BaziView({ bazi, isDemo }) {
+  const b = bazi || BAZI;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 56 }}>
       {/* 4 pillars */}
       <div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-          {BAZI.pillars.map(p => <PillarCard key={p.label} pillar={p} big />)}
+          {b.pillars.map(p => <PillarCard key={p.label} pillar={p} big />)}
         </div>
 
-        <div style={{ marginTop: 48 }}>
-          <Rule label="大运 · MAJOR LUCK CYCLES" />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 0, marginTop: 24 }}>
-            {BAZI.daYun.map((d, i) => (
-              <div key={i} style={{
-                padding: "16px 12px",
-                borderLeft: i === 0 ? "1px solid var(--ink)" : "var(--rule)",
-                borderRight: i === 5 ? "1px solid var(--ink)" : "none",
-                borderTop: "1px solid var(--ink)", borderBottom: "1px solid var(--ink)",
-                background: d.current ? "color-mix(in oklch, var(--cinnabar) 6%, transparent)" : "transparent",
-                position: "relative",
-              }}>
-                <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{d.age}+</div>
-                <div style={{ fontFamily: "var(--serif-cn)", fontSize: 28, fontWeight: 600, marginTop: 6, color: d.current ? "var(--cinnabar)" : "var(--ink)" }}>{d.ganzhi}</div>
-                {d.current && <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)", marginTop: 8 }}>当前 · NOW</div>}
-              </div>
-            ))}
+        {b.daYun?.length > 0 && (
+          <div style={{ marginTop: 48 }}>
+            <Rule label="大运 · MAJOR LUCK CYCLES" />
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(6, b.daYun.length)}, 1fr)`, gap: 0, marginTop: 24 }}>
+              {b.daYun.slice(0, 6).map((d, i, arr) => (
+                <div key={i} style={{
+                  padding: "16px 12px",
+                  borderLeft: i === 0 ? "1px solid var(--ink)" : "var(--rule)",
+                  borderRight: i === arr.length - 1 ? "1px solid var(--ink)" : "none",
+                  borderTop: "1px solid var(--ink)", borderBottom: "1px solid var(--ink)",
+                  background: d.current ? "color-mix(in oklch, var(--cinnabar) 6%, transparent)" : "transparent",
+                  position: "relative",
+                }}>
+                  <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{d.age}+</div>
+                  <div style={{ fontFamily: "var(--serif-cn)", fontSize: 28, fontWeight: 600, marginTop: 6, color: d.current ? "var(--cinnabar)" : "var(--ink)" }}>{d.ganzhi}</div>
+                  {d.current && <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)", marginTop: 8 }}>当前 · NOW</div>}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* notes */}
-        <div style={{ marginTop: 48, padding: 28, background: "color-mix(in oklch, var(--paper) 50%, var(--paper-2))", borderLeft: "2px solid var(--cinnabar)" }}>
-          <div className="caps" style={{ fontSize: 10 }}>命局速断 · QUICK READ</div>
-          <p style={{ fontFamily: "var(--serif-cn)", fontSize: 18, lineHeight: 1.85, marginTop: 12, marginBottom: 0, color: "var(--ink)" }}>
-            日主 <span style={{ color: "var(--cinnabar)", fontWeight: 600 }}>丁火</span> 生于丙申月，火透干而金藏支；月令申金为偏财，年柱辛金为偏财，故成 <span style={{ fontWeight: 600 }}>正财格</span>。火势旺而无水制，喜用之神在 <span style={{ color: "var(--cinnabar)", fontWeight: 600 }}>木</span>，能生火又能疏土；忌见再添丁丙之火地。
-          </p>
-        </div>
+        {/* hardcoded 命局速断 only valid for the 陈书雅 demo */}
+        {isDemo && (
+          <div style={{ marginTop: 48, padding: 28, background: "color-mix(in oklch, var(--paper) 50%, var(--paper-2))", borderLeft: "2px solid var(--cinnabar)" }}>
+            <div className="caps" style={{ fontSize: 10 }}>命局速断 · QUICK READ</div>
+            <p style={{ fontFamily: "var(--serif-cn)", fontSize: 18, lineHeight: 1.85, marginTop: 12, marginBottom: 0, color: "var(--ink)" }}>
+              日主 <span style={{ color: "var(--cinnabar)", fontWeight: 600 }}>丁火</span> 生于丙申月，火透干而金藏支；月令申金为偏财，年柱辛金为偏财，故成 <span style={{ fontWeight: 600 }}>正财格</span>。火势旺而无水制，喜用之神在 <span style={{ color: "var(--cinnabar)", fontWeight: 600 }}>木</span>，能生火又能疏土；忌见再添丁丙之火地。
+            </p>
+          </div>
+        )}
       </div>
 
       {/* sidebar */}
       <div>
         <Lockup cn="五行" en="FIVE PHASES" size="md" />
         <div style={{ marginTop: 24 }}>
-          <FiveElementsBar data={BAZI.fiveElements} />
+          <FiveElementsBar data={b.fiveElements} />
         </div>
 
         <div style={{ marginTop: 56 }}>
           <Lockup cn="格局 / 用神" en="PATTERN / FAVORABLE" size="md" />
           <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 0 }}>
-            <KV k="格局" en="pattern" v={`${BAZI.pattern} · ${BAZI.patternEn}`} />
-            <KV k="用神" en="yòng shén" v={`${BAZI.yongShen} · ${BAZI.yongShenEn}`} accent />
-            <KV k="日主" en="day master" v={BAZI.master} />
+            <KV k="格局" en="pattern" v={b.patternEn ? `${b.pattern} · ${b.patternEn}` : b.pattern} />
+            <KV k="用神" en="yòng shén" v={b.yongShenEn ? `${b.yongShen} · ${b.yongShenEn}` : b.yongShen} accent />
+            <KV k="日主" en="day master" v={b.master} />
           </div>
         </div>
 
-        <div style={{ marginTop: 48 }}>
-          <Lockup cn="神煞" en="SHEN SHA" size="md" />
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 18 }}>
-            {BAZI.shenSha.map(s => <Chip key={s}>{s}</Chip>)}
+        {b.shenSha?.length > 0 && (
+          <div style={{ marginTop: 48 }}>
+            <Lockup cn="神煞" en="SHEN SHA" size="md" />
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 18 }}>
+              {b.shenSha.map(s => <Chip key={s}>{s}</Chip>)}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -2544,7 +2702,8 @@ function KV({ k, en, v, accent }) {
   );
 }
 
-function ZiweiView({ profile }) {
+function ZiweiView({ profile, ziwei }) {
+  const z = ziwei || ZIWEI;
   // simplified 12-palace grid (4x4 with center 2x2 info)
   const palaces = [
     "命宫","父母","福德","田宅",
@@ -2576,9 +2735,9 @@ function ZiweiView({ profile }) {
                   <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", alignItems: "center", gap: 8 }}>
                     <div className="caps" style={{ fontSize: 9 }}>命主 · CENTER</div>
                     <div style={{ fontFamily: "var(--serif-cn)", fontSize: 36, fontWeight: 700 }}>{profile?.name || SAMPLE_PROFILE.name}</div>
-                    <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{ZIWEI.局}</div>
+                    <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{z.局}</div>
                     <div className="hairline" style={{ width: "60%", margin: "8px 0" }} />
-                    <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>命: {ZIWEI.ming} · 身: {ZIWEI.shen}</div>
+                    <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>命: {z.ming} · 身: {z.shen}</div>
                   </div>
                 ) : (
                   <>
@@ -2602,7 +2761,7 @@ function ZiweiView({ profile }) {
       <div>
         <Lockup cn="四化" en="FOUR TRANSFORMATIONS" size="md" />
         <div style={{ marginTop: 18 }}>
-          {Object.entries(ZIWEI.bihua).map(([k, v]) => (
+          {Object.entries(z.bihua).map(([k, v]) => (
             <KV key={k} k={`化${k}`} en={k === "禄" ? "lù · prosperity" : k === "权" ? "quán · authority" : k === "科" ? "kē · fame" : "jì · taboo"} v={v} accent={k === "禄"} />
           ))}
         </div>
@@ -2618,26 +2777,27 @@ function ZiweiView({ profile }) {
   );
 }
 
-function AstroView() {
+function AstroView({ astro }) {
+  const a = astro || ASTRO;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "start" }}>
       <div style={{ display: "flex", justifyContent: "center", color: "var(--ink)" }}>
-        <AnimatedAstroWheel size={460} />
+        <AnimatedAstroWheel size={460} astro={a} />
       </div>
       <div>
         <Lockup cn="三大点" en="THREE LUMINARIES" size="md" />
         <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0, border: "1px solid var(--ink)" }}>
           {[
-            { cn: "太阳", en: "Sun", body: ASTRO.sun },
-            { cn: "月亮", en: "Moon", body: ASTRO.moon },
-            { cn: "上升", en: "Asc", body: ASTRO.asc },
+            { cn: "太阳", en: "Sun", body: a.sun },
+            { cn: "月亮", en: "Moon", body: a.moon },
+            { cn: "上升", en: "Asc", body: a.asc },
           ].map((x, i) => (
             <div key={i} style={{ padding: 20, borderRight: i < 2 ? "var(--rule)" : "none", textAlign: "center" }}>
               <div className="caps" style={{ fontSize: 10 }}>{x.en}</div>
               <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 18, marginTop: 6 }}>{x.cn}</div>
               <div style={{ fontFamily: "var(--serif-en)", fontSize: 36, marginTop: 10 }}>{x.body.glyph}</div>
               <div className="em" style={{ fontSize: 16, marginTop: 4 }}>{x.body.sign}</div>
-              <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 4 }}>{x.body.deg.toFixed(2)}°</div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 4 }}>{(x.body.deg || 0).toFixed(2)}°</div>
             </div>
           ))}
         </div>
@@ -2645,12 +2805,12 @@ function AstroView() {
         <div style={{ marginTop: 36 }}>
           <Lockup cn="行星位置" en="POSITIONS" size="md" />
           <div style={{ marginTop: 14, fontFamily: "var(--mono)", fontSize: 13, lineHeight: 1.9 }}>
-            {ASTRO.bodies.slice(0, 7).map(b => (
+            {a.bodies.slice(0, 7).map(b => (
               <div key={b.name} style={{ display: "grid", gridTemplateColumns: "32px 1fr 80px 60px", gap: 12, padding: "4px 0", borderBottom: "var(--rule)" }}>
                 <span style={{ fontFamily: "var(--serif-en)", fontSize: 16 }}>{b.glyph}</span>
                 <span style={{ fontFamily: "var(--serif-en)" }}>{b.name}</span>
                 <span style={{ color: "var(--ink-3)" }}>{b.sign}</span>
-                <span style={{ color: "var(--cinnabar)" }}>{b.deg.toFixed(1)}° · {b.house}H</span>
+                <span style={{ color: "var(--cinnabar)" }}>{(b.deg || 0).toFixed(1)}° · {b.house}H</span>
               </div>
             ))}
           </div>
@@ -2659,11 +2819,11 @@ function AstroView() {
         <div style={{ marginTop: 36 }}>
           <Lockup cn="主要相位" en="KEY ASPECTS" size="md" />
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 0 }}>
-            {ASTRO.aspects.map((a, i) => (
+            {a.aspects.map((x, i) => (
               <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 90px 50px", padding: "10px 0", borderBottom: "var(--rule)", fontSize: 14 }}>
-                <span><span className="em">{a.a}</span> ⟷ <span className="em">{a.b}</span></span>
-                <span style={{ color: "var(--cinnabar)", fontFamily: "var(--mono)", fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>{a.type}</span>
-                <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>orb {a.orb}°</span>
+                <span><span className="em">{x.a}</span> ⟷ <span className="em">{x.b}</span></span>
+                <span style={{ color: "var(--cinnabar)", fontFamily: "var(--mono)", fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>{x.type}</span>
+                <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>orb {x.orb}°</span>
               </div>
             ))}
           </div>
@@ -2673,13 +2833,15 @@ function AstroView() {
   );
 }
 
-function NumeroView() {
+function NumeroView({ numer }) {
+  const n = numer || NUMER;
+  const noteFor = (num) => (n.notes && n.notes[num]) || NUMER_NOTES[num] || "";
   const items = [
-    { n: NUMER.life, cn: "生命数", en: "Life Path", note: "求道者 · seeker" },
-    { n: NUMER.expression, cn: "表达数", en: "Expression", note: "开创者 · initiator" },
-    { n: NUMER.soul, cn: "灵魂数", en: "Soul Urge", note: "表达者 · communicator" },
-    { n: NUMER.personality, cn: "性格数", en: "Personality", note: "求道者 · seeker" },
-    { n: NUMER.year, cn: "个人年", en: "Personal Year", note: "责任之年 · year of duty", current: true },
+    { n: n.life,        cn: "生命数", en: "Life Path",     note: noteFor(n.life) },
+    { n: n.expression,  cn: "表达数", en: "Expression",    note: noteFor(n.expression) },
+    { n: n.soul,        cn: "灵魂数", en: "Soul Urge",     note: noteFor(n.soul) },
+    { n: n.personality, cn: "性格数", en: "Personality",   note: noteFor(n.personality) },
+    { n: n.year,        cn: "个人年", en: "Personal Year", note: noteFor(n.year) || "本年度", current: true },
   ];
   return (
     <div>
@@ -2702,40 +2864,41 @@ function NumeroView() {
       <div style={{ marginTop: 56, padding: 32, borderLeft: "2px solid var(--cinnabar)", background: "color-mix(in oklch, var(--paper) 50%, var(--paper-2))" }}>
         <div className="caps" style={{ fontSize: 10 }}>毕达哥拉斯派 · PYTHAGOREAN</div>
         <p style={{ fontFamily: "var(--serif-cn)", fontSize: 18, lineHeight: 1.85, marginTop: 12, marginBottom: 0 }}>
-          生命数 7 与表达数 1 形成"内省者—开创者"的张力——你内里需要独处与求道，外在却要表达与开创。今年个人年 6，是责任之年；新东西须长在已有结构上，非纯创新年。
+          生命数 <strong>{n.life}</strong> 是你这一生的主调，{noteFor(n.life)}；表达数 <strong>{n.expression}</strong> 是外显的姿态。今年个人年 <strong>{n.year}</strong>，{noteFor(n.year)}。
         </p>
       </div>
     </div>
   );
 }
 
-function AllView() {
+function AllView({ bazi, ziwei, astro, numer }) {
+  const b = bazi || BAZI, z = ziwei || ZIWEI, a = astro || ASTRO, nm = numer || NUMER;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
       <div className="card">
         <Lockup cn="八字 · 四柱" en="FOUR PILLARS" size="md" />
         <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-          {BAZI.pillars.map(p => <PillarCard key={p.label} pillar={p} />)}
+          {b.pillars.map(p => <PillarCard key={p.label} pillar={p} />)}
         </div>
       </div>
       <div className="card" style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "var(--ink)" }}>
         <Lockup cn="占星 · 星盘" en="NATAL CHART" size="md" />
-        <div style={{ marginTop: 16 }}><AstroWheel size={300} data={ASTRO} /></div>
+        <div style={{ marginTop: 16 }}><AstroWheel size={300} data={a} /></div>
       </div>
       <div className="card">
         <Lockup cn="紫微 · 命主" en="ZIWEI · LIFE PALACE" size="md" />
         <div style={{ marginTop: 24, fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.9 }}>
-          <div>命宫: <strong>巳宫</strong> · 巨门化禄 · 太阳化权</div>
-          <div>身宫: <strong>酉宫</strong></div>
-          <div>局: <strong>{ZIWEI.局}</strong></div>
+          <div>命宫: <strong>{z.ming}</strong> · 化禄 {z.bihua["禄"]} · 化权 {z.bihua["权"]}</div>
+          <div>身宫: <strong>{z.shen}</strong></div>
+          <div>局: <strong>{z.局}</strong></div>
         </div>
       </div>
       <div className="card">
         <Lockup cn="数字命理" en="NUMEROLOGY" size="md" />
         <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, textAlign: "center" }}>
-          {[NUMER.life, NUMER.expression, NUMER.soul, NUMER.personality, NUMER.year].map((n, i) => (
+          {[nm.life, nm.expression, nm.soul, nm.personality, nm.year].map((v, i) => (
             <div key={i}>
-              <div style={{ fontFamily: "var(--serif-en)", fontSize: 48, fontWeight: 500, lineHeight: 1, color: i === 4 ? "var(--cinnabar)" : "var(--ink)" }}>{n}</div>
+              <div style={{ fontFamily: "var(--serif-en)", fontSize: 48, fontWeight: 500, lineHeight: 1, color: i === 4 ? "var(--cinnabar)" : "var(--ink)" }}>{v}</div>
               <div className="caps" style={{ fontSize: 8, marginTop: 8 }}>
                 {["LIFE","EXPR","SOUL","PERS","YEAR"][i]}
               </div>
@@ -3345,7 +3508,9 @@ window.ChatScreen = ChatScreen;
 
   <script type="text/babel">
 // Report — long-scroll deep research report
-function ReportScreen({ go, profile }) {
+function ReportScreen({ go, profile, charts }) {
+  const raw = charts?.charts;
+  const baziAdapted = useMemo(() => adaptBazi(raw?.bazi) || BAZI, [raw]);
   return (
     <div className="fade-in" style={{ position: "relative", background: "var(--paper)" }}>
       {/* Cover */}
@@ -3361,7 +3526,7 @@ function ReportScreen({ go, profile }) {
           <p>当前大运庚子，金水并行，与命局喜用相合，是十年中最宜立方向的一段。</p>
         </>
       } sidebar={
-        <BaziMiniGrid />
+        <BaziMiniGrid bazi={baziAdapted} />
       } />
 
       <ReportChapter no="02" cn="紫微斗数" en="Zǐwēi Dǒushù" body={
@@ -3581,10 +3746,11 @@ function SidebarKVList({ items }) {
   );
 }
 
-function BaziMiniGrid() {
+function BaziMiniGrid({ bazi }) {
+  const b = bazi || BAZI;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4 }}>
-      {BAZI.pillars.map(p => (
+      {b.pillars.map(p => (
         <div key={p.label} style={{ textAlign: "center", padding: "12px 4px", border: p.master ? "1.5px solid var(--cinnabar)" : "1px solid color-mix(in oklch, var(--ink) 18%, transparent)" }}>
           <div className="caps" style={{ fontSize: 8 }}>{p.labelEn}</div>
           <div style={{ fontFamily: "var(--serif-cn)", fontSize: 26, fontWeight: 600, marginTop: 4, color: p.master ? "var(--cinnabar)" : "var(--ink)" }}>{p.stem}</div>
@@ -3995,6 +4161,46 @@ function App() {
 
   const [tweaks, setTweaks] = useTweaks(window.__TWEAK_DEFAULTS);
 
+  // Real backend charts (bazi/ziwei/natal_astro/numerology). Fetched on profile change.
+  const [charts, setCharts]               = useState(null);
+  const [chartsLoading, setChartsLoading] = useState(false);
+  const [chartsError, setChartsError]     = useState(null);
+
+  useEffect(() => {
+    let aborted = false;
+    const fetchCharts = async () => {
+      if (!profile?.birth) return;
+      setChartsLoading(true); setChartsError(null);
+      try {
+        const res = await fetch("/api/v1/charts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            profile: {
+              name: profile.name,
+              gender: profile.gender === "女" ? "female" : profile.gender === "男" ? "male" : "other",
+              date: (profile.birth || "").split(" ")[0] || "",
+              time: (profile.birth || "").split(" ")[1] || "",
+              unknownTime: false,
+              place: profile.place,
+              timezone_offset: 8.0,
+              scenario: "chat",
+            },
+            question: "",
+          }),
+        });
+        const j = await res.json();
+        if (!aborted) setCharts(j);
+      } catch (err) {
+        if (!aborted) setChartsError(err.message || "排盘失败");
+      } finally {
+        if (!aborted) setChartsLoading(false);
+      }
+    };
+    fetchCharts();
+    return () => { aborted = true; };
+  }, [profile?.name, profile?.birth, profile?.place, profile?.gender]);
+
   // persist
   useEffect(() => { try { localStorage.setItem("suan_profile", JSON.stringify(profile)); } catch {} }, [profile]);
   useEffect(() => { try { localStorage.setItem("suan_question", question); } catch {} }, [question]);
@@ -4058,9 +4264,9 @@ function App() {
       })[screen]}>
         {screen === "home"    && <LandingScreen go={go} hasProfile={hasProfile} profile={profile} />}
         {screen === "onboard" && <OnboardingScreen go={go} sealProfile={sealProfile} initialProfile={profile} initialQuestion={question} />}
-        {screen === "chart"   && <ChartScreen go={go} profile={profile} />}
+        {screen === "chart"   && <ChartScreen go={go} profile={profile} charts={charts} chartsLoading={chartsLoading} chartsError={chartsError} />}
         {screen === "chat"    && <ChatScreen go={go} animSpeed={tweaks.animSpeed || 1} profile={profile} question={question} />}
-        {screen === "report"  && <ReportScreen go={go} profile={profile} />}
+        {screen === "report"  && <ReportScreen go={go} profile={profile} charts={charts} />}
         {screen === "archive" && <ArchiveScreen go={go} profile={profile} sessions={sessions} hasProfile={hasProfile} />}
       </main>
 
