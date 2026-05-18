@@ -58,10 +58,19 @@ async def _on_startup():
 
 @app.get("/")
 async def index():
-    p = WEB_ROOT / "index.html"
+    """根路由：v2.html（编辑设计杂志风 React 单文件 SPA）。
+    老的 SaaS 风落地页移到 /classic。"""
+    p = WEB_ROOT / "v2.html"
     if p.exists():
         return FileResponse(p)
     return RedirectResponse("/health")
+
+
+@app.get("/classic")
+@app.get("/classic.html")
+async def classic_index():
+    """老的 SaaS 风落地页（Tailwind + Alpine），保留作历史对照。"""
+    return FileResponse(WEB_ROOT / "index.html")
 
 
 @app.get("/chat")
