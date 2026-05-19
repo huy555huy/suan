@@ -4,28 +4,24 @@
     1. 64 卦数据：``HEXAGRAMS`` 提供每卦 (id, 卦名, 上卦, 下卦, 6 爻, 卦辞简略, 彖辞)
     2. 起卦法：
         - ``compute_meihua``：梅花易数（数字起卦 / 时间起卦）
-        - ``compute_coin``：铜钱起卦（6 次三枚硬币结果，未提供则随机）
+        - ``compute_coin``：铜钱起卦（6 次三枚硬币结果）
     3. 本卦 / 变卦 / 互卦 / 动爻
-    4. 京房纳甲：每爻配六亲、六神（按问卦时日干）、世应位置
+    4. 京房纳甲：六爻盘由 najia 计算纳甲、六亲、伏神、世应、六神
     5. 用神（按问题类型简单映射）
 
 入口：
-    - compute_meihua(question, numbers=None, dt=None) -> HexagramChart
-    - compute_coin(question, coin_results=None) -> HexagramChart
+    - compute_meihua(question, numbers=None, dt) -> HexagramChart
+    - compute_coin(question, coin_results) -> HexagramChart
 """
 from __future__ import annotations
 
-import secrets
 from datetime import datetime
+from importlib.metadata import version
 from typing import Any
 
 from core.schemas import HexagramChart
 from computation.calendar import (
     DI_ZHI,
-    GAN_WUXING,
-    TIAN_GAN,
-    ZHI_WUXING,
-    get_day_pillar,
 )
 
 
@@ -56,6 +52,29 @@ TRIGRAM_TO_FIVEELEMENT = {
     "震": "木", "巽": "木",
     "坎": "水",
     "艮": "土", "坤": "土",
+}
+WUXING_SHENG = {"木": "火", "火": "土", "土": "金", "金": "水", "水": "木"}
+WUXING_KE = {"木": "土", "土": "水", "水": "火", "火": "金", "金": "木"}
+MONTH_BRANCH_BY_GANZHI_MONTH = {
+    "寅": {"旺": {"木"}, "相": {"火"}, "休": {"水"}, "囚": {"金"}, "死": {"土"}},
+    "卯": {"旺": {"木"}, "相": {"火"}, "休": {"水"}, "囚": {"金"}, "死": {"土"}},
+    "辰": {"旺": {"土"}, "相": {"金"}, "休": {"火"}, "囚": {"木"}, "死": {"水"}},
+    "巳": {"旺": {"火"}, "相": {"土"}, "休": {"木"}, "囚": {"水"}, "死": {"金"}},
+    "午": {"旺": {"火"}, "相": {"土"}, "休": {"木"}, "囚": {"水"}, "死": {"金"}},
+    "未": {"旺": {"土"}, "相": {"金"}, "休": {"火"}, "囚": {"木"}, "死": {"水"}},
+    "申": {"旺": {"金"}, "相": {"水"}, "休": {"土"}, "囚": {"火"}, "死": {"木"}},
+    "酉": {"旺": {"金"}, "相": {"水"}, "休": {"土"}, "囚": {"火"}, "死": {"木"}},
+    "戌": {"旺": {"土"}, "相": {"金"}, "休": {"火"}, "囚": {"木"}, "死": {"水"}},
+    "亥": {"旺": {"水"}, "相": {"木"}, "休": {"金"}, "囚": {"土"}, "死": {"火"}},
+    "子": {"旺": {"水"}, "相": {"木"}, "休": {"金"}, "囚": {"土"}, "死": {"火"}},
+    "丑": {"旺": {"土"}, "相": {"金"}, "休": {"火"}, "囚": {"木"}, "死": {"水"}},
+}
+RELATIVE_HINTS = {
+    "妻财": "钱财、资源、交易、男命感情对象",
+    "官鬼": "工作、职位、规则压力、女命感情对象、疾病忧患",
+    "父母": "文书、证件、房屋、长辈、考试资料",
+    "子孙": "结果、产出、子女、医药、解忧",
+    "兄弟": "同辈、竞争、耗财、朋友同事",
 }
 
 
@@ -168,7 +187,7 @@ def _lines_to_trigrams(lines: list[int]) -> tuple[str, str]:
 
 # ── 京房纳甲 ────────────────────────────────────────────────
 # 京房八宫：每宫 8 卦，配地支与五行
-# 这里采用简化纳甲：按上卦/下卦 8 卦各自的纳甲规律
+# 按上卦/下卦 8 卦各自的纳甲规律
 # 乾（金）：内卦 子寅辰、外卦 午申戌
 # 坤（土）：内卦 未巳卯、外卦 丑亥酉
 # 震（木）：内卦 子寅辰、外卦 午申戌
@@ -225,9 +244,9 @@ SHI_YAO_BY_INDEX_IN_PALACE = [6, 1, 2, 3, 4, 5, 4, 3]  # 本/一/二/三/四/五
 def _palace_index(hex_name: str) -> tuple[str, int]:
     """返回卦所属宫名 + 在宫中的索引 0-7。
 
-    简化：用顺序词典。如果不在表中，按"乾"宫处理。
+    使用完整八宫顺序表；卦名缺失视为数据错误。
     """
-    palace = PALACE_OF_HEXAGRAM.get(hex_name, "乾")
+    palace = PALACE_OF_HEXAGRAM[hex_name]
     palace_order = {
         "乾": ["乾", "姤", "遁", "否", "观", "剥", "晋", "大有"],
         "震": ["震", "豫", "解", "恒", "升", "井", "大过", "随"],
@@ -241,7 +260,7 @@ def _palace_index(hex_name: str) -> tuple[str, int]:
     seq = palace_order[palace]
     if hex_name in seq:
         return palace, seq.index(hex_name)
-    return palace, 0
+    raise ValueError(f"京房八宫顺序表缺少卦名：{hex_name}")
 
 
 def _na_jia_for_hexagram(upper: str, lower: str) -> list[str]:
@@ -292,19 +311,175 @@ def _six_gods_for_lines(day_stem: str) -> list[str]:
 
 # ── 用神简易判定 ─────────────────────────────────────────────
 QUESTION_TO_YONGSHEN = {
-    "财": "妻财", "求财": "妻财", "事业": "官鬼", "工作": "官鬼",
-    "婚姻": "妻财", "感情": "妻财",  # 男看妻财，女看官鬼（粗略）
-    "学业": "父母", "考试": "父母",
-    "健康": "子孙", "疾病": "子孙",
-    "出行": "父母", "诉讼": "官鬼", "子女": "子孙",
+    "财": "妻财", "求财": "妻财", "投资": "妻财", "收入": "妻财",
+    "事业": "官鬼", "工作": "官鬼", "职位": "官鬼", "升职": "官鬼",
+    "学业": "父母", "考试": "父母", "合同": "父母", "房": "父母",
+    "健康": "子孙", "疾病": "官鬼", "病": "官鬼",
+    "出行": "父母", "诉讼": "官鬼", "子女": "子孙", "合作": "应爻",
 }
+RELATIONSHIP_KEYWORDS = ("婚姻", "感情", "恋爱", "复合", "对象", "伴侣", "男友", "女友", "丈夫", "妻子")
+MALE_SELF_HINTS = ("男", "男方", "男生", "男性", "丈夫", "老公", "我追她", "女友", "女朋友", "妻子")
+FEMALE_SELF_HINTS = ("女", "女方", "女生", "女性", "妻", "太太", "我追他", "男友", "男朋友", "丈夫")
 
 
-def _guess_yong_shen(question: str) -> str:
+def _infer_yong_shen(question: str) -> dict[str, Any]:
+    q = question or ""
+    if any(keyword in q for keyword in RELATIONSHIP_KEYWORDS):
+        male_hit = any(keyword in q for keyword in MALE_SELF_HINTS)
+        female_hit = any(keyword in q for keyword in FEMALE_SELF_HINTS)
+        if male_hit and not female_hit:
+            return {
+                "value": "妻财",
+                "source": "relationship_male_self",
+                "confidence": "medium",
+                "needs_clarification": [],
+            }
+        if female_hit and not male_hit:
+            return {
+                "value": "官鬼",
+                "source": "relationship_female_self",
+                "confidence": "medium",
+                "needs_clarification": [],
+            }
+        return {
+            "value": None,
+            "source": "relationship_requires_identity",
+            "confidence": "low",
+            "needs_clarification": ["感情/婚姻占需确认求测者性别与所问对象；男问伴侣多取妻财，女问伴侣多取官鬼。"],
+        }
     for k, v in QUESTION_TO_YONGSHEN.items():
-        if k in question:
-            return v
-    return "妻财"
+        if k in q:
+            return {
+                "value": v,
+                "source": f"keyword:{k}",
+                "confidence": "medium",
+                "needs_clarification": [],
+            }
+    return {
+        "value": None,
+        "source": "unclassified_question",
+        "confidence": "low",
+        "needs_clarification": ["问题未能归入财、官、父母、子孙等明确占事；请补充具体所问对象，再定用神。"],
+    }
+
+
+def _month_state_for_wuxing(month_branch: str, wuxing: str | None) -> str | None:
+    if not wuxing:
+        return None
+    table = MONTH_BRANCH_BY_GANZHI_MONTH.get(month_branch)
+    if not table:
+        return None
+    for state, elements in table.items():
+        if wuxing in elements:
+            return state
+    return None
+
+
+def _relation_between_elements(source: str | None, target: str | None) -> str:
+    if not source or not target:
+        return "未知"
+    if source == target:
+        return "比和"
+    if WUXING_SHENG[source] == target:
+        return "生"
+    if WUXING_KE[source] == target:
+        return "克"
+    if WUXING_SHENG[target] == source:
+        return "被生"
+    if WUXING_KE[target] == source:
+        return "被克"
+    return "无直接生克"
+
+
+def _line_by_position(lines: list[dict[str, Any]], position: int) -> dict[str, Any] | None:
+    for line in lines:
+        if line["position"] == position:
+            return line
+    return None
+
+
+def _analyze_liuyao(question: str, yong_shen_info: dict[str, Any], data: dict[str, Any],
+                    ben_lines_detail: list[dict[str, Any]]) -> dict[str, Any]:
+    gz = data["lunar"]["gz"]
+    month_branch = gz["month"][1]
+    day_branch = gz["day"][1]
+    xun_kong = set(data["lunar"]["xkong"])
+    yong_shen = yong_shen_info.get("value")
+    yong_lines = [
+        line for line in ben_lines_detail
+        if yong_shen is not None and line["six_relative"] == yong_shen
+    ]
+    shi = _line_by_position(ben_lines_detail, data["shiy"][0])
+    ying = _line_by_position(ben_lines_detail, data["shiy"][1])
+    moving = [line for line in ben_lines_detail if line["moving"]]
+
+    enriched_yong_lines: list[dict[str, Any]] = []
+    for line in yong_lines:
+        month_state = _month_state_for_wuxing(month_branch, line["wuxing"])
+        score = 0
+        if month_state in ("旺", "相"):
+            score += 1
+        if line["branch"] == day_branch:
+            score += 1
+        if line["branch"] in xun_kong:
+            score -= 1
+        if line["moving"]:
+            score += 1
+        enriched_yong_lines.append({
+            **line,
+            "month_state": month_state,
+            "day_same_branch": line["branch"] == day_branch,
+            "is_xun_kong": line["branch"] in xun_kong,
+            "strength_score": score,
+            "strength_label": "旺" if score >= 2 else "有气" if score == 1 else "偏弱" if score == 0 else "空弱",
+        })
+
+    yong_positions = [line["position"] for line in enriched_yong_lines]
+    moving_effects = []
+    for line in moving:
+        effect = {
+            "from_position": line["position"],
+            "from_relative": line["six_relative"],
+            "from_wuxing": line["wuxing"],
+            "to_yong_shen": [],
+            "to_shi": _relation_between_elements(line["wuxing"], shi["wuxing"] if shi else None),
+            "to_ying": _relation_between_elements(line["wuxing"], ying["wuxing"] if ying else None),
+        }
+        for yong_line in enriched_yong_lines:
+            effect["to_yong_shen"].append({
+                "target_position": yong_line["position"],
+                "relation": _relation_between_elements(line["wuxing"], yong_line["wuxing"]),
+            })
+        moving_effects.append(effect)
+
+    shi_ying_relation = {
+        "shi": shi,
+        "ying": ying,
+        "shi_to_ying": _relation_between_elements(shi["wuxing"] if shi else None, ying["wuxing"] if ying else None),
+        "ying_to_shi": _relation_between_elements(ying["wuxing"] if ying else None, shi["wuxing"] if shi else None),
+    }
+    missing_required = []
+    missing_required = list(yong_shen_info.get("needs_clarification", []))
+    if yong_shen is None:
+        missing_required.append("用神未定，不应输出确定吉凶；需先补清占事对象。")
+    elif not yong_lines:
+        missing_required.append("用神不上卦，需看伏神/飞神，当前应标为隐伏或事象不明。")
+
+    return {
+        "question_yong_shen": yong_shen,
+        "yong_shen_source": yong_shen_info.get("source"),
+        "yong_shen_confidence": yong_shen_info.get("confidence"),
+        "yong_shen_hint": RELATIVE_HINTS.get(yong_shen),
+        "month_branch": month_branch,
+        "day_branch": day_branch,
+        "xun_kong": data["lunar"]["xkong"],
+        "yong_shen_positions": yong_positions,
+        "yong_shen_lines": enriched_yong_lines,
+        "shi_ying_relation": shi_ying_relation,
+        "moving_effects": moving_effects,
+        "hidden_spirits": data.get("hide"),
+        "needs_clarification": missing_required,
+    }
 
 
 # ── 互卦 ──────────────────────────────────────────────────
@@ -338,9 +513,12 @@ def _meihua_from_numbers(num1: int, num2: int, num3: int) -> tuple[list[int], li
 
 def _meihua_from_time(dt: datetime) -> tuple[list[int], list[int], int]:
     """时间起卦：年支号 + 月 + 日 取上卦；上数加时辰序号取下卦；总和取动爻。"""
-    # 年支序号：子=1, 丑=2, ..., 亥=12
-    # 这里用阳历年序号简化：(year - 1900) % 12 + 1
-    year_num = (dt.year - 1900) % 12 + 1
+    from lunar_python import Solar
+
+    # 年支序号：子=1, 丑=2, ..., 亥=12，按节气精确年柱取值。
+    lunar = Solar.fromYmdHms(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second).getLunar()
+    year_zhi = lunar.getYearZhiExact()
+    year_num = DI_ZHI.index(year_zhi) + 1
     month = dt.month
     day = dt.day
     # 时辰序：子=1...亥=12
@@ -354,15 +532,6 @@ def _meihua_from_time(dt: datetime) -> tuple[list[int], list[int], int]:
     lower_total = upper_total + hour_num
     moving = (upper_total + hour_num) % 6 or 6
     return _meihua_from_numbers(upper_total, lower_total, moving)
-
-
-def _coin_throw() -> int:
-    """单次掷三枚硬币 → 老阴(6)/少阳(7)/少阴(8)/老阳(9)。
-    每枚正面记 3 分、反面记 2 分；3 枚相加 6/7/8/9。
-    """
-    coins = [secrets.randbelow(2) for _ in range(3)]  # 0=反 1=正
-    score = sum(3 if c == 1 else 2 for c in coins)
-    return score
 
 
 def _coin_results_to_lines(coin_results: list[list[int]]) -> tuple[list[int], list[int], list[int]]:
@@ -389,76 +558,204 @@ def _coin_results_to_lines(coin_results: list[list[int]]) -> tuple[list[int], li
     return ben, bian, moving
 
 
-# ── 综合输出 ─────────────────────────────────────────────────
-def _build_chart(method: str, question: str, ben_lines: list[int],
-                  bian_lines: list[int], moving_lines: list[int],
-                  dt: datetime | None = None) -> HexagramChart:
-    """根据本/变/动爻构造完整 HexagramChart。"""
-    ben = _hexagram_from_lines(ben_lines)
-    bian = _hexagram_from_lines(bian_lines)
-    hu_lines = _hu_gua(ben_lines)
-    hu = _hexagram_from_lines(hu_lines)
+def _line_param_to_line(param: int) -> int:
+    return int(param) % 2
 
-    # 京房纳甲：每爻地支
-    line_zhi = _na_jia_for_hexagram(ben["upper_trigram"], ben["lower_trigram"])
 
-    # 宫主五行
-    palace_name, in_palace_idx = _palace_index(ben["name"])
-    palace_wx = TRIGRAM_TO_FIVEELEMENT[palace_name]
-    six_relatives = _six_relatives_for_lines(line_zhi, palace_wx)
+def _line_param_to_transformed_line(param: int) -> int:
+    return 1 if int(param) in (1, 4) else 0
 
-    # 世应
-    shi_yao = SHI_YAO_BY_INDEX_IN_PALACE[in_palace_idx]
-    ying_yao = ((shi_yao - 1 + 3) % 6) + 1
 
-    # 六神（按起卦日干）
-    if dt is None:
-        dt = datetime.now()
-    day_stem, _, _ = get_day_pillar(dt)
-    six_gods = _six_gods_for_lines(day_stem)
+def _params_to_lines(params: list[int]) -> tuple[list[int], list[int], list[int]]:
+    if len(params) != 6:
+        raise ValueError("六爻参数必须为 6 爻，自初爻到上爻。")
+    ben = [_line_param_to_line(v) for v in params]
+    bian = [_line_param_to_transformed_line(v) for v in params]
+    moving = [i + 1 for i, v in enumerate(params) if int(v) > 2]
+    return ben, bian, moving
 
-    # 用神
-    yong_shen = _guess_yong_shen(question)
 
-    # 增强本/变卦字段
-    ben_full = {
-        **ben,
-        "line_branches": line_zhi,
+def _coin_results_to_najia_params(coin_results: list[list[int]]) -> list[int]:
+    """三枚铜钱 → najia 参数，自初爻到上爻。
+
+    1=少阳，0=少阴，3=老阴动化阳，4=老阳动化阴。
+    coin_results 中 1 计 3 分、0 计 2 分。
+    """
+    if len(coin_results) != 6:
+        raise ValueError("铜钱起卦需要 6 次掷币结果")
+    params: list[int] = []
+    score_to_param = {6: 3, 7: 1, 8: 0, 9: 4}
+    for coins in coin_results:
+        if len(coins) != 3:
+            raise ValueError("每次需 3 枚铜钱")
+        if any(c not in (0, 1) for c in coins):
+            raise ValueError("铜钱结果只能使用 1=正、0=反")
+        score = sum(3 if c == 1 else 2 for c in coins)
+        params.append(score_to_param[score])
+    return params
+
+
+def _lines_to_najia_params(ben_lines: list[int], moving_lines: list[int]) -> list[int]:
+    moving = set(moving_lines)
+    params: list[int] = []
+    for idx, line in enumerate(ben_lines, start=1):
+        if line == 1:
+            params.append(4 if idx in moving else 1)
+        elif line == 0:
+            params.append(3 if idx in moving else 0)
+        else:
+            raise ValueError(f"爻值必须为 0/1，收到 {line!r}")
+    return params
+
+
+def _split_qinx(value: str) -> dict[str, str | None]:
+    if not value:
+        return {"stem": None, "branch": None, "wuxing": None, "ganzhi": None, "text": value}
+    return {
+        "stem": value[0] if len(value) >= 1 else None,
+        "branch": value[1] if len(value) >= 2 else None,
+        "wuxing": value[2:] or None,
+        "ganzhi": value[:2] if len(value) >= 2 else None,
+        "text": value,
+    }
+
+
+def _enrich_lines(mark: str, qin6: list[str], qinx: list[str],
+                  gods: list[str] | tuple[str, ...] | None = None,
+                  moving: list[int] | None = None) -> list[dict[str, Any]]:
+    moving_set = set(moving or [])
+    result: list[dict[str, Any]] = []
+    for idx, raw_line in enumerate(mark, start=1):
+        parsed = _split_qinx(qinx[idx - 1])
+        result.append({
+            "position": idx,
+            "line": int(raw_line),
+            "yin_yang": "阳" if raw_line == "1" else "阴",
+            "six_relative": qin6[idx - 1],
+            "ganzhi_wuxing": qinx[idx - 1],
+            "stem": parsed["stem"],
+            "branch": parsed["branch"],
+            "wuxing": parsed["wuxing"],
+            "six_god": gods[idx - 1] if gods else None,
+            "moving": idx - 1 in moving_set,
+        })
+    return result
+
+
+def _hexagram_from_najia_name(name: str, mark: str) -> dict[str, Any]:
+    if name.endswith("为天"):
+        simple_name = "乾"
+    elif name.endswith("为泽"):
+        simple_name = "兑"
+    elif name.endswith("为火"):
+        simple_name = "离"
+    elif name.endswith("为雷"):
+        simple_name = "震"
+    elif name.endswith("为风"):
+        simple_name = "巽"
+    elif name.endswith("为水"):
+        simple_name = "坎"
+    elif name.endswith("为山"):
+        simple_name = "艮"
+    elif name.endswith("为地"):
+        simple_name = "坤"
+    else:
+        simple_name = name[-1] if len(name) >= 3 and name[1] in "天地风雷水火山泽" else name
+    try:
+        base = _hexagram_from_lines([int(x) for x in mark])
+    except Exception:
+        base = {"name": simple_name, "lines": [int(x) for x in mark]}
+    base["full_name"] = name
+    return base
+
+
+def _compile_najia(params: list[int], dt: datetime, question: str):
+    from najia import Najia
+
+    return Najia(0).compile(params=params, date=dt, title=question)
+
+
+def _build_chart_from_najia(method: str, question: str, params: list[int],
+                            dt: datetime, hu_lines: list[int] | None = None) -> HexagramChart:
+    gua = _compile_najia(params, dt, question)
+    data = gua.data
+    if data is None:
+        raise ValueError("najia 未返回排盘数据")
+
+    ben_lines, bian_lines, moving_lines = _params_to_lines(params)
+    ben = _hexagram_from_najia_name(data["name"], data["mark"])
+    bian = None
+    transformed_mark = "".join(str(x) for x in bian_lines)
+    if data.get("bian"):
+        bian_raw = data["bian"]
+        bian = _hexagram_from_najia_name(bian_raw["name"], bian_raw["mark"])
+        bian.update({
+            "mark": bian_raw["mark"],
+            "palace": bian_raw.get("gong"),
+            "line_relatives": bian_raw.get("qin6", []),
+            "line_ganzhi_wuxing": bian_raw.get("qinx", []),
+            "lines_detail": _enrich_lines(
+                bian_raw["mark"],
+                bian_raw.get("qin6", []),
+                bian_raw.get("qinx", []),
+            ),
+        })
+    elif transformed_mark != data["mark"]:
+        bian = _hexagram_from_lines(bian_lines)
+        bian.update({"mark": transformed_mark})
+
+    hu_source = hu_lines if hu_lines is not None else _hu_gua(ben_lines)
+    hu = _hexagram_from_lines(hu_source)
+
+    shi_yao, ying_yao, palace_index = data["shiy"]
+    six_gods = list(data["god6"])
+    six_relatives = list(data["qin6"])
+    qinx = list(data["qinx"])
+    ben_lines_detail = _enrich_lines(data["mark"], six_relatives, qinx, six_gods, data["dong"])
+    ben.update({
+        "mark": data["mark"],
+        "palace": data["gong"],
+        "palace_index": palace_index,
         "line_relatives": six_relatives,
         "line_gods": six_gods,
-        "palace": palace_name,
-        "palace_wuxing": palace_wx,
+        "line_ganzhi_wuxing": qinx,
+        "lines_detail": ben_lines_detail,
         "shi_yao": shi_yao,
         "ying_yao": ying_yao,
-    }
-    bian_full = {
-        **bian,
-        "line_branches": _na_jia_for_hexagram(bian["upper_trigram"], bian["lower_trigram"]),
-    }
-    hu_full = {
-        **hu,
-        "line_branches": _na_jia_for_hexagram(hu["upper_trigram"], hu["lower_trigram"]),
-    }
+        "xun_kong": data["lunar"]["xkong"],
+        "gan_zhi": data["lunar"]["gz"],
+    })
+    hu.update({
+        "mark": "".join(str(x) for x in hu_source),
+    })
 
+    yong_shen_info = _infer_yong_shen(question)
+    yong_shen = yong_shen_info.get("value")
+    liuyao_analysis = _analyze_liuyao(question, yong_shen_info, data, ben_lines_detail)
     metadata: dict[str, Any] = {
-        "ben_gua_id": ben["id"],
-        "bian_gua_id": bian["id"],
-        "hu_gua_id": hu["id"],
-        "palace": palace_name,
-        "palace_index": in_palace_idx,
-        "day_stem_used": day_stem,
-        "note": (
-            "本卦/变卦/互卦+京房纳甲+世应+六神计算完整; "
-            "用神按问题关键词简单匹配; 男女六亲细分需上层补充"
-        ),
+        "engine": "najia",
+        "engine_version": version("najia"),
+        "params": list(params),
+        "line_encoding": "0=少阴, 1=少阳, 3=老阴动化阳, 4=老阳动化阴",
+        "ben_gua_id": ben.get("id"),
+        "bian_gua_id": bian.get("id") if bian else None,
+        "hu_gua_id": hu.get("id"),
+        "palace": data["gong"],
+        "palace_index": palace_index,
+        "xun_kong": data["lunar"]["xkong"],
+        "gan_zhi": data["lunar"]["gz"],
+        "hide": data.get("hide"),
+        "liuyao_analysis": liuyao_analysis,
+        "render": gua.render(),
+        "yong_shen_note": "用神按明确占事关键词给候选；感情等涉及身份的问题若缺求测者信息，会标记 needs_clarification，不输出确定吉凶。",
     }
 
     return HexagramChart(
         method=method,
         question=question,
-        ben_gua=ben_full,
-        bian_gua=bian_full,
-        hu_gua=hu_full,
+        ben_gua=ben,
+        bian_gua=bian,
+        hu_gua=hu,
         moving_lines=moving_lines,
         yong_shen=yong_shen,
         shi_yao=shi_yao,
@@ -469,6 +766,16 @@ def _build_chart(method: str, question: str, ben_lines: list[int],
     )
 
 
+# ── 综合输出 ─────────────────────────────────────────────────
+def _build_chart(method: str, question: str, ben_lines: list[int],
+                  bian_lines: list[int], moving_lines: list[int],
+                  dt: datetime | None = None) -> HexagramChart:
+    if dt is None:
+        raise ValueError("起卦时间缺失；请提供明确起卦时间。")
+    params = _lines_to_najia_params(ben_lines, moving_lines)
+    return _build_chart_from_najia(method, question, params, dt, hu_lines=_hu_gua(ben_lines))
+
+
 # ── 入口函数 ────────────────────────────────────────────────
 def compute_meihua(question: str = "", numbers: tuple[int, int] | None = None,
                     dt: datetime | None = None) -> HexagramChart:
@@ -477,33 +784,36 @@ def compute_meihua(question: str = "", numbers: tuple[int, int] | None = None,
     参数：
         question: 问题文本（用于简易用神判定）
         numbers: 可选 (a, b)，两数法；为空则用时间起卦
-        dt: 时间起卦的时间，默认 now()
+        dt: 时间起卦的时间；时间起卦必须显式提供
     """
-    if dt is None:
-        dt = datetime.now()
     if numbers is not None:
         a, b = numbers
         ben, bian, mv = _meihua_from_numbers(a, b, a + b)
         moving = [mv]
     else:
+        if dt is None:
+            raise ValueError("梅花时间起卦需要明确起卦时间；不能默认使用系统当前时间。")
         ben, bian, mv = _meihua_from_time(dt)
         moving = [mv]
     return _build_chart("meihua", question, ben, bian, moving, dt)
 
 
 def compute_coin(question: str = "",
-                  coin_results: list[list[int]] | None = None) -> HexagramChart:
+                 coin_results: list[list[int]] | None = None,
+                 dt: datetime | None = None) -> HexagramChart:
     """铜钱起卦。
 
     参数：
         question: 问题文本
-        coin_results: 6 次掷币结果，每次 3 枚 (1=正/0=反)；为空则随机
+        coin_results: 6 次掷币结果，每次 3 枚 (1=正/0=反)
+        dt: 起卦时间；用于日辰/六神
     """
     if coin_results is None:
-        # 随机生成
-        coin_results = [[secrets.randbelow(2) for _ in range(3)] for _ in range(6)]
+        raise ValueError("铜钱起卦需要用户提供 6 次掷币结果；不能由系统随机生成。")
+    if dt is None:
+        raise ValueError("铜钱起卦需要明确起卦时间；不能默认使用系统当前时间。")
     ben, bian, moving = _coin_results_to_lines(coin_results)
-    return _build_chart("coin", question, ben, bian, moving, datetime.now())
+    return _build_chart("coin", question, ben, bian, moving, dt=dt)
 
 
 # ── CLI 测试 ────────────────────────────────────────────────
@@ -512,9 +822,20 @@ if __name__ == "__main__":
 
     # 1. 梅花数字起卦
     print("=== 梅花数字起卦 (3, 5) ===")
-    chart1 = compute_meihua("我今年事业如何？", numbers=(3, 5))
+    chart1 = compute_meihua("我今年事业如何？", numbers=(3, 5), dt=datetime(2026, 5, 19, 12, 0))
     print(json.dumps(chart1.model_dump(), default=str, ensure_ascii=False, indent=2))
 
-    print("\n\n=== 铜钱起卦（随机模拟）===")
-    chart2 = compute_coin("近期感情走向？")
+    print("\n\n=== 铜钱起卦（固定结果示例）===")
+    chart2 = compute_coin(
+        "近期感情走向？",
+        coin_results=[
+            [1, 1, 0],
+            [1, 0, 0],
+            [1, 1, 1],
+            [0, 0, 0],
+            [1, 0, 1],
+            [0, 1, 0],
+        ],
+        dt=datetime(2026, 5, 19, 12, 0),
+    )
     print(json.dumps(chart2.model_dump(), default=str, ensure_ascii=False, indent=2))

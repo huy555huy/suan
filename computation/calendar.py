@@ -2,13 +2,13 @@
 
 实现要点：
 - 干支 60 甲子用 1900-01-01 (庚子年丁丑月甲戌日) 作为锚点（六十甲子表）
-- 节气日期用基于太阳黄经的精确算法（VSOP87 简化版）
+- 节气日期使用 lunar_python 的历法数据
 - 真太阳时校正：基于经度差 + 均时差
-- 不依赖任何外部库（避免 sxtwl / lunar-python 依赖问题）
 
-精度：节气计算 ±15 分钟（足够八字排盘用），日干支 100% 准确。
+精度：节气边界与 lunar_python 保持一致。
 """
 from __future__ import annotations
+from functools import lru_cache
 import math
 from datetime import datetime, timedelta, timezone
 from typing import Literal
@@ -55,6 +55,13 @@ SOLAR_TERMS = [
     "立冬", "小雪", "大雪", "冬至", "小寒", "大寒",
 ]
 
+# lunar_python 的节气表包含上一年/下一年的别名；这里映射到“从立春到次年大寒”的一轮。
+LUNAR_PYTHON_TERM_ALIASES = {
+    "冬至": "DONG_ZHI",
+    "小寒": "XIAO_HAN",
+    "大寒": "DA_HAN",
+}
+
 # 时辰对应（每 2 小时一个）
 HOUR_ZHI_RANGES = [
     ("子", 23, 1),  # 23:00-00:59
@@ -91,79 +98,41 @@ def to_julian_day(dt: datetime) -> float:
     return jd
 
 
-def from_julian_day(jd: float) -> datetime:
-    """儒略日 → 公历 UTC datetime。"""
-    jd_plus = jd + 0.5
-    z = int(jd_plus)
-    f = jd_plus - z
-    if z < 2299161:
-        a = z
-    else:
-        alpha = int((z - 1867216.25) / 36524.25)
-        a = z + 1 + alpha - alpha // 4
-    b = a + 1524
-    c = int((b - 122.1) / 365.25)
-    d = int(365.25 * c)
-    e = int((b - d) / 30.6001)
-    day_frac = b - d - int(30.6001 * e) + f
-    day = int(day_frac)
-    frac = day_frac - day
-    month = e - 1 if e < 14 else e - 13
-    year = c - 4716 if month > 2 else c - 4715
-    seconds_total = int(round(frac * 86400))
-    seconds_total = max(0, min(seconds_total, 86399))
-    h = seconds_total // 3600
-    mi = (seconds_total % 3600) // 60
-    s = seconds_total % 60
-    return datetime(year, month, day, h, mi, s, tzinfo=timezone.utc)
+def _solar_terms_for_year_lunar_python(year: int) -> dict[str, datetime]:
+    """用 lunar_python 返回某节气年 24 节气 UTC datetime。
+
+    lunar_python 的 Solar.toYmdHms() 输出按北京时间表示；节气本身是绝对天文时刻，
+    这里统一转回 UTC，供不同时区的出生时刻比较。
+    """
+    from lunar_python import LunarYear, Solar
+    from lunar_python.Lunar import Lunar
+
+    raw_terms: dict[str, datetime] = {}
+    jie_qi_jds = LunarYear.fromYear(year).getJieQiJulianDays()
+    for name, jd in zip(Lunar.JIE_QI_IN_USE, jie_qi_jds):
+        solar = Solar.fromJulianDay(jd)
+        local_dt = datetime.strptime(solar.toYmdHms(), "%Y-%m-%d %H:%M:%S")
+        raw_terms[name] = (local_dt - timedelta(hours=8)).replace(tzinfo=timezone.utc)
+
+    terms: dict[str, datetime] = {}
+    for term in SOLAR_TERMS:
+        source_name = LUNAR_PYTHON_TERM_ALIASES.get(term, term)
+        terms[term] = raw_terms[source_name]
+    return terms
 
 
-# ── 太阳黄经（精度 ±0.01°，足够用） ──────────────────────────
-def solar_longitude(jd: float) -> float:
-    """计算给定儒略日时太阳的视黄经（度）。基于 Meeus 简化算法。"""
-    t = (jd - 2451545.0) / 36525.0  # 自 J2000.0 起的儒略世纪
-    # 平黄经
-    L0 = (280.46646 + 36000.76983 * t + 0.0003032 * t * t) % 360
-    # 平近点角
-    M = (357.52911 + 35999.05029 * t - 0.0001537 * t * t) % 360
-    M_rad = math.radians(M)
-    # 中心方程
-    C = ((1.914602 - 0.004817 * t - 0.000014 * t * t) * math.sin(M_rad)
-         + (0.019993 - 0.000101 * t) * math.sin(2 * M_rad)
-         + 0.000289 * math.sin(3 * M_rad))
-    true_long = L0 + C
-    # 章动 + 光行差简化（约 -20.5″）
-    omega = math.radians(125.04 - 1934.136 * t)
-    apparent_long = true_long - 0.00569 - 0.00478 * math.sin(omega)
-    return apparent_long % 360
-
-
-def find_solar_term_jd(target_longitude: float, around_jd: float) -> float:
-    """在 around_jd 附近寻找太阳黄经等于 target_longitude 的精确儒略日。"""
-    # 牛顿迭代 / 二分
-    jd = around_jd
-    for _ in range(40):
-        lon = solar_longitude(jd)
-        diff = (target_longitude - lon + 540) % 360 - 180
-        jd += diff / 0.9856474  # 太阳每日约 0.985 度
-        if abs(diff) < 1e-5:
-            break
-    return jd
+@lru_cache(maxsize=256)
+def _solar_terms_for_year_cached(year: int) -> tuple[tuple[str, datetime], ...]:
+    terms = _solar_terms_for_year_lunar_python(year)
+    return tuple((term, terms[term]) for term in SOLAR_TERMS)
 
 
 def solar_terms_for_year(year: int) -> dict[str, datetime]:
-    """返回某年所有 24 节气的 UTC datetime。"""
-    terms: dict[str, datetime] = {}
-    # 立春（315°） 起算
-    for i, term in enumerate(SOLAR_TERMS):
-        target_lon = (315 + i * 15) % 360
-        # 每个节气每年大致同一日期，初值给个估算
-        approx_doy = i * 15 + 35  # 立春约第 35 天
-        approx_dt = datetime(year, 1, 1, tzinfo=timezone.utc) + timedelta(days=approx_doy)
-        approx_jd = to_julian_day(approx_dt)
-        jd = find_solar_term_jd(target_lon, approx_jd)
-        terms[term] = from_julian_day(jd)
-    return terms
+    """返回某节气年所有 24 节气的 UTC datetime。
+
+    “节气年”从当年立春开始，到次年大寒结束。
+    """
+    return dict(_solar_terms_for_year_cached(year))
 
 
 # ── 真太阳时 ─────────────────────────────────────────────────
@@ -244,11 +213,6 @@ def get_month_pillar(dt: datetime, year_stem: str,
                       terms_this_year: dict[str, datetime] | None = None,
                       terms_next_year: dict[str, datetime] | None = None) -> tuple[str, str]:
     """月柱根据节气判断（从立春寅月开始）。"""
-    if terms_this_year is None:
-        terms_this_year = solar_terms_for_year(dt.year)
-    if terms_next_year is None and dt.month >= 12:
-        terms_next_year = solar_terms_for_year(dt.year + 1)
-
     if dt.tzinfo is None:
         dt_utc = dt.replace(tzinfo=timezone.utc)
     else:
@@ -256,29 +220,21 @@ def get_month_pillar(dt: datetime, year_stem: str,
 
     # 取12个月节气：立春寅、惊蛰卯、清明辰、立夏巳、芒种午、小暑未、立秋申、白露酉、寒露戌、立冬亥、大雪子、小寒丑
     nodes = []
-    for i, term_name in enumerate(SOLAR_TERMS_FOR_MONTH):
-        if term_name in terms_this_year:
-            nodes.append((term_name, terms_this_year[term_name], MONTH_ZHI_ORDER[i]))
-
-    # 加入次年立春供边界判断
-    if terms_next_year and "立春" in terms_next_year:
-        nodes.append(("立春_next", terms_next_year["立春"], "寅"))
-    # 也要考虑前年小寒
-    if dt.month <= 2:
-        terms_prev = solar_terms_for_year(dt.year - 1)
+    # dt 可能因为时区换算落在相邻 UTC 年；直接覆盖前后节气年，避免一月/十二月边界错月。
+    for cycle_year in range(dt_utc.year - 1, dt_utc.year + 2):
+        terms = solar_terms_for_year(cycle_year)
         for i, term_name in enumerate(SOLAR_TERMS_FOR_MONTH):
-            if term_name in terms_prev:
-                nodes.append((term_name + "_prev", terms_prev[term_name], MONTH_ZHI_ORDER[i]))
+            nodes.append((f"{term_name}_{cycle_year}", terms[term_name], MONTH_ZHI_ORDER[i]))
 
     nodes.sort(key=lambda x: x[1])
-    # 找到最大的 < dt_utc 的节气
+    # 找到最大的 <= dt_utc 的节气
     month_zhi = None
     for term_name, term_dt, zhi in reversed(nodes):
         if term_dt <= dt_utc:
             month_zhi = zhi
             break
     if month_zhi is None:
-        month_zhi = "丑"  # 兜底
+        raise ValueError(f"无法根据节气确定月柱：{dt_utc.isoformat()}")
 
     # 根据年干推月干（五虎遁元歌）
     # 甲己之年丙作首 / 乙庚之岁戊为头 / 丙辛必定寻庚起 / 丁壬壬位顺行流 / 戊癸甲寅之上求
@@ -299,8 +255,7 @@ def get_month_pillar(dt: datetime, year_stem: str,
 def get_day_pillar(dt: datetime) -> tuple[str, str, int]:
     """日柱：基于固定锚点 1900-01-01 = 甲戌日（六十甲子索引 10）。
 
-    注意：日柱以 23:00 为换日点（子时为新一天起始）。本函数使用纯日期计算，
-    上层调用前把"23:00 后"的时间归并到下一天。
+    本函数使用传入 datetime 的日期部分计算；上层负责处理子时换日流派。
     """
     anchor = datetime(1900, 1, 1, tzinfo=timezone.utc)
     if dt.tzinfo is None:
@@ -339,8 +294,8 @@ def get_hour_pillar(day_stem: str, hour: int, minute: int = 0) -> tuple[str, str
     return hour_stem, hour_zhi
 
 
-def get_four_pillars(birth_dt: datetime, longitude: float = 116.4074,
-                      tz_offset: float = 8.0, use_true_solar_time: bool = True) -> dict:
+def get_four_pillars(birth_dt: datetime, longitude: float,
+                      tz_offset: float, use_true_solar_time: bool = True) -> dict:
     """返回完整四柱信息（年/月/日/时）。
 
     输入：当地时间 birth_dt（无时区或带时区均可，按 tz_offset 换算）+ 经度。
@@ -355,10 +310,10 @@ def get_four_pillars(birth_dt: datetime, longitude: float = 116.4074,
     # 2. UTC 时刻（用于节气判断）
     utc_dt = (true_local - timedelta(hours=tz_offset)).replace(tzinfo=timezone.utc)
 
-    # 3. 处理子时换日（≥23:00 算次日）
+    # 3. 处理子时换日：默认采用“子初换日”，23:00 起算次日。
     day_dt = true_local
     if true_local.hour == 23:
-        day_dt = true_local + timedelta(hours=1)  # 推到次日凌晨用于查日柱
+        day_dt = true_local + timedelta(days=1)
 
     # 4. 节气
     terms_this = solar_terms_for_year(true_local.year)
@@ -371,15 +326,17 @@ def get_four_pillars(birth_dt: datetime, longitude: float = 116.4074,
     month_stem, month_branch = get_month_pillar(utc_dt, year_stem, terms_this, terms_next)
 
     # 7. 日柱
-    day_dt_utc = (day_dt - timedelta(hours=tz_offset)).replace(tzinfo=timezone.utc)
-    day_stem, day_branch, day_idx = get_day_pillar(day_dt_utc)
+    day_stem, day_branch, day_idx = get_day_pillar(day_dt)
 
     # 8. 时柱
     hour_stem, hour_branch = get_hour_pillar(day_stem, true_local.hour, true_local.minute)
 
     # 9. 当下节气
     current_term = None
-    sorted_terms = sorted(terms_this.items(), key=lambda x: x[1])
+    term_events: list[tuple[str, datetime]] = []
+    for cycle_year in range(utc_dt.year - 1, utc_dt.year + 2):
+        term_events.extend(solar_terms_for_year(cycle_year).items())
+    sorted_terms = sorted(term_events, key=lambda x: x[1])
     for name, term_dt in reversed(sorted_terms):
         if term_dt <= utc_dt:
             current_term = name
@@ -397,6 +354,7 @@ def get_four_pillars(birth_dt: datetime, longitude: float = 116.4074,
         "true_solar_time": true_local.isoformat(),
         "solar_term": current_term,
         "lunar_year_idx": year_idx,
+        "day_boundary": "zi_start_23:00",
     }
 
 

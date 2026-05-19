@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "description": "Professional golden regression cases for engine-level astrology/divination outputs. Each case captures manually reviewed chart facts and teacher-style interpretation anchors.",
+  "cases": [
+    {
+      "id": "bazi_1991_hangzhou_female_event_timing",
+      "system": "bazi",
+      "source_type": "manual_reference_chart",
+      "birth": {
+        "gender": "female",
+        "year": 1991,
+        "month": 8,
+        "day": 15,
+        "hour": 14,
+        "minute": 30,
+        "location_name": "杭州",
+        "longitude": 120.0,
+        "latitude": 30.0,
+        "timezone_offset": 8.0,
+        "use_true_solar_time": false
+      },
+      "question": "当前阶段事业与变动",
+      "current_year": 2026,
+      "expected": {
+        "year_pillar.stem": "辛",
+        "year_pillar.branch": "未",
+        "year_pillar.ten_god": "偏财",
+        "month_pillar.stem": "丙",
+        "month_pillar.branch": "申",
+        "month_pillar.ten_god": "劫财",
+        "day_pillar.stem": "丁",
+        "day_pillar.branch": "巳",
+        "day_pillar.ten_god": "日主",
+        "hour_pillar.stem": "丁",
+        "hour_pillar.branch": "未",
+        "hour_pillar.ten_god": "比肩",
+        "day_master": "丁",
+        "da_yun[0].ganzhi": "丁酉",
+        "da_yun[0].start_date": "1999-07-30T08:30:00",
+        "metadata.da_yun_start.forward": true,
+        "metadata.da_yun_start.target_term": "白露",
+        "metadata.event_timing.current_da_yun.ganzhi": "己亥",
+        "metadata.event_timing.current_da_yun.branch_triggers[0].interactions[0]": "六害",
+        "metadata.event_timing.current_da_yun.branch_triggers[0].target_ten_god": "正财",
+        "metadata.event_timing.current_da_yun.branch_triggers[1].interactions[0]": "六冲",
+        "metadata.event_timing.current_da_yun.branch_triggers[1].target_ten_god": "劫财",
+        "metadata.event_timing.current_da_yun.branch_triggers[1].target_is_favorable": true,
+        "metadata.event_timing.current_da_yun.branch_triggers[1].domain_hint[0]": "亲密关系",
+        "liu_nian[0].ganzhi": "丙午",
+        "liu_nian[1].ganzhi": "丁未",
+        "metadata.event_timing.liu_nian[0].preference_label": "喜用得力",
+        "metadata.event_timing.liu_nian[0].stem_triggers[0].target": "year",
+        "metadata.event_timing.liu_nian[0].stem_triggers[0].target_ten_god": "偏财",
+        "metadata.event_timing.liu_nian[0].stem_triggers[0].interactions[0]": "合水",
+        "metadata.event_timing.liu_nian[0].stem_triggers[0].relation_types[0]": "天干五合",
+        "metadata.event_timing.liu_nian[0].stem_triggers[0].relation_types[1]": "天干相克",
+        "metadata.event_timing.liu_nian[0].stem_triggers[0].requires_context": true,
+        "metadata.event_timing.liu_nian[0].branch_triggers[0].interactions[0]": "六合土",
+        "metadata.event_timing.liu_nian[0].branch_triggers[0].relation_types[0]": "地支六合",
+        "metadata.event_timing.liu_nian[0].branch_triggers[0].requires_context": true,
+        "metadata.event_timing.liu_nian[0].branch_triggers[1].target_ten_god": "食神",
+        "metadata.event_timing.liu_nian[0].branch_triggers[1].domain_hint[0]": "长期规划"
+      },
+      "interpretation_anchors": [
+        {
+          "claim": "当前己亥大运与日支巳形成六冲，是阶段性环境/关系/工作节奏变化的重要触发点。",
+          "chart_refs": [
+            "metadata.event_timing.current_da_yun.ganzhi=己亥",
+            "metadata.event_timing.current_da_yun.branch_triggers[1].target=day",
+            "metadata.event_timing.current_da_yun.branch_triggers[1].interactions[0]=六冲",
+            "metadata.event_timing.current_da_yun.branch_triggers[1].target_ten_god=劫财",
+            "metadata.event_timing.current_da_yun.branch_triggers[1].domain_hint[0]=亲密关系"
+          ],
+          "rule_ref": "BZ_R_0080",
+          "source_ref": "smtonghui_v4_p176"
+        },
+        {
+          "claim": "2026 丙午流年火势得力，但午未合同时牵动年柱与时柱，宜把机会落实到明确项目与长期规划。",
+          "chart_refs": [
+            "liu_nian[0].ganzhi=丙午",
+            "metadata.event_timing.liu_nian[0].preference_label=喜用得力",
+            "metadata.event_timing.liu_nian[0].stem_triggers[0].target_ten_god=偏财",
+            "metadata.event_timing.liu_nian[0].stem_triggers[0].relation_types[0]=天干五合",
+            "metadata.event_timing.liu_nian[0].stem_triggers[0].relation_types[1]=天干相克",
+            "metadata.event_timing.liu_nian[0].branch_triggers[0].interactions[0]=六合土",
+            "metadata.event_timing.liu_nian[0].branch_triggers[0].relation_types[0]=地支六合",
+            "metadata.event_timing.liu_nian[0].branch_triggers[1].target_ten_god=食神",
+            "metadata.event_timing.liu_nian[0].branch_triggers[1].domain_hint[0]=长期规划"
+          ],
+          "rule_ref": "BZ_R_0081",
+          "source_ref": "smtonghui_v6_p089"
+        }
+      ]
+    },
+    {
+      "id": "ziwei_1991_hangzhou_female_reference",
+      "system": "ziwei",
+      "source_type": "manual_reference_chart",
+      "birth": {
+        "gender": "female",
+        "year": 1991,
+        "month": 8,
+        "day": 15,
+        "hour": 14,
+        "minute": 30,
+        "location_name": "杭州",
+        "longitude": 120.0,
+        "latitude": 30.0,
+        "timezone_offset": 8.0,
+        "use_true_solar_time": false
+      },
+      "question": "命盘核心格局",
+      "expected": {
+        "school": "iztro",
+        "five_element_bureau": "土五局",
+        "life_palace": "命宫",
+        "body_palace": "福德宫",
+        "main_stars.命宫[0]": "天相",
+        "main_stars.福德宫[0]": "武曲",
+        "main_stars.福德宫[1]": "七杀",
+        "si_hua.化禄": "巨门",
+        "si_hua.化权": "太阳",
+        "si_hua.化科": "文曲",
+        "si_hua.化忌": "文昌",
+        "metadata.time": "未时",
+        "metadata.soul_palace_branch": "丑",
+        "metadata.body_palace_branch": "卯"
+      },
+      "interpretation_anchors": [
+        {
+          "claim": "命宫天相重视秩序、协作与规则位置，解读职业时不能只按强攻型主星断。",
+          "chart_refs": [
+            "main_stars.命宫[0]=天相",
+            "life_palace=命宫"
+          ],
+          "rule_ref": "ZW_R_0080",
+          "source_ref": "ziwei_quanshu_p157"
+        },
+        {
+          "claim": "福德宫武曲七杀提示内在驱动力偏执行、压力感和结果导向，需结合命宫天相一起看。",
+          "chart_refs": [
+            "body_palace=福德宫",
+            "main_stars.福德宫[0]=武曲",
+            "main_stars.福德宫[1]=七杀"
+          ],
+          "rule_ref": "ZW_R_0081",
+          "source_ref": "ziwei_quanshu_p079"
+        }
+      ]
+    },
+    {
+      "id": "liuyao_qian_work_static",
+      "system": "yijing",
+      "source_type": "manual_hexagram_case",
+      "method": "coin",
+      "question": "问工作",
+      "divination_time": "2026-05-19T12:00:00",
+      "coin_results": [
+        [1, 0, 0],
+        [1, 0, 0],
+        [1, 0, 0],
+        [1, 0, 0],
+        [1, 0, 0],
+        [1, 0, 0]
+      ],
+      "expected": {
+        "ben_gua.full_name": "乾为天",
+        "ben_gua.name": "乾",
+        "ben_gua.palace": "乾",
+        "shi_yao": 6,
+        "ying_yao": 3,
+        "moving_lines": [],
+        "six_relatives[3]": "官鬼",
+        "ben_gua.line_ganzhi_wuxing[0]": "甲子水",
+        "metadata.xun_kong": "午未",
+        "metadata.liuyao_analysis.question_yong_shen": "官鬼",
+        "metadata.liuyao_analysis.yong_shen_positions[0]": 4,
+        "metadata.liuyao_analysis.yong_shen_lines[0].is_xun_kong": true,
+        "metadata.liuyao_analysis.yong_shen_lines[0].strength_label": "偏弱",
+        "metadata.liuyao_analysis.shi_ying_relation.shi_to_ying": "比和"
+      },
+      "interpretation_anchors": [
+        {
+          "claim": "问工作取官鬼为用神，本卦官鬼在四爻。",
+          "chart_refs": [
+            "metadata.liuyao_analysis.question_yong_shen=官鬼",
+            "metadata.liuyao_analysis.yong_shen_positions[0]=4"
+          ],
+          "rule_ref": "YJ_R_0080",
+          "source_ref": "zsbushi_yongshen"
+        },
+        {
+          "claim": "乾卦主刚健进取，但用神旬空且强度偏弱，不能只按乾卦说大吉。",
+          "chart_refs": [
+            "ben_gua.name=乾",
+            "metadata.liuyao_analysis.yong_shen_lines[0].is_xun_kong=True",
+            "metadata.liuyao_analysis.yong_shen_lines[0].strength_label=偏弱"
+          ],
+          "rule_ref": "YJ_R_0001",
+          "source_ref": "yijing_qian_gua"
+        }
+      ]
+    },
+    {
+      "id": "fengshui_period9_ding_facing_tigua",
+      "system": "fengshui",
+      "source_type": "manual_luopan_case",
+      "birth": {
+        "gender": "female",
+        "year": 1991,
+        "month": 8,
+        "day": 15,
+        "hour": 14,
+        "minute": 30,
+        "location_name": "杭州",
+        "longitude": 120.1551,
+        "latitude": 30.2741,
+        "timezone_offset": 8.0,
+        "use_true_solar_time": false
+      },
+      "facing_degree": 200.0,
+      "move_in_year": 2024,
+      "expected": {
+        "period": 9,
+        "facing_direction": "200.0°/丁(离/南)",
+        "sitting_direction": "癸(坎/北)",
+        "ming_gua": "艮",
+        "metadata.period_range": "2024-2043 / 2204-2223",
+        "metadata.pan_method": "替卦",
+        "metadata.ti_gua_school": "shen_shi",
+        "metadata.facing_degree_detail.shan": "丁",
+        "metadata.facing_degree_detail.zone": "ti_gua",
+        "metadata.flying_trace.xiang.yun_star_at_position": 4,
+        "metadata.flying_trace.xiang.same_yuan_shan": "巳",
+        "metadata.flying_trace.xiang.seed_used": 6,
+        "metadata.flying_trace.xiang.replaced": true,
+        "metadata.palace_priorities.wealth_or_opening_priority[0].bagua": "离",
+        "metadata.palace_priorities.wealth_or_opening_priority[0].direction": "南"
+      },
+      "interpretation_anchors": [
+        {
+          "claim": "200 度丁向落替卦区，不能按下卦直接飞星。",
+          "chart_refs": [
+            "metadata.facing_degree_detail.shan=丁",
+            "metadata.facing_degree_detail.zone=ti_gua",
+            "metadata.pan_method=替卦"
+          ],
+          "rule_ref": "FS_R_0080",
+          "source_ref": "shenshi_xuankong_p045"
+        },
+        {
+          "claim": "九运宅盘先看当令离火与南方开口/动线，但仍需现场门窗水路复核。",
+          "chart_refs": [
+            "period=9",
+            "metadata.palace_priorities.wealth_or_opening_priority[0].bagua=离",
+            "metadata.palace_priorities.wealth_or_opening_priority[0].direction=南"
+          ],
+          "rule_ref": "FS_R_0001",
+          "source_ref": "shenshi_xuankong_p012"
+        }
+      ]
+    }
+  ]
+}

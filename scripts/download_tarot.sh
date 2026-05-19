@@ -65,5 +65,5 @@ done
 
 echo
 echo "=== 总文件数 / 总大小 ==="
-ls /Users/huy/suan/web/static/img/tarot/*.jpg 2>/dev/null | wc -l
-du -sh /Users/huy/suan/web/static/img/tarot/
+find "$DIR" -maxdepth 1 -name '*.jpg' | wc -l
+du -sh "$DIR"

@@ -861,6 +861,12 @@ const SAMPLE_PROFILE = {
   scenario: "career",
 };
 
+const DEMO_SESSIONS = [
+  { id: "demo-001", date: "2026-05-09", topic: "事业方向之问", scenarioCn: "事业", scenarioEn: "career", current: true  },
+  { id: "demo-002", date: "2026-04-21", topic: "流年财运之问", scenarioCn: "财运", scenarioEn: "fortune", current: false },
+  { id: "demo-003", date: "2026-03-15", topic: "关系合相之问", scenarioCn: "关系", scenarioEn: "relation", current: false },
+];
+
 // BaZi 八字 — 辛未 · 丙申 · 丁巳 · 丁未
 const BAZI = {
   pillars: [
@@ -925,63 +931,19 @@ const NUMER = {
   notes: { 7: "求道者 · seeker", 1: "开创者 · initiator", 6: "顾守 · responsibility year" }
 };
 
-// Chat / experts
-const EXPERTS = [
-  { id: "bazi",      cn: "八字",     en: "BaZi",        sys: "cn", desc: "子平派 · 辛未丙申丁巳丁未" },
-  { id: "ziwei",     cn: "紫微",     en: "Zǐwēi",       sys: "cn", desc: "中州派 · 命宫巳" },
-  { id: "yijing",    cn: "易经",     en: "Yìjīng",      sys: "cn", desc: "京房纳甲 · 起卦" },
+// Skills — agent 可按需加载的命理技能
+const SKILLS = [
+  { id: "bazi",      cn: "八字",     en: "BaZi",        sys: "cn", desc: "子平派 · 格局用神 · 大运流年" },
+  { id: "ziwei",     cn: "紫微",     en: "Zǐwēi",       sys: "cn", desc: "中州派 · 十二宫位 · 四化飞星" },
+  { id: "yijing",    cn: "易经",     en: "Yìjīng",      sys: "cn", desc: "梅花易数 · 体用断卦" },
   { id: "fengshui",  cn: "风水",     en: "Fēngshuǐ",    sys: "cn", desc: "玄空飞星 · 八宅" },
-  { id: "liunian",   cn: "流年",     en: "Annual",      sys: "cn", desc: "丙午 2026 · 流月推演" },
-  { id: "astrology", cn: "占星",     en: "Astrology",   sys: "wt", desc: "Placidus · 现代心理派" },
+  { id: "astrology", cn: "占星",     en: "Astrology",   sys: "wt", desc: "现代心理派 · Transit" },
   { id: "tarot",     cn: "塔罗",     en: "Tarot",       sys: "wt", desc: "RWS · 凯尔特十字" },
-  { id: "numero",    cn: "数字",     en: "Numerology",  sys: "wt", desc: "毕达哥拉斯派" },
+  { id: "numerology",cn: "数字",     en: "Numerology",  sys: "wt", desc: "毕达哥拉斯派" },
+  { id: "cross",     cn: "交叉",     en: "Synthesis",   sys: "both", desc: "跨体系共识 · 矛盾 · 互补" },
 ];
 
 const SAMPLE_QUESTION = "今年事业怎么走？我想换一个方向，但不确定该走科技还是教育。";
-
-// SSE event timeline (faux-stream for the prototype)
-const STREAM = [
-  { t: 0,    type: "phase",      payload: { id: "classify",  cn: "问题分类",      en: "Classifier"  } },
-  { t: 700,  type: "classifier", payload: { topic: "career_direction · 事业方向", confidence: 0.92 } },
-  { t: 1100, type: "phase",      payload: { id: "compute",   cn: "盘面计算",      en: "Calculator"  } },
-  { t: 1700, type: "chart",      payload: { systems: 7, ms: 142 } },
-  { t: 2100, type: "phase",      payload: { id: "experts",   cn: "八路并行推理",  en: "8 Experts"   } },
-  { t: 2400, type: "expert",     payload: { id: "bazi",  status: "thinking" } },
-  { t: 2500, type: "expert",     payload: { id: "ziwei", status: "thinking" } },
-  { t: 2600, type: "expert",     payload: { id: "yijing",status: "thinking" } },
-  { t: 2700, type: "expert",     payload: { id: "fengshui", status: "thinking" } },
-  { t: 2800, type: "expert",     payload: { id: "liunian",  status: "thinking" } },
-  { t: 2900, type: "expert",     payload: { id: "astrology",status: "thinking" } },
-  { t: 3000, type: "expert",     payload: { id: "tarot",    status: "thinking" } },
-  { t: 3100, type: "expert",     payload: { id: "numero",   status: "thinking" } },
-  { t: 4400, type: "expert",     payload: { id: "bazi", status: "done", claim: "丁火日主，火旺金弱；正财格成，宜以技艺生财，避急于扩张。" } },
-  { t: 4900, type: "expert",     payload: { id: "ziwei", status: "done", claim: "巨门化禄入命宫；适合以言谈、文字、教研立身；忌昌入迁移，远行需慎契约。" } },
-  { t: 5300, type: "expert",     payload: { id: "tarot", status: "done", claim: "Three of Pentacles · 协作精进；逆位 Wheel of Fortune 提示节奏自控。" } },
-  { t: 5700, type: "expert",     payload: { id: "yijing", status: "done", claim: "得风火家人变水火既济；先稳内部秩序，方可外谋新局。" } },
-  { t: 6100, type: "expert",     payload: { id: "astrology", status: "done", claim: "9 宫狮子群星与 6 宫处女对望；学问 / 远方 ↔ 服务 / 工艺 是核心张力。" } },
-  { t: 6500, type: "expert",     payload: { id: "liunian", status: "done", claim: "丙午年丁火得禄；上半年宜定方向，下半年宜执行；冲日柱注意契约。" } },
-  { t: 6900, type: "expert",     payload: { id: "fengshui", status: "done", claim: "八运震宫见七赤；办公东向布水，忌正南动土。" } },
-  { t: 7300, type: "expert",     payload: { id: "numero", status: "done", claim: "Personal year 6 · 责任之年；新事须以现有结构为本，非纯创新年。" } },
-  { t: 7600, type: "phase",      payload: { id: "synth", cn: "中西小综合", en: "Sub-synthesis" } },
-  { t: 8400, type: "synth",      payload: { sys: "cn", text: "中式三家共指：日主火旺 · 喜金水 · 忌再行火地；事业宜技艺 / 教研，避急扩张。" } },
-  { t: 9000, type: "synth",      payload: { sys: "wt", text: "西式三家共指：9宫学问与远方为利；6宫工艺为底；个人年6责任之年。" } },
-  { t: 9400, type: "phase",      payload: { id: "align", cn: "中西交叉验证", en: "Cross Aligner" } },
-  { t: 10400,type: "align",      payload: { consensus: 2, divergence: 1, complementary: 1 } },
-  { t: 10800,type: "phase",      payload: { id: "verdict", cn: "综合判官", en: "Synthesis Judge" } },
-  { t: 11600,type: "verdict",    payload: { confidence: "high", core: "以技艺为本的教育科技方向" } },
-  { t: 11900,type: "phase",      payload: { id: "narr", cn: "叙事", en: "Narrative" } },
-];
-const NARRATIVE_TEXT = `你这一问，问得正当其时。
-
-四柱里，你是丁火日主，生于丙申月——火旺而金透；命局喜的是金水的收敛与流动，最忌的是再添一把火。这并不是让你停下来，而是提醒你：今年的方向感比速度更要紧。
-
-紫微里巨门化禄入命宫，这是一颗适合用「言说与文字」生财的星；占星上 9 宫狮子群星给了你学问与远方的渴望，6 宫处女则把你拉回工艺与服务的具体里。两边其实在说同一件事——你最适合的，不是单纯的科技，也不是纯粹的教育，而是把"教育"作为内核，把"科技"作为工具的那条窄路。
-
-塔罗里抽到的 Three of Pentacles 是协作精进牌；逆位的 Wheel of Fortune 提醒你，今年节奏要由你自己掌握，而不是被外部机会牵着走。数字命理上你正在 Personal Year 6——这是一个责任之年，新东西要长在旧结构之上，而不是另起炉灶。
-
-具体节奏上：上半年至立秋前后，宜定方向、签约慎；下半年丁火得禄，是动手的窗口。关键的几个分歧——中式说"避急扩张"，西式说"远方有利"——其实在 aligner 里被合成为一句话：远方可以去，但要带着可重复的方法论去，而不是带着冲动去。
-
-最后一句不入命理，只是常识：换方向是大事，不必一次想完。`;
 
 // ── Backend → v2 chart shape adapters ─────────────────────────────
 const STEM_PINYIN = { 甲:"jiǎ", 乙:"yǐ", 丙:"bǐng", 丁:"dīng", 戊:"wù", 己:"jǐ", 庚:"gēng", 辛:"xīn", 壬:"rén", 癸:"guǐ" };
@@ -1093,17 +1055,18 @@ function adaptAstro(a) {
 
 function adaptNumer(n) {
   if (!n) return null;
+  const notes = { ...NUMER_NOTES, ...(n.notes || {}) };
   return {
     life: n.life_path || 0,
     expression: n.expression || 0,
     soul: n.soul_urge || 0,
     personality: n.personality || 0,
     year: n.personal_year || 0,
-    notes: NUMER_NOTES,
+    notes,
   };
 }
 
-Object.assign(window, { SAMPLE_PROFILE, BAZI, ZIWEI, ASTRO, NUMER, EXPERTS, SAMPLE_QUESTION, STREAM, NARRATIVE_TEXT,
+Object.assign(window, { SAMPLE_PROFILE, DEMO_SESSIONS, BAZI, ZIWEI, ASTRO, NUMER, SKILLS, SAMPLE_QUESTION,
   adaptBazi, adaptZiwei, adaptAstro, adaptNumer });
 
   </script>
@@ -1113,7 +1076,8 @@ Object.assign(window, { SAMPLE_PROFILE, BAZI, ZIWEI, ASTRO, NUMER, EXPERTS, SAMP
 
 // 占星轮（升级版）— 黄道带按元素染色 + 行星按属性配色 + 相位线分色
 function AnimatedAstroWheel({ size = 460, astro }) {
-  const ASTRO_DATA = astro || ASTRO;
+  if (!astro) return null;
+  const ASTRO_DATA = astro;
   const r = size / 2, cx = r, cy = r;
   const rOuterEdge = r - 4;
   const rZodiacOuter = r - 8;       // 黄道带外圈
@@ -1452,7 +1416,7 @@ function InkStroke({ width = "100%", height = 4, delay = 0 }) {
 // Tarot card with flip
 // 塔罗牌（升级版）— 按 suit 配色 + SVG 矢量插画感 + 朱金双框
 function TarotCardFlip({ name = "III · Pentacles", glyph = "III", reversed = false, delay = 0, suit = "pent", cn = "三 · 星币" }) {
-  // 自动从 name 推 suit（兼容旧调用）
+  // 未显式传 suit 时，根据牌名推断牌组。
   let _suit = suit;
   if (!_suit || _suit === "pent") {
     if (/Pent|Coin|星币|钱币/i.test(name)) _suit = "pent";
@@ -1607,111 +1571,7 @@ Object.assign(window, {
 
 
 
-// MysticalCompute — ONE unified gesture: an enso circle slowly drawn, with 8 quiet
-// expert markers along its rim and a breathing taiji at center. No chaos.
-function MysticalCompute({ phase, expertState }) {
-  const size = 440;
-  const cx = size / 2, cy = size / 2;
-  const rOuter = 178;
-  const rMarker = 178;
-  const rLabel = 208;
-  return (
-    <div style={{ position: "relative", width: "100%", padding: "32px 0 24px", borderTop: "var(--rule)", borderBottom: "var(--rule)", display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
-      <style>{`
-        @keyframes mc-enso { from { stroke-dashoffset: 1200; } to { stroke-dashoffset: 0; } }
-        @keyframes mc-breathe { 0%,100% { transform: scale(1); opacity: 0.92; } 50% { transform: scale(1.04); opacity: 1; } }
-        @keyframes mc-rotate { to { transform: rotate(360deg); } }
-        @keyframes mc-fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes mc-pulsedot { 0%,100% { transform: scale(1); } 50% { transform: scale(1.35); } }
-      `}</style>
-
-      <div style={{ position: "relative", width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", inset: 0 }}>
-          {/* faint guide circle */}
-          <circle cx={cx} cy={cy} r={rOuter} fill="none" stroke="var(--ink)" strokeOpacity="0.06" />
-          {/* enso — single ink stroke being drawn */}
-          <circle cx={cx} cy={cy} r={rOuter} fill="none"
-            stroke="var(--ink)" strokeWidth="1.5" strokeLinecap="round"
-            strokeDasharray="1200" strokeDashoffset="1200"
-            style={{ transformOrigin: "center", transform: "rotate(-90deg)", animation: "mc-enso 3.6s cubic-bezier(.22,1,.36,1) forwards" }} />
-          {/* 8 hairline radial spokes, very faint */}
-          {Array.from({ length: 8 }).map((_, i) => {
-            const a = (i * 45 - 90) * Math.PI / 180;
-            return <line key={i}
-              x1={cx + Math.cos(a) * 60} y1={cy + Math.sin(a) * 60}
-              x2={cx + Math.cos(a) * (rOuter - 6)} y2={cy + Math.sin(a) * (rOuter - 6)}
-              stroke="var(--ink)" strokeOpacity="0.05" />;
-          })}
-        </svg>
-
-        {/* 8 expert markers along the rim */}
-        {EXPERTS.map((ex, i) => {
-          const a = (i * 45 - 90) * Math.PI / 180;
-          const x = cx + Math.cos(a) * rMarker;
-          const y = cy + Math.sin(a) * rMarker;
-          const lx = cx + Math.cos(a) * rLabel;
-          const ly = cy + Math.sin(a) * rLabel;
-          const st = (expertState && expertState[ex.id]) ? expertState[ex.id].status : "idle";
-          const done = st === "done";
-          const thinking = st === "thinking";
-          return (
-            <React.Fragment key={ex.id}>
-              {/* dot */}
-              <div style={{
-                position: "absolute", left: x - 5, top: y - 5,
-                width: 10, height: 10, borderRadius: "50%",
-                background: done ? "var(--cinnabar)" : "var(--paper)",
-                border: `1px solid ${done ? "var(--cinnabar)" : (thinking ? "var(--ink)" : "color-mix(in oklch, var(--ink) 25%, transparent)")}`,
-                animation: thinking ? "mc-pulsedot 1.6s ease-in-out infinite" : "none",
-                transition: "background 0.5s ease, border-color 0.5s ease",
-              }} />
-              {/* label */}
-              <div style={{
-                position: "absolute",
-                left: lx, top: ly,
-                transform: "translate(-50%, -50%)",
-                fontFamily: "var(--serif-cn)", fontSize: 13, fontWeight: 600,
-                color: done ? "var(--cinnabar)" : (thinking ? "var(--ink)" : "var(--ink-3)"),
-                opacity: 0,
-                animation: `mc-fadein 0.6s ${0.4 + i * 0.08}s ease-out forwards`,
-                whiteSpace: "nowrap",
-                letterSpacing: "0.05em",
-                transition: "color 0.5s ease",
-              }}>{ex.cn}</div>
-            </React.Fragment>
-          );
-        })}
-
-        {/* center: breathing taiji */}
-        <div style={{
-          position: "absolute", left: "50%", top: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 84, height: 84,
-          animation: "mc-breathe 5s ease-in-out infinite",
-        }}>
-          <svg width="84" height="84" viewBox="0 0 100 100" style={{ animation: "mc-rotate 24s linear infinite", transformOrigin: "center" }}>
-            <circle cx="50" cy="50" r="48" fill="var(--paper)" stroke="var(--ink)" strokeWidth="1" />
-            <path d="M50 2 A 48 48 0 0 1 50 98 A 24 24 0 0 1 50 50 A 24 24 0 0 0 50 2 Z" fill="var(--ink)" />
-            <circle cx="50" cy="26" r="4" fill="var(--paper)" />
-            <circle cx="50" cy="74" r="4" fill="var(--cinnabar)" />
-          </svg>
-        </div>
-      </div>
-
-      {/* phase line — single quiet line below the circle */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: 16, opacity: 0, animation: "mc-fadein 0.6s 0.2s ease-out forwards" }}>
-        <span className="caps" style={{ fontSize: 10, color: "var(--cinnabar)", letterSpacing: "0.22em" }}>推演</span>
-        <span style={{ fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 600, letterSpacing: "0.04em" }}>
-          {phase ? phase.cn : "..."}
-        </span>
-        <span className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 14, color: "var(--ink-3)" }}>
-          {phase ? phase.en : ""}
-        </span>
-      </div>
-    </div>
-  );
-}
-window.MysticalCompute = MysticalCompute;
+// (MysticalCompute removed — replaced by inline agent trace in ChatScreen)
 
 
 
@@ -2091,8 +1951,8 @@ function LandingScreen({ go, hasProfile, profile }) {
             <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 28 }}>
               <BreathingSeal char="算" size={68} />
               <div>
-                <div className="caps" style={{ fontSize: 11, color: "var(--cinnabar)" }}>中西命理 AI Agent · CHINESE & WESTERN DIVINATION</div>
-                <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 4, letterSpacing: "0.18em" }}>suàn · v1.4 · MMXXVI</div>
+                <div className="caps" style={{ fontSize: 11, color: "var(--cinnabar)" }}>中西命理 · CHINESE & WESTERN DIVINATION</div>
+                <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 4, letterSpacing: "0.18em" }}>suàn · MMXXVI</div>
               </div>
             </div>
             {/* refined editorial hero — quieter, ceremonial */}
@@ -2100,7 +1960,7 @@ function LandingScreen({ go, hasProfile, profile }) {
               知命 <span style={{ color: "var(--gild)", fontWeight: 400, margin: "0 0.2em" }}>·</span> 察微
             </h1>
             <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: "clamp(20px, 2vw, 26px)", color: "var(--ink-2)", marginTop: 20, lineHeight: 1.4, maxWidth: 640, fontWeight: 400 }}>
-              Read the chart. Hear the subtle. Eight expert agents — five Chinese schools, three Western — meeting across two traditions.
+              Seven arts, two traditions, one reading — the most rigorous divination you've ever experienced.
             </div>
             {/* aphorism — refined editorial pull, not a billboard */}
             <div style={{ marginTop: 44, paddingLeft: 22, borderLeft: "2px solid var(--cinnabar)", maxWidth: 620 }}>
@@ -2122,7 +1982,7 @@ function LandingScreen({ go, hasProfile, profile }) {
               ) : (
                 <>
                   <button className="btn" onClick={() => go("onboard")}>立档 · 开始 <span className="arr">→</span></button>
-                  <button className="btn btn-ghost" onClick={() => go("onboard")}>看示例 · see demo</button>
+                  <button className="btn btn-ghost" onClick={() => go("chart")}>看示例 · see demo</button>
                 </>
               )}
             </div>
@@ -2169,96 +2029,98 @@ function LandingScreen({ go, hasProfile, profile }) {
         </div>
       </section>
 
-      <Rule label="八路推理 · EIGHT EXPERTS" style={{ padding: "0 var(--screen-pad)" }} />
+      <Rule label="七术兼通 · SEVEN ARTS" style={{ padding: "0 var(--screen-pad)" }} />
 
-      {/* Eight experts */}
+      {/* Skills grid */}
       <section style={{ padding: "80px var(--screen-pad)", maxWidth: 1400, margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 56 }}>
           <div>
-            <Lockup cn="八路推理" en="EIGHT EXPERTS · PARALLEL" size="lg" />
+            <Lockup cn="七术兼通" en="SEVEN ARTS" size="lg" />
             <p style={{ fontSize: 15, color: "var(--ink-2)", lineHeight: 1.7, marginTop: 18 }}>
-              五路中式与三路西式，互不可见对方结论，独立推理后由 Aligner 在 26 个 topic 上做交叉验证。共识 / 分歧 / 互补，皆显式呈现。
+              五门中式正统 —— 子平八字、紫微斗数、梅花易数、玄空风水、塔罗牌理。两门西式体系 —— 现代心理占星、生命灵数。每一问，按需调度，交叉印证。
             </p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0 }}>
-            {EXPERTS.map((ex, i) => (
-              <div key={ex.id} style={{
+            {SKILLS.map((sk, i) => (
+              <div key={sk.id} style={{
                 padding: 24,
-                borderTop: i < 4 ? "var(--rule)" : "var(--rule)",
+                borderTop: "var(--rule)",
                 borderBottom: i >= 4 ? "var(--rule)" : "none",
                 borderLeft: i % 4 !== 0 ? "var(--rule)" : "none",
               }}>
-                <div className="caps" style={{ fontSize: 9, color: ex.sys === "cn" ? "var(--cinnabar)" : "var(--ink-3)" }}>
-                  {ex.sys === "cn" ? "CN · 中" : "WT · 西"} · {String(i + 1).padStart(2, "0")}
+                <div className="caps" style={{ fontSize: 9, color: sk.sys === "cn" ? "var(--cinnabar)" : sk.sys === "both" ? "var(--gild)" : "var(--ink-3)" }}>
+                  {sk.sys === "cn" ? "中式" : sk.sys === "both" ? "综合" : "西式"} · {String(i + 1).padStart(2, "0")}
                 </div>
-                <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 28, marginTop: 10 }}>{ex.cn}</div>
-                <div className="em" style={{ fontSize: 14, color: "var(--ink-3)", marginTop: 2 }}>{ex.en}</div>
-                <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 14, lineHeight: 1.5 }}>{ex.desc}</div>
+                <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 28, marginTop: 10 }}>{sk.cn}</div>
+                <div className="em" style={{ fontSize: 14, color: "var(--ink-3)", marginTop: 2 }}>{sk.en}</div>
+                <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 14, lineHeight: 1.5 }}>{sk.desc}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <Rule label="工作流 · PIPELINE" style={{ padding: "0 var(--screen-pad)" }} />
+      <Rule label="问一次，七步成局 · SEVEN STEPS" style={{ padding: "0 var(--screen-pad)" }} />
 
-      {/* Pipeline */}
+      {/* How a reading works */}
       <section style={{ padding: "80px var(--screen-pad)", maxWidth: 1400, margin: "0 auto" }}>
         <div style={{ marginBottom: 48 }}>
-          <Lockup cn="一次问询，七层递进" en="ONE QUERY · SEVEN LAYERS" size="lg" />
+          <Lockup cn="问一次，七步成局" en="ONE QUESTION · SEVEN STEPS" size="lg" />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 0, position: "relative" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 0, position: "relative" }}>
           {[
-            { cn: "分类",   en: "Classify"   },
-            { cn: "起盘",   en: "Compute"    },
-            { cn: "推理",   en: "8 Experts"  },
-            { cn: "校验",   en: "Verifier"   },
-            { cn: "小综",   en: "Sub-synth"  },
-            { cn: "对齐",   en: "Align"      },
-            { cn: "判官",   en: "Judge"      },
+            { cn: "审题",   en: "Understand",  desc: "看你问什么" },
+            { cn: "起盘",   en: "Compute",     desc: "纯算法排盘" },
+            { cn: "查证",   en: "Cross-check",  desc: "翻阅典籍规则" },
+            { cn: "中式研判", en: "CN Reading",  desc: "独立出中式结论" },
+            { cn: "西式研判", en: "WT Reading",  desc: "独立出西式结论" },
+            { cn: "交叉印证", en: "Cross-verify", desc: "中西对照找共识" },
+            { cn: "成文",   en: "Compose",     desc: "温润克制地讲" },
           ].map((p, i) => (
             <div key={i} style={{
-              padding: "28px 16px",
+              padding: "24px 16px",
               borderLeft: i === 0 ? "1px solid var(--ink)" : "var(--rule)",
               borderRight: i === 6 ? "1px solid var(--ink)" : "none",
               borderTop: "1px solid var(--ink)", borderBottom: "1px solid var(--ink)",
               position: "relative",
             }}>
-              <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 22 }}>{p.cn}</div>
-              <div className="em" style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 4 }}>{p.en}</div>
+              <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 20 }}>{p.cn}</div>
+              <div className="em" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>{p.en}</div>
+              <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 10, lineHeight: 1.5 }}>{p.desc}</div>
             </div>
           ))}
         </div>
       </section>
 
-      <Rule label="哲学 · PHILOSOPHY" style={{ padding: "0 var(--screen-pad)" }} />
+      <Rule label="不同在哪 · WHAT SETS US APART" style={{ padding: "0 var(--screen-pad)" }} />
 
-      {/* Manifesto */}
+      {/* What's different */}
       <section style={{ padding: "80px var(--screen-pad)", maxWidth: 1400, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80 }}>
         <div>
-          <div className="caps" style={{ fontSize: 10 }}>必须硬 · MUST BE HARD</div>
+          <div className="caps" style={{ fontSize: 10 }}>我们做到的 · WHAT WE DO</div>
           <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 0", fontSize: 17, lineHeight: 1.9, color: "var(--ink)" }}>
-            <li>· 算盘起卦 · chart computation</li>
-            <li>· 行星位置真实性 · ephemeris truth</li>
-            <li>· chart_ref 校验 · reference integrity</li>
-            <li>· Schema · 红线 · safety</li>
+            <li>· 每个四柱、星位，纯算法起盘，不靠 AI 瞎编</li>
+            <li>· 每条核心结论，可追溯到盘面数据 + 典籍出处</li>
+            <li>· 中式结论和西式结论独立推演，再交叉印证</li>
+            <li>· 81 篇典籍、61 条规则，不是网上搜来的碎片</li>
           </ul>
         </div>
         <div>
-          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>必须软 · MUST BE SOFT</div>
+          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>市面上没有的 · WHAT OTHERS DON'T</div>
           <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 0", fontSize: 17, lineHeight: 1.9, color: "var(--ink)" }}>
-            <li>· 规则如何应用 · rule application</li>
-            <li>· 典籍如何综合 · classical synthesis</li>
-            <li>· 跨系统怎么联结 · cross linkage</li>
-            <li>· 何时追问 · when to ask back</li>
+            <li>· 结论三元组校验：盘面 + 规则 + 典籍缺一不可</li>
+            <li>· 事实不符 → 硬拒绝，不会编一句漂亮的废话糊弄你</li>
+            <li>· 中西两套体系指向同一方向 = 强信号，不是巧合</li>
+            <li>· 涉及心理危机自动转介，不做你的情绪依赖</li>
           </ul>
         </div>
         <FrameBox style={{ gridColumn: "1 / -1", padding: 40 }}>
-          <div className="em" style={{ fontFamily: "var(--serif-en)", fontSize: 32, fontStyle: "italic", lineHeight: 1.4, color: "var(--ink)", textWrap: "balance" }}>
-            “This is an Agent, not a chatty rule engine. The rule engine outputs reference material — not commands. The LLM may deviate; deviations are logged for masters to review. That log is the real engine of the data flywheel.”
+          <div className="em" style={{ fontFamily: "var(--serif-cn)", fontSize: 28, lineHeight: 1.6, color: "var(--ink)", textWrap: "balance" }}>
+            别人告诉你"你命里有财"。<br/>
+            <span style={{ color: "var(--cinnabar)" }}>我们告诉你凭什么这么说。</span>
           </div>
-          <div style={{ fontSize: 14, color: "var(--ink-3)", marginTop: 24, fontFamily: "var(--serif-cn)" }}>
-            — 设计方案 v1.4 · 第二章
+          <div style={{ fontSize: 14, color: "var(--ink-3)", marginTop: 24, fontFamily: "var(--serif-en)", fontStyle: "italic" }}>
+            Every claim traceable. Every reading verifiable.
           </div>
         </FrameBox>
       </section>
@@ -2284,17 +2146,16 @@ window.LandingScreen = LandingScreen;
 function OnboardingScreen({ go, sealProfile, initialProfile, initialQuestion }) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState(() => {
-    // Pre-fill from existing profile if user is re-立档ing
     const [d = "", t = ""] = (initialProfile?.birth || "").split(" ");
     return {
-      name:     initialProfile?.name === "陈书雅" ? "" : (initialProfile?.name || ""),
-      gender:   initialProfile?.gender || "女",
-      date:     initialProfile?.name === "陈书雅" ? "" : d,
-      time:     initialProfile?.name === "陈书雅" ? "" : t,
-      place:    initialProfile?.name === "陈书雅" ? "" : (initialProfile?.place || ""),
+      name:     initialProfile?.name || "",
+      gender:   initialProfile?.gender || "",
+      date:     d,
+      time:     t,
+      place:    initialProfile?.place || "",
       scenario: initialProfile?.scenario || "general",
-      calendar: "solar", trueSolar: true,
-      question: initialQuestion === SAMPLE_QUESTION ? "" : (initialQuestion || ""),
+      calendar: "solar", trueSolar: initialProfile?.trueSolar ?? true,
+      question: initialQuestion || "",
     };
   });
 
@@ -2306,8 +2167,8 @@ function OnboardingScreen({ go, sealProfile, initialProfile, initialQuestion }) 
     });
   };
 
-  // Validation: 立档 requires at least name + date + time + place + a question.
-  const canSeal = data.name.trim() && data.date && data.time && data.place.trim() && data.question.trim();
+  // Validation: core charts require name + binary chart sex + precise time + domestic place + question.
+  const canSeal = data.name.trim() && ["女", "男"].includes(data.gender) && data.date && data.time && data.place.trim() && data.question.trim();
 
   const onSeal = () => {
     if (!canSeal) return;
@@ -2330,7 +2191,7 @@ function OnboardingScreen({ go, sealProfile, initialProfile, initialQuestion }) 
         <div>
           <Lockup cn="立档" en="ESTABLISH RECORD" size="lg" />
           <p style={{ fontSize: 14, color: "var(--ink-3)", lineHeight: 1.7, marginTop: 16 }}>
-            盘面由本地纯算法生成，不经 LLM。三步即立。
+            盘面由本地纯算法生成。三步即立。
           </p>
           <div style={{ marginTop: 48, display: "flex", flexDirection: "column", gap: 0 }}>
             {stepLabels.map((s, i) => {
@@ -2381,7 +2242,7 @@ function OnboardingScreen({ go, sealProfile, initialProfile, initialQuestion }) 
                 <input value={data.name} onChange={e => setData({ ...data, name: e.target.value })} placeholder="如 · 陈书雅" />
               </Field>
               <Field label="性别" en="GENDER">
-                <Segmented options={[{v:"女", l:"女 / female"},{v:"男", l:"男 / male"},{v:"other", l:"其他 / other"}]}
+                <Segmented options={[{v:"女", l:"女 / female"},{v:"男", l:"男 / male"}]}
                   value={data.gender} onChange={v => setData({ ...data, gender: v })} />
               </Field>
               <Field label="情境" en="SCENARIO" full>
@@ -2405,7 +2266,7 @@ function OnboardingScreen({ go, sealProfile, initialProfile, initialQuestion }) 
                 <input type="time" value={data.time} onChange={e => setData({ ...data, time: e.target.value })} />
               </Field>
               <Field label="出生地" en="BIRTHPLACE" full>
-                <input value={data.place} onChange={e => setData({ ...data, place: e.target.value })} placeholder="如 · 北京 / Beijing, China" />
+                <input value={data.place} onChange={e => setData({ ...data, place: e.target.value })} placeholder="如 · 杭州西湖区" />
               </Field>
               <Field label="历法" en="CALENDAR">
                 <Segmented options={[{v:"solar", l:"阳历 · gregorian"},{v:"lunar", l:"农历 · lunar"}]}
@@ -2435,7 +2296,7 @@ function OnboardingScreen({ go, sealProfile, initialProfile, initialQuestion }) 
               </div>
               {!canSeal && (
                 <div className="em" style={{ marginTop: 20, fontSize: 13, color: "var(--ink-3)" }}>
-                  · 请补全：姓名 / 生日 / 时辰 / 出生地 / 本次议题
+                  · 请补全：姓名 / 排盘性别 / 生日 / 时辰 / 出生地 / 本次议题
                 </div>
               )}
             </div>
@@ -2501,19 +2362,17 @@ window.OnboardingScreen = OnboardingScreen;
 
   <script type="text/babel">
 // Chart visualization — BaZi pillars + ZiWei + astrology + numerology
-function ChartScreen({ go, profile, charts, chartsLoading, chartsError }) {
+function ChartScreen({ go, profile, charts, chartsLoading, chartsError, hasProfile }) {
   const [tab, setTab] = useState("bazi");
   const p = profile || SAMPLE_PROFILE;
   const placeLine = p.placeEn && p.placeEn !== p.place ? `${p.place} · ${p.placeEn}` : p.place;
 
-  // Adapt backend charts → v2 view shapes. Falls back to demo BAZI/ZIWEI/ASTRO/NUMER
-  // when no real charts available (e.g. while loading on first visit).
   const raw = charts?.charts;
-  const bazi  = useMemo(() => adaptBazi(raw?.bazi)  || BAZI,  [raw]);
-  const ziwei = useMemo(() => adaptZiwei(raw?.ziwei) || ZIWEI, [raw]);
-  const astro = useMemo(() => adaptAstro(raw?.natal_astro) || ASTRO, [raw]);
-  const numer = useMemo(() => adaptNumer(raw?.numerology) || NUMER, [raw]);
-  const isDemo = p.name === SAMPLE_PROFILE.name;
+  const isDemo = !hasProfile && p.name === SAMPLE_PROFILE.name;
+  const bazi  = useMemo(() => adaptBazi(raw?.bazi)  || (isDemo ? BAZI : null),  [raw, isDemo]);
+  const ziwei = useMemo(() => adaptZiwei(raw?.ziwei) || (isDemo ? ZIWEI : null), [raw, isDemo]);
+  const astro = useMemo(() => adaptAstro(raw?.natal_astro) || (isDemo ? ASTRO : null), [raw, isDemo]);
+  const numer = useMemo(() => adaptNumer(raw?.numerology) || (isDemo ? NUMER : null), [raw, isDemo]);
   const caveats = charts?.caveats || [];
 
   return (
@@ -2554,7 +2413,7 @@ function ChartScreen({ go, profile, charts, chartsLoading, chartsError }) {
           <div style={{ marginTop: 18, padding: 14, border: "1px solid var(--cinnabar)", background: "color-mix(in oklch, var(--cinnabar) 5%, transparent)" }}>
             <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>排盘失败 · ERROR</div>
             <div style={{ fontFamily: "var(--serif-cn)", fontSize: 13, marginTop: 6, color: "var(--ink-2)" }}>
-              {chartsError} —— 暂以示例盘代替（陈书雅 · 1991-08-15）
+              {chartsError}
             </div>
           </div>
         )}
@@ -2582,24 +2441,33 @@ function ChartScreen({ go, profile, charts, chartsLoading, chartsError }) {
       </div>
 
       <div style={{ maxWidth: 1400, margin: "40px auto 0" }}>
-        {tab === "bazi"  && <BaziView bazi={bazi} isDemo={isDemo} />}
-        {tab === "ziwei" && <ZiweiView profile={p} ziwei={ziwei} />}
-        {tab === "astro" && <AstroView astro={astro} />}
-        {tab === "numero"&& <NumeroView numer={numer} />}
-        {tab === "all"   && <AllView bazi={bazi} ziwei={ziwei} astro={astro} numer={numer} />}
+        {tab === "bazi"  && (bazi ? <BaziView bazi={bazi} isDemo={isDemo} /> : <ChartUnavailable system="八字" chartsLoading={chartsLoading} chartsError={chartsError} />)}
+        {tab === "ziwei" && (ziwei ? <ZiweiView profile={p} ziwei={ziwei} /> : <ChartUnavailable system="紫微" chartsLoading={chartsLoading} chartsError={chartsError} />)}
+        {tab === "astro" && (astro ? <AstroView astro={astro} /> : <ChartUnavailable system="占星" chartsLoading={chartsLoading} chartsError={chartsError} />)}
+        {tab === "numero"&& (numer ? <NumeroView numer={numer} /> : <ChartUnavailable system="数字命理" chartsLoading={chartsLoading} chartsError={chartsError} />)}
+        {tab === "all"   && <AllView bazi={bazi} ziwei={ziwei} astro={astro} numer={numer} chartsLoading={chartsLoading} chartsError={chartsError} />}
       </div>
 
       {/* CTA */}
       <div style={{ maxWidth: 1400, margin: "80px auto 0", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "var(--rule)", paddingTop: 32 }}>
         <div>
-          <div className="caps" style={{ fontSize: 10 }}>下一步 · NEXT</div>
+          <div className="caps" style={{ fontSize: 10 }}>{hasProfile ? "下一步 · NEXT" : "演示 · DEMO"}</div>
           <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 22, marginTop: 6, color: "var(--ink-2)" }}>
-            Take this chart into a consultation.
+            {hasProfile ? "Take this chart into a consultation." : "Demo charts are not written into your archive."}
           </div>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
-          <button className="btn btn-ghost" onClick={() => go("report")}>生成研报 · deep report</button>
-          <button className="btn" onClick={() => go("chat")}>请教 · consult <span className="arr">→</span></button>
+          {hasProfile ? (
+            <>
+              <button className="btn btn-ghost" onClick={() => go("report")}>生成研报 · deep report</button>
+              <button className="btn" onClick={() => go("chat")}>请教 · consult <span className="arr">→</span></button>
+            </>
+          ) : (
+            <>
+              <button className="btn btn-ghost" onClick={() => go("report")}>看演示研报 · demo report</button>
+              <button className="btn" onClick={() => go("onboard")}>立档开始 · establish <span className="arr">→</span></button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -2618,8 +2486,39 @@ function Meta({ cn, en, v }) {
   );
 }
 
+function ChartUnavailable({ system, chartsLoading, chartsError }) {
+  return (
+    <div style={{
+      minHeight: 360,
+      border: "1px solid var(--ink)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      textAlign: "center",
+      padding: 48,
+      background: "color-mix(in oklch, var(--paper) 60%, var(--paper-2))",
+    }}>
+      <div>
+        <div className="caps" style={{ fontSize: 10, color: chartsError ? "var(--cinnabar)" : "var(--ink-3)" }}>
+          {chartsLoading ? "排盘中 · COMPUTING" : chartsError ? "排盘失败 · ERROR" : "待补资料 · NEEDS INPUT"}
+        </div>
+        <div style={{ fontFamily: "var(--serif-cn)", fontSize: 30, fontWeight: 600, marginTop: 12 }}>
+          {system}盘未生成
+        </div>
+        <p style={{ fontFamily: "var(--serif-cn)", fontSize: 15, lineHeight: 1.8, maxWidth: 520, margin: "14px auto 0", color: "var(--ink-2)" }}>
+          {chartsLoading
+            ? "正在调用本地排盘引擎。"
+            : chartsError
+              ? chartsError
+              : "请补齐出生日期、时间和中国境内出生地后重新立档。"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function BaziView({ bazi, isDemo }) {
-  const b = bazi || BAZI;
+  const b = bazi;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 56 }}>
       {/* 4 pillars */}
@@ -2703,7 +2602,7 @@ function KV({ k, en, v, accent }) {
 }
 
 function ZiweiView({ profile, ziwei }) {
-  const z = ziwei || ZIWEI;
+  const z = ziwei;
   // simplified 12-palace grid (4x4 with center 2x2 info)
   const palaces = [
     "命宫","父母","福德","田宅",
@@ -2778,7 +2677,7 @@ function ZiweiView({ profile, ziwei }) {
 }
 
 function AstroView({ astro }) {
-  const a = astro || ASTRO;
+  const a = astro;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "start" }}>
       <div style={{ display: "flex", justifyContent: "center", color: "var(--ink)" }}>
@@ -2834,8 +2733,8 @@ function AstroView({ astro }) {
 }
 
 function NumeroView({ numer }) {
-  const n = numer || NUMER;
-  const noteFor = (num) => (n.notes && n.notes[num]) || NUMER_NOTES[num] || "";
+  const n = numer;
+  const noteFor = (num) => n.notes?.[num] ?? "";
   const items = [
     { n: n.life,        cn: "生命数", en: "Life Path",     note: noteFor(n.life) },
     { n: n.expression,  cn: "表达数", en: "Expression",    note: noteFor(n.expression) },
@@ -2871,29 +2770,32 @@ function NumeroView({ numer }) {
   );
 }
 
-function AllView({ bazi, ziwei, astro, numer }) {
-  const b = bazi || BAZI, z = ziwei || ZIWEI, a = astro || ASTRO, nm = numer || NUMER;
+function AllView({ bazi, ziwei, astro, numer, chartsLoading, chartsError }) {
+  if (!bazi && !ziwei && !astro && !numer) {
+    return <ChartUnavailable system="总览" chartsLoading={chartsLoading} chartsError={chartsError} />;
+  }
+  const b = bazi, z = ziwei, a = astro, nm = numer;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-      <div className="card">
+      {b && <div className="card">
         <Lockup cn="八字 · 四柱" en="FOUR PILLARS" size="md" />
         <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
           {b.pillars.map(p => <PillarCard key={p.label} pillar={p} />)}
         </div>
-      </div>
-      <div className="card" style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "var(--ink)" }}>
+      </div>}
+      {a && <div className="card" style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "var(--ink)" }}>
         <Lockup cn="占星 · 星盘" en="NATAL CHART" size="md" />
         <div style={{ marginTop: 16 }}><AstroWheel size={300} data={a} /></div>
-      </div>
-      <div className="card">
+      </div>}
+      {z && <div className="card">
         <Lockup cn="紫微 · 命主" en="ZIWEI · LIFE PALACE" size="md" />
         <div style={{ marginTop: 24, fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.9 }}>
           <div>命宫: <strong>{z.ming}</strong> · 化禄 {z.bihua["禄"]} · 化权 {z.bihua["权"]}</div>
           <div>身宫: <strong>{z.shen}</strong></div>
           <div>局: <strong>{z.局}</strong></div>
         </div>
-      </div>
-      <div className="card">
+      </div>}
+      {nm && <div className="card">
         <Lockup cn="数字命理" en="NUMEROLOGY" size="md" />
         <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, textAlign: "center" }}>
           {[nm.life, nm.expression, nm.soul, nm.personality, nm.year].map((v, i) => (
@@ -2905,7 +2807,7 @@ function AllView({ bazi, ziwei, astro, numer }) {
             </div>
           ))}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -2915,34 +2817,61 @@ window.ChartScreen = ChartScreen;
   </script>
 
   <script type="text/babel">
-// Chat — animated SSE streaming consultation
-// Map backend action types → UI phase {id, cn, en}
-const PHASE_MAP = {
-  planner_start:    { id: "start",    cn: "起 · 立档读题", en: "Start" },
-  planner_thinking: { id: "thinking", cn: "思 · 思考下一步", en: "Thinking" },
-  compute_chart:    { id: "compute",  cn: "排盘 · 本地纯算法", en: "Compute charts" },
-  auto_compute:    { id: "compute",  cn: "排盘 · 自动补算", en: "Auto-compute" },
-  consult_expert:  { id: "expert",   cn: "请教 · 单专家深算", en: "Consult expert" },
-  cross_link:      { id: "cross",    cn: "联 · 中西交叉", en: "Cross-link" },
-  reflect:         { id: "reflect",  cn: "镜 · VRP 反思", en: "Reflect" },
-  synthesize:      { id: "synth",    cn: "综 · 小综合 / 对齐", en: "Synthesize" },
-  ask_user:        { id: "ask",      cn: "问 · 反问澄清", en: "Clarify" },
-  narrative_start: { id: "narr",     cn: "述 · 撰写叙事", en: "Narrative" },
+// Chat — single Agent SSE streaming consultation
+// Tool display names
+const TOOL_DISPLAY = {
+  load_skill:       { cn: "加载技能",  icon: "📖", phase: 1 },
+  compute_chart:    { cn: "排盘计算",  icon: "🧮", phase: 2 },
+  grep_classics:    { cn: "搜索典籍",  icon: "🔍", phase: 3 },
+  read_classic:     { cn: "读取典籍",  icon: "📜", phase: 3 },
+  grep_rules:       { cn: "搜索规则",  icon: "🔍", phase: 3 },
+  read_rule:        { cn: "读取规则",  icon: "📋", phase: 3 },
+  verify_chart_ref: { cn: "校验引用",  icon: "✓",  phase: 4 },
+  verify_claim:     { cn: "三元组校验", icon: "⚖",  phase: 4 },
+  apply_safety:     { cn: "安全审查",  icon: "🛡", phase: 5 },
+  ask_user:         { cn: "反问用户",  icon: "💬", phase: 0 },
 };
 
-// Map backend expert names → UI EXPERTS id
-const EXPERT_ID_MAP = { numerology: "numero" };
-const normExpertId = (e) => EXPERT_ID_MAP[e] || e;
+const AGENT_PHASES = [
+  { key: "think",   cn: "思考", en: "Think" },
+  { key: "skill",   cn: "备术", en: "Prepare" },
+  { key: "compute", cn: "排盘", en: "Compute" },
+  { key: "search",  cn: "查证", en: "Search" },
+  { key: "verify",  cn: "校验", en: "Verify" },
+  { key: "safety",  cn: "审查", en: "Safety" },
+  { key: "write",   cn: "输出", en: "Write" },
+];
 
-const initExpertState = () => {
-  const out = {};
-  EXPERTS.forEach(ex => { out[ex.id] = { status: "idle", claim: null }; });
-  return out;
-};
+// Map tool calls to phase index
+function inferPhase(toolCalls, thoughts, reachedNarr, done) {
+  if (done) return 6;
+  if (reachedNarr) return 6;
+  const last = toolCalls[toolCalls.length - 1];
+  if (!last && thoughts.length === 0) return 0;
+  if (!last) return 0;
+  const td = TOOL_DISPLAY[last.tool];
+  if (!td) return 0;
+  return td.phase || 0;
+}
+
+function ChatUnavailable({ go }) {
+  return (
+    <div className="fade-in screen" style={{ position: "relative" }}>
+      <div style={{ maxWidth: 880, margin: "0 auto", border: "1px solid var(--ink)", padding: 44, background: "color-mix(in oklch, var(--paper) 60%, var(--paper-2))" }}>
+        <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>未立档 · NO PROFILE</div>
+        <h1 style={{ fontFamily: "var(--serif-cn)", fontSize: 42, lineHeight: 1.2, margin: "16px 0 0" }}>请先立档再咨询</h1>
+        <p style={{ fontFamily: "var(--serif-cn)", fontSize: 16, lineHeight: 1.85, color: "var(--ink-2)", marginTop: 16 }}>
+          Agent 不会用演示档案替你起盘。请提供真实出生日期、精确时间和中国境内出生地后再开始咨询。
+        </p>
+        <button className="btn" style={{ marginTop: 28 }} onClick={() => go("onboard")}>立档 · establish <span className="arr">→</span></button>
+      </div>
+    </div>
+  );
+}
 
 function ChatScreen({ go, animSpeed = 1, profile, question }) {
-  const p = profile || SAMPLE_PROFILE;
-  const q = question || SAMPLE_QUESTION;
+  const p = profile;
+  const q = question;
   const [, time] = (p.birth || "").split(" ");
   const sc = SCENARIO_MAP[p.scenario] || SCENARIO_MAP.general;
 
@@ -2951,127 +2880,78 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
   const [error, setError]           = useState(null);
   const [sessionId, setSessionId]   = useState(null);
 
-  const [currentPhase, setCurrentPhase] = useState(null);
-  const [expertState, setExpertState]   = useState(initExpertState);
-  const [synthList, setSynthList]       = useState([]); // [{sys: "cn"|"wt", text}]
-  const [align, setAlign]               = useState(null); // {consensus, divergence, complementary}
-  const [emergence, setEmergence]       = useState([]);   // ★ 自动涌现洞察
-  const [priorAnswer, setPriorAnswer]   = useState(null); // 上一轮的 verdict + question（后端 prior_round）
-  const [verdict, setVerdict]           = useState(null); // {core, confidence}
-  const [narrative, setNarrative]       = useState("");
-  const [caveats, setCaveats]           = useState([]);
-  const [askUserPrompt, setAskUserPrompt] = useState(null); // {question, why}
+  // Agent-specific state
+  const [thoughts, setThoughts]     = useState([]);    // agent thinking steps
+  const [toolCalls, setToolCalls]   = useState([]);    // [{tool, args, result, ts}]
+  const [skills, setSkills]         = useState([]);    // loaded skill names
+  const [narrative, setNarrative]   = useState("");    // streaming final text
+  const [caveats, setCaveats]       = useState([]);
+  const [askUserPrompt, setAskUserPrompt] = useState(null);
   const [askUserReply, setAskUserReply]   = useState("");
-  const [eventLog, setEventLog]         = useState([]);   // raw events for sidebar trace
+  const [eventLog, setEventLog]     = useState([]);
+  const [agentStats, setAgentStats] = useState(null);  // {turns, total_tokens, elapsed_ms}
 
-  // multi-turn follow-up state
-  const [followUps, setFollowUps] = useState([]);   // [{q, status, narrative, verdict}]
+  // Follow-up state
+  const [followUps, setFollowUps] = useState([]);
   const [followUp, setFollowUp]   = useState("");
   const eventSourceRef = useRef(null);
-  const activeFollowupIdxRef = useRef(-1); // -1 = main run; >=0 = follow-up index
+  const activeFollowupIdxRef = useRef(-1);
+  const narrativeRef = useRef(null);
 
-  // Cleanup on unmount
   useEffect(() => () => { if (eventSourceRef.current) eventSourceRef.current.close(); }, []);
 
-  // Push narrative chunk into the right target (main or follow-up)
+  // Auto-scroll narrative
+  useEffect(() => {
+    if (narrativeRef.current) narrativeRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [narrative]);
+
   const appendNarrative = (chunk) => {
     const idx = activeFollowupIdxRef.current;
-    if (idx < 0) {
-      setNarrative(prev => prev + chunk);
-    } else {
-      setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, narrative: (fu.narrative || "") + chunk } : fu));
-    }
-  };
-  const replaceNarrative = (text) => {
-    const idx = activeFollowupIdxRef.current;
-    if (idx < 0) setNarrative(text);
-    else setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, narrative: text } : fu));
-  };
-  const setRunVerdict = (v) => {
-    const idx = activeFollowupIdxRef.current;
-    if (idx < 0) setVerdict(v);
-    else setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, verdict: v } : fu));
-  };
-  const appendEmergence = (ins) => {
-    const idx = activeFollowupIdxRef.current;
-    if (idx < 0) setEmergence(prev => [...prev, ins]);
-    else setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, emergence: [...(fu.emergence || []), ins] } : fu));
+    if (idx < 0) setNarrative(prev => prev + chunk);
+    else setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, narrative: (fu.narrative || "") + chunk } : fu));
   };
 
-  // Listen to all known event types on the EventSource
+  // Wire SSE events for new agent architecture
   const wireEvents = (es) => {
-    const log = (type, data) => setEventLog(prev => [...prev.slice(-200), { type, ...data, _t: Date.now() }]);
+    const log = (type, data) => setEventLog(prev => [...prev.slice(-300), { type, ...data, _t: Date.now() }]);
     const handlers = {
-      planner_start:   (d) => { log("planner_start", d); setCurrentPhase(PHASE_MAP.planner_start); },
-      input_caveats:   (d) => { log("input_caveats", d); setCaveats(d.caveats || []); },
-      planner_thinking:(d) => { log("planner_thinking", d); setCurrentPhase(PHASE_MAP.planner_thinking); },
-      planner_thought: (d) => { log("planner_thought", d); },
-      planner_executing: (d) => {
-        log("planner_executing", d);
-        const phase = PHASE_MAP[d.action] || { id: d.action, cn: d.action, en: d.action };
-        setCurrentPhase(phase);
-        if (d.action === "consult_expert" && d.expert) {
-          const eid = normExpertId(d.expert);
-          setExpertState(prev => ({ ...prev, [eid]: { status: "thinking", claim: prev[eid]?.claim || null } }));
-        }
+      thought: (d) => {
+        log("thought", d);
+        setThoughts(prev => [...prev, d.content || ""]);
       },
-      chart_ready:     (d) => log("chart_ready", d),
-      charts_summary:  (d) => log("charts_summary", d),
-      expert_done: (d) => {
-        log("expert_done", d);
-        const eid = normExpertId(d.expert);
-        setExpertState(prev => ({ ...prev, [eid]: { status: "done", claim: d.headline || d.summary || null } }));
+      tool_call: (d) => {
+        log("tool_call", d);
+        setToolCalls(prev => [...prev, { tool: d.tool, args: d.args || {}, result: null, ts: Date.now() }]);
       },
-      cross_link_insight: (d) => log("cross_link_insight", d),
-      emergent_insight: (d) => {
-        log("emergent_insight", d);
-        appendEmergence(d);
-      },
-      reflection:         (d) => log("reflection", d),
-      synth_done: (d) => {
-        log("synth_done", d);
-        if (d.is_skipped) return;
-        const sys = d.group === "chinese" ? "cn" : "wt";
-        setSynthList(prev => {
-          if (prev.some(s => s.sys === sys)) return prev.map(s => s.sys === sys ? { sys, text: d.headline } : s);
-          return [...prev, { sys, text: d.headline }];
+      tool_result: (d) => {
+        log("tool_result", d);
+        setToolCalls(prev => {
+          const copy = [...prev];
+          for (let i = copy.length - 1; i >= 0; i--) {
+            if (copy[i].tool === d.tool && !copy[i].result) {
+              copy[i] = { ...copy[i], result: d.result || "" };
+              break;
+            }
+          }
+          return copy;
         });
       },
-      aligner_done: (d) => {
-        log("aligner_done", d);
-        const nT = d.n_topics || 0;
-        const consensus = Math.round((d.consensus_score || 0) * nT);
-        const divergence = Math.round((d.divergence_score || 0) * nT);
-        setAlign({
-          consensus,
-          divergence,
-          complementary: Math.max(0, nT - consensus - divergence),
-          summary: d.summary,
-        });
+      skill_loaded: (d) => {
+        log("skill_loaded", d);
+        setSkills(prev => prev.includes(d.skill) ? prev : [...prev, d.skill]);
       },
-      verdict_done: (d) => {
-        log("verdict_done", d);
-        const conf = (d.confidence || "").toString().toUpperCase();
-        setRunVerdict({
-          core: d.summary || (d.consensus || []).join("、") || "已合议",
-          confidence: conf || "—",
-        });
-      },
-      narrative_start: (d) => { log("narrative_start", d); setCurrentPhase(PHASE_MAP.narrative_start); },
-      narrative_chunk: (d) => { log("narrative_chunk", { textLen: (d.text || "").length }); appendNarrative(d.text || ""); },
-      narrative:       (d) => { log("narrative", { len: (d.text || "").length }); if (d.replaced) replaceNarrative(d.text || ""); },
       ask_user: (d) => {
         log("ask_user", d);
         setAskUserPrompt({ question: d.question || "请补充更多信息。", why: d.why || "" });
-        setCurrentPhase(PHASE_MAP.ask_user);
       },
-      waiting_user: (d) => log("waiting_user", d),
-      user_replied: (d) => { log("user_replied", d); setAskUserPrompt(null); setAskUserReply(""); },
+      text_delta: (d) => {
+        appendNarrative(d.delta || "");
+      },
       done: (d) => {
         log("done", d);
         setDone(true);
+        setAgentStats({ turns: d.turns, total_tokens: d.total_tokens, elapsed_ms: d.elapsed_ms });
         if (eventSourceRef.current) { eventSourceRef.current.close(); eventSourceRef.current = null; }
-        // mark follow-up as done if active
         const idx = activeFollowupIdxRef.current;
         if (idx >= 0) setFollowUps(prev => prev.map((fu, i) => i === idx ? { ...fu, status: "done" } : fu));
       },
@@ -3080,8 +2960,6 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
         setError(d.message || "未知错误");
         if (eventSourceRef.current) { eventSourceRef.current.close(); eventSourceRef.current = null; }
       },
-      action_error: (d) => log("action_error", d),
-      planner_max_steps: (d) => log("planner_max_steps", d),
     };
     Object.keys(handlers).forEach(type => {
       es.addEventListener(type, (msgEvent) => {
@@ -3090,13 +2968,12 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
       });
     });
     es.onerror = () => {
-      if (es.readyState === EventSource.CLOSED) return; // normal close
+      if (es.readyState === EventSource.CLOSED) return;
       console.error("SSE connection error");
       setError("连接中断");
     };
   };
 
-  // Convert UI profile shape → backend session shape
   const buildSessionPayload = () => ({
     id: sessionId || undefined,
     name: p.name,
@@ -3105,38 +2982,33 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
     time: (p.birth || "").split(" ")[1] || "",
     unknownTime: false,
     place: p.place,
-    timezone_offset: 8.0,
+    trueSolar: p.trueSolar ?? true,
+    use_true_solar_time: p.trueSolar ?? true,
     scenario: "chat",
     question: q,
   });
 
-  // First run: create session + post initial question + open stream
   const startRun = async () => {
     setRunning(true); setDone(false); setError(null);
-    setCurrentPhase(null); setExpertState(initExpertState());
-    setSynthList([]); setAlign(null); setVerdict(null); setNarrative("");
-    setCaveats([]); setAskUserPrompt(null); setAskUserReply("");
-    setEventLog([]); setFollowUps([]); setEmergence([]);
+    setThoughts([]); setToolCalls([]); setSkills([]);
+    setNarrative(""); setCaveats([]); setAskUserPrompt(null);
+    setAskUserReply(""); setEventLog([]); setFollowUps([]);
+    setAgentStats(null);
     activeFollowupIdxRef.current = -1;
 
     try {
       const sres = await fetch("/api/v1/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildSessionPayload()),
       });
       const sjson = await sres.json();
       const sid = sjson.session_id;
       setSessionId(sid);
-
       const es = new EventSource(`/api/v1/sessions/${sid}/stream`);
       eventSourceRef.current = es;
       wireEvents(es);
-
-      // Post initial question (after stream opens so backend's queue.get is awaiting)
       await fetch(`/api/v1/sessions/${sid}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: q }),
       });
     } catch (err) {
@@ -3146,40 +3018,33 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
     }
   };
 
-  // Mid-cycle: user answers an ask_user prompt
   const submitAskUserReply = async () => {
     const txt = askUserReply.trim();
     if (!txt || !sessionId) return;
     try {
       await fetch(`/api/v1/sessions/${sessionId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: txt }),
       });
-      // ask_user UI clears on user_replied event
-    } catch (err) {
-      console.error(err);
-      setError("回复失败");
-    }
+      setAskUserPrompt(null); setAskUserReply("");
+    } catch (err) { console.error(err); setError("回复失败"); }
   };
 
-  // Post-done follow-up: post new question + re-open stream for another full cycle
   const sendFollowUp = async () => {
     const txt = followUp.trim();
     if (!txt || !sessionId) return;
     const idx = followUps.length;
-    setFollowUps(prev => [...prev, { q: txt, status: "running", narrative: "", verdict: null }]);
+    setFollowUps(prev => [...prev, { q: txt, status: "running", narrative: "" }]);
     setFollowUp("");
     activeFollowupIdxRef.current = idx;
     setDone(false); setAskUserPrompt(null);
-
+    setThoughts([]); setToolCalls([]); setSkills([]);
     try {
       const es = new EventSource(`/api/v1/sessions/${sessionId}/stream`);
       eventSourceRef.current = es;
       wireEvents(es);
       await fetch(`/api/v1/sessions/${sessionId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: txt }),
       });
     } catch (err) {
@@ -3188,55 +3053,42 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
     }
   };
 
-  // For sidebar SSE trace
   const events = eventLog;
   const reachedNarr = narrative.length > 0;
 
   return (
     <div className="fade-in screen" style={{ position: "relative" }}>
       <div style={{ maxWidth: 1400, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 360px", gap: 56 }}>
-        {/* main */}
+        {/* main column */}
         <div>
-          {/* ask */}
+          {/* question header */}
           <div style={{ borderBottom: "1px solid var(--ink)", paddingBottom: 32 }}>
-            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>问 · CONSULT · session #{p.name?.slice(0, 4) || "demo"}</div>
+            <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>问 · CONSULT</div>
             <div style={{ display: "flex", gap: 20, marginTop: 18, alignItems: "flex-start" }}>
               <Seal char="问" size={48} rotate={-3} />
               <div style={{ flex: 1 }}>
                 <div className="caps" style={{ fontSize: 9 }}>{p.name} · {time || "—"} · {p.place} · {sc.en}</div>
-                <div style={{ fontFamily: "var(--serif-cn)", fontSize: 30, fontWeight: 500, lineHeight: 1.4, marginTop: 10, color: "var(--ink)" }}>
-                  {q}
-                </div>
+                <div style={{ fontFamily: "var(--serif-cn)", fontSize: 30, fontWeight: 500, lineHeight: 1.4, marginTop: 10, color: "var(--ink)" }}>{q}</div>
               </div>
             </div>
           </div>
 
-          {/* run controls */}
+          {/* run button */}
           {!running && (
             <div style={{ marginTop: 40, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
               <button className="btn" onClick={startRun}>
-                请教 · run consultation <span className="arr">→</span>
+                请教 · consult <span className="arr">→</span>
               </button>
-              <span className="em" style={{ fontSize: 14, color: "var(--ink-3)" }}>八路并行 · 真实 LLM 流（DeepSeek）· 约 60–90 秒</span>
+              <span className="em" style={{ fontSize: 14, color: "var(--ink-3)" }}>七术交叉研判 · 约 40-60 秒</span>
             </div>
           )}
 
-          {/* error banner */}
+          {/* error */}
           {error && (
             <div style={{ marginTop: 24, padding: 16, border: "1px solid var(--cinnabar)", background: "color-mix(in oklch, var(--cinnabar) 5%, transparent)" }}>
               <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>错 · ERROR</div>
               <div style={{ fontFamily: "var(--serif-cn)", fontSize: 14, marginTop: 6, color: "var(--ink-2)" }}>{error}</div>
               <button className="btn btn-ghost" style={{ marginTop: 12, fontSize: 12, padding: "8px 14px" }} onClick={startRun}>↻ 重试</button>
-            </div>
-          )}
-
-          {/* caveats banner */}
-          {caveats.length > 0 && (
-            <div style={{ marginTop: 24, padding: 16, border: "1px dashed color-mix(in oklch, var(--gild) 60%, transparent)", background: "color-mix(in oklch, var(--gild) 4%, transparent)" }}>
-              <div className="caps" style={{ fontSize: 10, color: "var(--gild)" }}>注 · INPUT CAVEATS</div>
-              <ul style={{ margin: "8px 0 0", paddingLeft: 20, fontFamily: "var(--serif-cn)", fontSize: 13, color: "var(--ink-2)", lineHeight: 1.7 }}>
-                {caveats.map((c, i) => <li key={i}>{c}</li>)}
-              </ul>
             </div>
           )}
 
@@ -3246,214 +3098,295 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
               <div style={{ position: "absolute", top: -12, left: 20, background: "var(--paper)", padding: "0 12px" }}>
                 <span className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>反问澄清 · CLARIFY</span>
               </div>
-              <div style={{ fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 500, lineHeight: 1.5, color: "var(--ink)" }}>
-                {askUserPrompt.question}
-              </div>
-              {askUserPrompt.why && (
-                <div className="em" style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 13, color: "var(--ink-3)", marginTop: 8 }}>
-                  {askUserPrompt.why}
-                </div>
-              )}
-              <textarea
-                rows={2}
-                value={askUserReply}
-                onChange={e => setAskUserReply(e.target.value)}
+              <div style={{ fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 500, lineHeight: 1.5, color: "var(--ink)" }}>{askUserPrompt.question}</div>
+              {askUserPrompt.why && <div className="em" style={{ fontStyle: "italic", fontSize: 13, color: "var(--ink-3)", marginTop: 8 }}>{askUserPrompt.why}</div>}
+              <textarea rows={2} value={askUserReply} onChange={e => setAskUserReply(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitAskUserReply(); }}
-                placeholder="回复 · reply (⌘/Ctrl + Enter 发送)"
-                style={{ marginTop: 16, width: "100%", fontSize: 15, lineHeight: 1.6, resize: "none" }}
-              />
+                placeholder="回复 (⌘/Ctrl + Enter)" style={{ marginTop: 16, width: "100%", fontSize: 15, lineHeight: 1.6, resize: "none" }} />
               <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
                 <button className="btn" disabled={!askUserReply.trim()} onClick={submitAskUserReply}
-                  style={{ opacity: askUserReply.trim() ? 1 : 0.45, cursor: askUserReply.trim() ? "pointer" : "not-allowed" }}>
-                  回复 · reply <span className="arr">→</span>
-                </button>
+                  style={{ opacity: askUserReply.trim() ? 1 : 0.45 }}>回复 <span className="arr">→</span></button>
               </div>
             </div>
           )}
 
-          {/* mystical compute centerpiece + phase indicator */}
-          {running && (
-            <>
-              <MysticalCompute phase={currentPhase} expertState={expertState} />
-              <div style={{ padding: "12px 0", borderBottom: "var(--rule)", display: "flex", alignItems: "center", gap: 16 }}>
-                <span className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>当前 · PHASE</span>
-                <div style={{ flex: 1, fontFamily: "var(--serif-cn)", fontSize: 22, fontWeight: 600 }}>
-                  {currentPhase ? `${currentPhase.cn} · ${currentPhase.en}` : "..."}
-                </div>
-                {!done && <Spinner />}
-                {done && <span className="caps" style={{ fontSize: 10, color: "var(--jade)" }}>✓ 完成 · DONE</span>}
-              </div>
-            </>
-          )}
-
-          {/* experts grid */}
-          {running && (
+          {/* Agent work: phase stepper + skills + tool calls + thoughts */}
+          {running && (toolCalls.length > 0 || thoughts.length > 0) && (() => {
+            const phase = inferPhase(toolCalls, thoughts, reachedNarr, done);
+            return (
             <div style={{ marginTop: 40 }}>
-              <Rule label="八路并行 · 8 EXPERTS PARALLEL" />
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14, marginTop: 24 }}>
-                {EXPERTS.map(ex => <ExpertCard key={ex.id} ex={ex} state={expertState[ex.id]} />)}
-              </div>
-            </div>
-          )}
-
-          {/* sub-synth */}
-          {synthEvents.length > 0 && (
-            <div style={{ marginTop: 40 }}>
-              <Rule label="中西小综合 · SUB-SYNTHESIS · 互不可见" />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 24 }}>
-                {synthEvents.map((e, i) => (
-                  <SynthCard key={i} sys={e.payload.sys} text={e.payload.text} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* align */}
-          {align && <AlignBoard align={align} />}
-
-          {/* ★ 自动涌现的跨系统强信号 */}
-          {emergence.length > 0 && (
-            <div style={{ marginTop: 40 }}>
-              <Rule label="涌现 · EMERGENT INSIGHTS · 算法自发现 · 非 Planner 拍脑袋" />
-              <div style={{ display: "grid", gridTemplateColumns: emergence.length > 1 ? "1fr 1fr" : "1fr", gap: 16, marginTop: 24 }}>
-                {emergence.map((ins, i) => (
-                  <div key={i} style={{
-                    padding: 22,
-                    border: `1.5px solid ${ins.strength === "strong" ? "var(--cinnabar)" : "color-mix(in oklch, var(--cinnabar) 50%, transparent)"}`,
-                    background: ins.strength === "strong" ? "color-mix(in oklch, var(--cinnabar) 4%, transparent)" : "transparent",
-                    position: "relative",
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-                      <span className="caps" style={{ fontSize: 9, color: "var(--cinnabar)", letterSpacing: "0.2em" }}>
-                        {ins.topic || "TOPIC"} · {(ins.strength || "moderate").toUpperCase()}
-                      </span>
-                    </div>
-                    <div style={{ fontFamily: "var(--serif-cn)", fontSize: 18, fontWeight: 600, lineHeight: 1.45, color: "var(--ink)" }}>
-                      {ins.headline}
-                    </div>
-                    <div style={{ marginTop: 10, fontFamily: "var(--serif-cn)", fontSize: 14, lineHeight: 1.85, color: "var(--ink-2)" }}>
-                      {ins.narrative}
-                    </div>
-                    {ins.implication && (
-                      <div className="em" style={{ marginTop: 10, fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 13, color: "var(--cinnabar)" }}>
-                        → {ins.implication}
+              {/* Phase stepper */}
+              <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 32 }}>
+                {AGENT_PHASES.map((ph, i) => {
+                  const active = i === phase;
+                  const completed = i < phase;
+                  return (
+                    <React.Fragment key={ph.key}>
+                      {i > 0 && <div style={{ flex: 1, height: 1, background: completed ? "var(--cinnabar)" : "color-mix(in oklch, var(--ink) 12%, transparent)", transition: "background 0.6s ease" }} />}
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative" }}>
+                        <div style={{
+                          width: active ? 28 : 20, height: active ? 28 : 20,
+                          borderRadius: "50%",
+                          background: completed ? "var(--cinnabar)" : active ? "transparent" : "transparent",
+                          border: active ? "2px solid var(--cinnabar)" : completed ? "none" : "1px solid color-mix(in oklch, var(--ink) 20%, transparent)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          transition: "all 0.4s ease",
+                          animation: active ? "phase-pulse 1.8s ease-in-out infinite" : "none",
+                        }}>
+                          {completed && <span style={{ color: "var(--paper)", fontSize: 10, fontWeight: 700 }}>✓</span>}
+                          {active && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--cinnabar)" }} />}
+                        </div>
+                        <span className="caps" style={{ fontSize: 8, color: active ? "var(--cinnabar)" : completed ? "var(--ink-2)" : "var(--ink-4)", transition: "color 0.4s ease", whiteSpace: "nowrap" }}>
+                          {ph.cn}
+                        </span>
                       </div>
-                    )}
+                    </React.Fragment>
+                  );
+                })}
+                <style>{`@keyframes phase-pulse{0%,100%{box-shadow:0 0 0 0 rgba(180,60,40,0.3)}50%{box-shadow:0 0 0 8px rgba(180,60,40,0)}}`}</style>
+              </div>
+
+              <Rule label="研判过程 · REASONING TRACE" />
+
+              {/* Pulsing seal while working */}
+              {!done && !reachedNarr && (
+                <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 20, marginBottom: 20 }}>
+                  <div style={{ position: "relative", width: 44, height: 44 }}>
+                    <div style={{ position: "absolute", inset: 0, border: "2px solid var(--cinnabar)", borderRadius: "50%", animation: "seal-ring 2.4s ease-in-out infinite", opacity: 0.4 }} />
+                    <div style={{ position: "absolute", inset: 4, border: "1.5px solid var(--cinnabar)", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--serif-cn)", fontSize: 18, fontWeight: 700, color: "var(--cinnabar)", animation: "seal-inner 2.4s ease-in-out infinite" }}>
+                      算
+                    </div>
+                    <style>{`
+                      @keyframes seal-ring{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.15);opacity:0.15}}
+                      @keyframes seal-inner{0%,100%{transform:rotate(0deg)}50%{transform:rotate(3deg)}}
+                    `}</style>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* verdict */}
-          {verdict && (
-            <div style={{ marginTop: 40, padding: 32, border: "1.5px solid var(--cinnabar)", position: "relative" }}>
-              <div style={{ position: "absolute", top: -12, left: 24, background: "var(--paper)", padding: "0 12px" }}>
-                <span className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>综合判官 · SYNTHESIS JUDGE</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
-                <div>
-                  <div className="caps" style={{ fontSize: 9 }}>核心结论 · CORE</div>
-                  <div style={{ fontFamily: "var(--serif-cn)", fontSize: 26, fontWeight: 600, marginTop: 8 }}>{verdict.core}</div>
+                  <div>
+                    <div style={{ fontFamily: "var(--serif-cn)", fontSize: 15, fontWeight: 500, color: "var(--ink)" }}>
+                      {phase <= 1 ? "正在准备研判..." : phase === 2 ? "正在起盘排卦..." : phase === 3 ? "正在翻阅典籍..." : phase === 4 ? "正在逐条校验..." : "正在审查措辞..."}
+                    </div>
+                    <div className="mono" style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 2 }}>
+                      {toolCalls.length} 步推演 · {skills.length} 术已备
+                    </div>
+                  </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div className="caps" style={{ fontSize: 9 }}>置信度 · CONFIDENCE</div>
-                  <div style={{ fontFamily: "var(--serif-en)", fontStyle: "italic", fontSize: 36, color: "var(--cinnabar)" }}>{verdict.confidence}</div>
-                </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* narrative (streaming from backend) */}
+              {/* loaded skills pills with slide-in animation */}
+              {skills.length > 0 && (
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12, marginBottom: 16 }}>
+                  <span className="caps" style={{ fontSize: 9, color: "var(--ink-3)", lineHeight: "28px" }}>术</span>
+                  {skills.map((s, si) => (
+                    <span key={s} className="skill-pill" style={{
+                      padding: "4px 14px", fontSize: 12, fontFamily: "var(--mono)",
+                      border: "1px solid var(--cinnabar)", color: "var(--cinnabar)",
+                      background: "color-mix(in oklch, var(--cinnabar) 4%, transparent)",
+                      animation: `skill-in 0.4s ${si * 0.08}s both ease-out`,
+                    }}>{s}</span>
+                  ))}
+                  <style>{`@keyframes skill-in{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}`}</style>
+                </div>
+              )}
+
+              {/* tool call feed — enhanced cards */}
+              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+                {toolCalls.filter(tc => tc.tool !== "load_skill").map((tc, i) => {
+                  const td = TOOL_DISPLAY[tc.tool] || { cn: tc.tool, icon: "⚙" };
+                  const argStr = tc.tool === "compute_chart" ? tc.args.chart_type :
+                    tc.tool === "grep_classics" || tc.tool === "grep_rules" ? tc.args.pattern :
+                    tc.tool === "read_classic" || tc.tool === "read_rule" ? tc.args.id :
+                    tc.tool === "verify_chart_ref" ? `${tc.args.path} = ${tc.args.expected}` :
+                    tc.tool === "verify_claim" ? tc.args.claim?.slice(0, 40) :
+                    tc.tool === "apply_safety" ? "(审查中...)" : "";
+                  const isVerify = tc.tool === "verify_chart_ref" || tc.tool === "verify_claim";
+                  const passed = isVerify && tc.result && (tc.result.includes("✓") || tc.result.includes("VERIFIED"));
+                  const rejected = isVerify && tc.result && (tc.result.includes("❌") || tc.result.includes("REJECTED"));
+                  const softFlag = isVerify && tc.result && tc.result.includes("SOFT_FLAG");
+                  const borderColor = rejected ? "var(--cinnabar)" : passed ? "#3a7a5a" : softFlag ? "var(--gild)" : "color-mix(in oklch, var(--ink) 12%, transparent)";
+
+                  // Special render for verify_claim — show three legs
+                  if (tc.tool === "verify_claim" && tc.result) {
+                    const hasChart = tc.result.includes("chart_ref:");
+                    const chartOk = tc.result.includes("✓ chart_ref");
+                    const hasRule = tc.result.includes("rule_ref:");
+                    const ruleOk = tc.result.includes("✓ rule_ref");
+                    const hasSource = tc.result.includes("source_ref:");
+                    const sourceOk = tc.result.includes("✓ source_ref");
+                    return (
+                      <div key={i} className="tool-card" style={{
+                        padding: "10px 14px", borderLeft: `3px solid ${borderColor}`,
+                        background: rejected ? "color-mix(in oklch, var(--cinnabar) 4%, transparent)" : "color-mix(in oklch, var(--ink) 2%, transparent)",
+                        animation: "card-in 0.3s ease-out both",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                          <span style={{ fontSize: 14 }}>⚖</span>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: 11, fontWeight: 600, color: "var(--ink-2)" }}>三元组校验</span>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {tc.args.claim?.slice(0, 50)}
+                          </span>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: 10, fontWeight: 600, color: rejected ? "var(--cinnabar)" : passed ? "#3a7a5a" : "var(--gild)" }}>
+                            {tc.args.tier}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
+                          {[
+                            { label: "chart", ok: chartOk, has: hasChart || tc.args.chart_ref },
+                            { label: "rule",  ok: ruleOk,  has: hasRule || (tc.args.rule_ref && tc.args.rule_ref !== "none") },
+                            { label: "source", ok: sourceOk, has: hasSource || (tc.args.source_ref && tc.args.source_ref !== "none") },
+                          ].map(leg => (
+                            <div key={leg.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <div style={{
+                                width: 16, height: 16, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700,
+                                background: leg.ok ? "#3a7a5a" : !leg.has ? "color-mix(in oklch, var(--ink) 10%, transparent)" : "var(--cinnabar)",
+                                color: (leg.ok || leg.has) ? "white" : "var(--ink-4)",
+                              }}>
+                                {leg.ok ? "✓" : leg.has ? "✗" : "—"}
+                              </div>
+                              <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{leg.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={i} className="tool-card" style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "8px 14px",
+                      borderLeft: `2px solid ${borderColor}`,
+                      background: !tc.result ? "color-mix(in oklch, var(--cinnabar) 2%, transparent)" : "transparent",
+                      transition: "all 0.3s ease",
+                      animation: "card-in 0.3s ease-out both",
+                    }}>
+                      <span style={{ fontSize: 14, width: 20, textAlign: "center" }}>{td.icon}</span>
+                      <span style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-2)", minWidth: 80 }}>{td.cn}</span>
+                      <span style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-3)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {argStr}
+                      </span>
+                      {tc.result && (
+                        <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: passed ? "#3a7a5a" : rejected ? "var(--cinnabar)" : "var(--ink-4)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {tc.result.slice(0, 60)}
+                        </span>
+                      )}
+                      {!tc.result && <Spinner />}
+                    </div>
+                  );
+                })}
+                <style>{`@keyframes card-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+              </div>
+
+              {/* thoughts */}
+              {thoughts.length > 0 && (
+                <div style={{ marginTop: 18 }}>
+                  {thoughts.map((t, i) => (
+                    <div key={i} style={{
+                      padding: "10px 16px", marginBottom: 6,
+                      background: "color-mix(in oklch, var(--gild) 5%, transparent)",
+                      borderLeft: "2px solid var(--gild)",
+                      fontFamily: "var(--serif-cn)", fontSize: 13, lineHeight: 1.7, color: "var(--ink-2)",
+                      animation: "card-in 0.3s ease-out both",
+                    }}>
+                      <span style={{ fontSize: 10, color: "var(--gild)", marginRight: 8 }}>思</span>{t}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            );
+          })()}
+
+          {/* narrative (streaming final text) */}
           {reachedNarr && (
-            <div style={{ marginTop: 56 }}>
-              <Rule label="叙事 · NARRATIVE · C 端" />
-              <div style={{ marginTop: 32, padding: "0 0 0 32px", borderLeft: "2px solid var(--cinnabar)", maxWidth: 740 }}>
-                <div style={{ fontFamily: "var(--serif-cn)", fontSize: 19, lineHeight: 1.95, color: "var(--ink)", whiteSpace: "pre-wrap", textWrap: "pretty" }}>
-                  {narrative}
-                  {!done && narrative.length > 0 && <span style={{ background: "var(--cinnabar)", display: "inline-block", width: 2, height: 18, verticalAlign: "middle", animation: "blink 0.8s infinite" }} />}
-                </div>
+            <div style={{ marginTop: 48 }} ref={narrativeRef}>
+              <Rule label="研判结论 · RESPONSE" />
+              <div style={{ marginTop: 28, padding: "0 0 0 28px", borderLeft: "2px solid var(--cinnabar)", maxWidth: 760 }}>
+                <div className="markdown-body" style={{ fontFamily: "var(--serif-cn)", fontSize: 18, lineHeight: 2, color: "var(--ink)", whiteSpace: "pre-wrap", textWrap: "pretty" }}
+                  dangerouslySetInnerHTML={{ __html: simpleMarkdown(narrative) }} />
+                {!done && narrative.length > 0 && <span style={{ background: "var(--cinnabar)", display: "inline-block", width: 2, height: 18, verticalAlign: "middle", animation: "blink 0.8s infinite" }} />}
                 <style>{`@keyframes blink{50%{opacity:0}}`}</style>
               </div>
             </div>
           )}
 
-          {/* follow-up thread (real backend re-stream) */}
+          {/* agent stats — mini dashboard */}
+          {done && agentStats && (
+            <div style={{ marginTop: 28, display: "flex", gap: 32, padding: "16px 0", borderTop: "1px solid color-mix(in oklch, var(--ink) 8%, transparent)", animation: "card-in 0.5s ease-out both" }}>
+              {[
+                { n: agentStats.turns, label: "步推演" },
+                { n: skills.length, label: "术参照" },
+                { n: Math.round(agentStats.elapsed_ms / 1000), label: "秒用时" },
+                { n: toolCalls.filter(tc => tc.tool === "verify_claim" || tc.tool === "verify_chart_ref").length, label: "项校验" },
+              ].map((s, i) => (
+                <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <div style={{ fontFamily: "var(--serif-cn)", fontSize: 24, fontWeight: 600, color: "var(--ink)", lineHeight: 1 }}>{s.n}</div>
+                  <div className="caps" style={{ fontSize: 8, color: "var(--ink-4)" }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* follow-up threads */}
           {followUps.map((fu, i) => (
             <div key={i} style={{ marginTop: 48, paddingTop: 32, borderTop: "1px solid var(--ink)" }}>
               <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)" }}>追问 · FOLLOW-UP {String(i + 1).padStart(2, "0")}</div>
               <div style={{ fontFamily: "var(--serif-cn)", fontSize: 22, fontWeight: 500, lineHeight: 1.45, marginTop: 10, color: "var(--ink)" }}>{fu.q}</div>
-              {fu.verdict && (
-                <div style={{ marginTop: 18, padding: "14px 18px", border: "1px solid var(--cinnabar)" }}>
-                  <span className="caps" style={{ fontSize: 9, color: "var(--cinnabar)" }}>核心 · CORE</span>
-                  <div style={{ fontFamily: "var(--serif-cn)", fontSize: 18, fontWeight: 500, marginTop: 4 }}>{fu.verdict.core}</div>
-                </div>
-              )}
               {fu.narrative ? (
-                <div style={{ marginTop: 18, paddingLeft: 24, borderLeft: "2px solid var(--cinnabar)", fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.9, color: "var(--ink-2)", maxWidth: 740, whiteSpace: "pre-wrap" }}>
-                  {fu.narrative}
+                <div style={{ marginTop: 18, paddingLeft: 24, borderLeft: "2px solid var(--cinnabar)", maxWidth: 740 }}>
+                  <div className="markdown-body" style={{ fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.9, color: "var(--ink-2)", whiteSpace: "pre-wrap" }}
+                    dangerouslySetInnerHTML={{ __html: simpleMarkdown(fu.narrative) }} />
                   {fu.status === "running" && <span style={{ background: "var(--cinnabar)", display: "inline-block", width: 2, height: 16, verticalAlign: "middle", animation: "blink 0.8s infinite" }} />}
                 </div>
               ) : fu.status === "running" ? (
                 <div className="em" style={{ marginTop: 12, fontSize: 13, color: "var(--ink-3)", display: "flex", alignItems: "center", gap: 10 }}>
-                  <Spinner /> 八路重启 · re-routing experts
+                  <Spinner /> 研判中...
                 </div>
               ) : null}
             </div>
           ))}
 
+          {/* follow-up input */}
           {done && narrative.length > 0 && (followUps.length === 0 || followUps[followUps.length - 1].status === "done") && (
-            <>
-              {/* follow-up input */}
-              <div style={{ marginTop: 48, paddingTop: 28, borderTop: "1px solid var(--ink)" }}>
-                <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>追问 · ASK FOLLOW-UP</div>
-                <textarea
-                  rows={3}
-                  value={followUp}
-                  onChange={e => setFollowUp(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendFollowUp(); }}
-                  placeholder="如 · 这个判词里说的「下半年宜动手」具体几月？"
-                  style={{ marginTop: 12, width: "100%", fontSize: 16, lineHeight: 1.65, resize: "none" }}
-                />
-                <div style={{ marginTop: 12, display: "flex", gap: 14, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
-                  <span className="em" style={{ fontSize: 12, color: "var(--ink-4)" }}>⌘/Ctrl + Enter 发送 · 真八路重跑</span>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <button className="btn btn-ghost" onClick={startRun}>↻ 重跑</button>
-                    <button className="btn btn-ghost" onClick={() => go("report")}>生成深度研报 · deep report</button>
-                    <button className="btn" onClick={sendFollowUp} disabled={!followUp.trim()} style={{ opacity: followUp.trim() ? 1 : 0.45, cursor: followUp.trim() ? "pointer" : "not-allowed" }}>
-                      发送 · ask <span className="arr">→</span>
-                    </button>
-                  </div>
-                </div>
+            <div style={{ marginTop: 48, paddingTop: 28, borderTop: "1px solid var(--ink)" }}>
+              <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>追问 · FOLLOW-UP</div>
+              <textarea rows={3} value={followUp} onChange={e => setFollowUp(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendFollowUp(); }}
+                placeholder="继续追问..."
+                style={{ marginTop: 12, width: "100%", fontSize: 16, lineHeight: 1.65, resize: "none" }} />
+              <div style={{ marginTop: 12, display: "flex", gap: 14, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                <button className="btn btn-ghost" onClick={startRun}>↻ 重新研判</button>
+                <button className="btn" onClick={sendFollowUp} disabled={!followUp.trim()} style={{ opacity: followUp.trim() ? 1 : 0.45 }}>
+                  追问 <span className="arr">→</span>
+                </button>
               </div>
-            </>
+            </div>
           )}
         </div>
 
         {/* sidebar: live trace */}
         <div style={{ position: "sticky", top: 100, alignSelf: "start", maxHeight: "calc(100vh - 120px)", display: "flex", flexDirection: "column" }}>
-          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>SSE TRACE · LIVE</div>
+          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>AGENT TRACE · LIVE</div>
           <div style={{ marginTop: 14, padding: 18, background: "color-mix(in oklch, var(--ink) 4%, transparent)", border: "var(--rule)", flex: 1, overflowY: "auto", fontFamily: "var(--mono)", fontSize: 11, lineHeight: 1.9 }}>
             {events.length === 0 && <div style={{ color: "var(--ink-4)" }}>// awaiting run...</div>}
             {events.map((e, i) => {
               const t0 = events[0]?._t || e._t;
-              const sec = ((e._t - t0) / 1000).toFixed(2).padStart(6, "0");
-              const accent = e.type === "verdict_done" || e.type === "planner_thought" || e.type === "ask_user";
+              const sec = ((e._t - t0) / 1000).toFixed(1).padStart(5, " ");
+              const accent = e.type === "thought" || e.type === "done" || e.type === "ask_user";
               const detail =
-                e.type === "planner_executing" ? `:${e.action || ""}${e.expert ? "/" + e.expert : ""}` :
-                e.type === "expert_done" ? `:${e.expert || ""}` :
-                e.type === "synth_done" ? `:${e.group || ""}` :
-                e.type === "chart_ready" ? `:${e.chart_type || ""}` :
+                e.type === "tool_call" ? ` → ${e.tool}(${JSON.stringify(e.args || {}).slice(0, 40)})` :
+                e.type === "tool_result" ? ` ← ${e.tool}` :
+                e.type === "skill_loaded" ? ` [${e.skill}]` :
+                e.type === "text_delta" ? "" :
                 "";
+              if (e.type === "text_delta") return null; // don't spam trace with text chunks
               return (
                 <div key={i} style={{ display: "flex", gap: 8, color: accent ? "var(--cinnabar)" : "var(--ink-2)" }}>
-                  <span style={{ color: "var(--ink-4)" }}>{sec}</span>
+                  <span style={{ color: "var(--ink-4)" }}>{sec}s</span>
                   <span style={{ flex: 1 }}>{e.type}{detail}</span>
                 </div>
               );
             })}
             {running && !done && (
-              <div style={{ color: "var(--cinnabar)", marginTop: 6 }}>▌ streaming...</div>
+              <div style={{ color: "var(--cinnabar)", marginTop: 6 }}>▌ agent working...</div>
             )}
           </div>
         </div>
@@ -3462,100 +3395,66 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
   );
 }
 
+// Simple markdown → HTML (bold, headers, lists, tables, hr)
+function simpleMarkdown(text) {
+  if (!text) return "";
+  return text
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/^### (.+)$/gm, '<h3 style="font-size:16px;font-weight:600;margin:18px 0 8px;font-family:var(--serif-cn)">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 style="font-size:20px;font-weight:600;margin:24px 0 10px;font-family:var(--serif-cn);color:var(--ink)">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 style="font-size:24px;font-weight:600;margin:28px 0 12px;font-family:var(--serif-cn)">$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li style="margin-left:20px;list-style:disc">$1</li>')
+    .replace(/^\d+\. (.+)$/gm, '<li style="margin-left:20px;list-style:decimal">$1</li>')
+    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--ink);margin:24px 0;opacity:0.2">')
+    .replace(/\|(.+)\|/g, (match) => {
+      const cells = match.split('|').filter(c => c.trim());
+      if (cells.every(c => /^[\s-:]+$/.test(c))) return ''; // separator row
+      return '<tr>' + cells.map(c => `<td style="padding:6px 12px;border:1px solid color-mix(in oklch,var(--ink) 15%,transparent);font-size:14px">${c.trim()}</td>`).join('') + '</tr>';
+    })
+    .replace(/(<tr>.*<\/tr>\n?)+/g, (m) => `<table style="border-collapse:collapse;margin:16px 0;width:100%">${m}</table>`)
+    .replace(/\n/g, '<br>');
+}
+
 function Spinner() {
   return <div style={{ width: 14, height: 14, border: "2px solid var(--cinnabar)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}>
     <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
   </div>;
 }
 
-function ExpertCard({ ex, state }) {
-  const stateColors = {
-    idle:     { ring: "color-mix(in oklch, var(--ink) 12%, transparent)", label: "待 · idle",      labelColor: "var(--ink-4)" },
-    thinking: { ring: "var(--cinnabar)",   label: "推 · thinking", labelColor: "var(--cinnabar)" },
-    done:     { ring: "var(--ink)",        label: "成 · done",     labelColor: "var(--jade)" },
-  };
-  const c = stateColors[state.status];
-  return (
-    <div style={{
-      padding: 20,
-      border: `1px solid ${c.ring}`,
-      background: state.status === "thinking" ? "color-mix(in oklch, var(--cinnabar) 3%, transparent)" : "transparent",
-      transition: "all .25s ease",
-      position: "relative",
-      minHeight: 120,
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <div>
-          <span style={{ fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 600 }}>{ex.cn}</span>
-          <span className="em" style={{ fontSize: 13, color: "var(--ink-3)", marginLeft: 8 }}>{ex.en}</span>
-        </div>
-        <span className="caps" style={{ fontSize: 9, color: c.labelColor }}>
-          {ex.sys === "cn" ? "中" : "西"} · {c.label}
-        </span>
-      </div>
-      {state.status === "thinking" && (
-        <div style={{ marginTop: 12, display: "flex", gap: 4 }}>
-          {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--cinnabar)", animation: `dot 1.2s ${i * 0.15}s infinite` }} />)}
-          <style>{`@keyframes dot{0%,80%,100%{opacity:0.3}40%{opacity:1}}`}</style>
-        </div>
-      )}
-      {state.claim && (
-        <div style={{ marginTop: 14, fontFamily: "var(--serif-cn)", fontSize: 14, lineHeight: 1.7, color: "var(--ink-2)", textWrap: "pretty" }}>
-          {state.claim}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SynthCard({ sys, text }) {
-  return (
-    <div style={{ padding: 24, border: "1px solid var(--ink)", position: "relative" }}>
-      <div className="caps" style={{ fontSize: 10, color: sys === "cn" ? "var(--cinnabar)" : "var(--ink-3)" }}>
-        {sys === "cn" ? "中式小综合 · CHINESE" : "西式小综合 · WESTERN"}
-      </div>
-      <div style={{ marginTop: 12, fontFamily: "var(--serif-cn)", fontSize: 16, lineHeight: 1.75 }}>{text}</div>
-    </div>
-  );
-}
-
-function AlignBoard({ align }) {
-  return (
-    <div style={{ marginTop: 40 }}>
-      <Rule label="中西交叉验证 · CROSS ALIGNER" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, marginTop: 24, border: "1px solid var(--ink)" }}>
-        {[
-          { n: align.consensus,     cn: "共识",     en: "CONSENSUS",     hint: "双方点亮", color: "var(--cinnabar)" },
-          { n: align.divergence,    cn: "分歧",     en: "DIVERGENCE",    hint: "需要审思", color: "var(--ink)" },
-          { n: align.complementary, cn: "互补",     en: "COMPLEMENTARY", hint: "拼成一图", color: "var(--jade)" },
-        ].map((x, i) => (
-          <div key={i} style={{ padding: 28, borderRight: i < 2 ? "var(--rule)" : "none", textAlign: "center" }}>
-            <div className="caps" style={{ fontSize: 10, color: x.color }}>{x.en}</div>
-            <div style={{ fontFamily: "var(--serif-en)", fontSize: 88, fontWeight: 500, lineHeight: 1, color: x.color, marginTop: 6 }}>{x.n}</div>
-            <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 18, marginTop: 10 }}>{x.cn}</div>
-            <div className="em" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>{x.hint}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: 18, padding: 20, background: "color-mix(in oklch, var(--cinnabar) 4%, transparent)", borderLeft: "2px solid var(--cinnabar)" }}>
-        <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>关键涌现 · EMERGENCE</div>
-        <div style={{ fontFamily: "var(--serif-cn)", fontSize: 16, lineHeight: 1.75, marginTop: 8 }}>
-          中式"火旺喜金水" × 西式"9 宫木火远方" → <strong>以教育为本，以科技为器，以学问为远方</strong>。
-        </div>
-      </div>
-    </div>
-  );
-}
-
 window.ChatScreen = ChatScreen;
+window.ChatUnavailable = ChatUnavailable;
 
   </script>
 
   <script type="text/babel">
 // Report — long-scroll deep research report
-function ReportScreen({ go, profile, charts }) {
+function ReportScreen({ go, profile, charts, hasProfile }) {
   const raw = charts?.charts;
-  const baziAdapted = useMemo(() => adaptBazi(raw?.bazi) || BAZI, [raw]);
+  const isDemo = !hasProfile && (profile?.name || SAMPLE_PROFILE.name) === SAMPLE_PROFILE.name;
+  const baziAdapted = useMemo(() => adaptBazi(raw?.bazi) || (isDemo ? BAZI : null), [raw, isDemo]);
+
+  if (!isDemo) {
+    return (
+      <div className="fade-in screen" style={{ position: "relative" }}>
+        <div style={{ maxWidth: 980, margin: "0 auto", border: "1px solid var(--ink)", padding: 48, background: "color-mix(in oklch, var(--paper) 60%, var(--paper-2))" }}>
+          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>研报未生成 · REPORT NOT READY</div>
+          <h1 style={{ fontFamily: "var(--serif-cn)", fontSize: 48, lineHeight: 1.2, margin: "16px 0 0" }}>
+            不能用示例研报代替你的命盘
+          </h1>
+          <p style={{ fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.9, color: "var(--ink-2)", marginTop: 18 }}>
+            深度研报必须由当前档案、当前问题和已校验盘面生成。请先进入咨询，让 Agent 完成排盘、追问、校验和综合后再归档成研报。
+          </p>
+          <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
+            <button className="btn btn-ghost" onClick={() => go("chart")}>回本命盘 · chart</button>
+            <button className="btn" onClick={() => go("chat")}>进入咨询 · consult <span className="arr">→</span></button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fade-in" style={{ position: "relative", background: "var(--paper)" }}>
       {/* Cover */}
@@ -3792,7 +3691,8 @@ function SidebarKVList({ items }) {
 }
 
 function BaziMiniGrid({ bazi }) {
-  const b = bazi || BAZI;
+  const b = bazi;
+  if (!b) return <ChartUnavailable system="八字" chartsLoading={false} chartsError={null} />;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4 }}>
       {b.pillars.map(p => (
@@ -4039,6 +3939,20 @@ window.ReportScreen = ReportScreen;
   <script type="text/babel">
 // Archive — single-column profile + past readings, editorial style
 function ArchiveScreen({ go, profile, sessions, hasProfile }) {
+  if (!hasProfile) {
+    return (
+      <div className="fade-in screen" style={{ position: "relative" }}>
+        <div style={{ maxWidth: 760, margin: "0 auto", border: "1px solid var(--ink)", padding: 44, background: "color-mix(in oklch, var(--paper) 60%, var(--paper-2))" }}>
+          <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>未立档 · NO ARCHIVE</div>
+          <h1 style={{ fontFamily: "var(--serif-cn)", fontSize: 42, lineHeight: 1.2, margin: "16px 0 0" }}>还没有真实档案</h1>
+          <p style={{ fontFamily: "var(--serif-cn)", fontSize: 16, lineHeight: 1.85, color: "var(--ink-2)", marginTop: 16 }}>
+            演示内容不会写入档案。先立档，排盘和咨询结果才会入卷。
+          </p>
+          <button className="btn" style={{ marginTop: 28 }} onClick={() => go("onboard")}>立档 · establish <span className="arr">→</span></button>
+        </div>
+      </div>
+    );
+  }
   const p = profile || SAMPLE_PROFILE;
   const [date, time] = (p.birth || "").split(" ");
   const sealedAt = hasProfile
@@ -4180,28 +4094,27 @@ const SCENARIO_MAP = {
 function App() {
   const [screen, setScreen] = useState("home");
 
-  // Persisted state (localStorage). Default = SAMPLE so a fresh visitor sees
-  // the full demo without an empty shell. Once user 立档s, their data wins.
+  const readSealed = () => {
+    try { return localStorage.getItem("suan_sealed") === "1"; } catch { return false; }
+  };
+
+  const [hasProfile, setHasProfile] = useState(readSealed);
+
+  // Demo is view-only. Only explicitly sealed user profiles are persisted.
   const [profile, setProfile] = useState(() => {
+    if (!readSealed()) return null;
     try { const s = localStorage.getItem("suan_profile"); if (s) return JSON.parse(s); } catch {}
-    return SAMPLE_PROFILE;
+    return null;
   });
   const [question, setQuestion] = useState(() => {
+    if (!readSealed()) return "";
     try { const s = localStorage.getItem("suan_question"); if (s) return s; } catch {}
-    return SAMPLE_QUESTION;
+    return "";
   });
   const [sessions, setSessions] = useState(() => {
+    if (!readSealed()) return [];
     try { const s = localStorage.getItem("suan_sessions"); if (s) return JSON.parse(s); } catch {}
-    return [
-      { id: "s-001", date: "2026-05-09", topic: "事业方向之问", scenarioCn: "事业", scenarioEn: "career",   current: true  },
-      { id: "s-002", date: "2026-04-21", topic: "流年财运之问", scenarioCn: "财运", scenarioEn: "fortune",  current: false },
-      { id: "s-003", date: "2026-03-15", topic: "关系合相之问", scenarioCn: "关系", scenarioEn: "relation", current: false },
-    ];
-  });
-
-  // hasProfile = user has explicitly 立档 (not just viewing demo)
-  const [hasProfile, setHasProfile] = useState(() => {
-    try { return localStorage.getItem("suan_sealed") === "1"; } catch { return false; }
+    return [];
   });
 
   const [tweaks, setTweaks] = useTweaks(window.__TWEAK_DEFAULTS);
@@ -4214,7 +4127,12 @@ function App() {
   useEffect(() => {
     let aborted = false;
     const fetchCharts = async () => {
-      if (!profile?.birth) return;
+      if (!hasProfile || !profile?.birth) {
+        setCharts(null);
+        setChartsLoading(false);
+        setChartsError(null);
+        return;
+      }
       setChartsLoading(true); setChartsError(null);
       try {
         const res = await fetch("/api/v1/charts", {
@@ -4228,13 +4146,17 @@ function App() {
               time: (profile.birth || "").split(" ")[1] || "",
               unknownTime: false,
               place: profile.place,
-              timezone_offset: 8.0,
+              trueSolar: profile.trueSolar ?? true,
+              use_true_solar_time: profile.trueSolar ?? true,
               scenario: "chat",
             },
             question: "",
           }),
         });
         const j = await res.json();
+        if (!res.ok) {
+          throw new Error(j.detail || j.message || "排盘失败");
+        }
         if (!aborted) setCharts(j);
       } catch (err) {
         if (!aborted) setChartsError(err.message || "排盘失败");
@@ -4244,12 +4166,27 @@ function App() {
     };
     fetchCharts();
     return () => { aborted = true; };
-  }, [profile?.name, profile?.birth, profile?.place, profile?.gender]);
+  }, [hasProfile, profile?.name, profile?.birth, profile?.place, profile?.gender, profile?.trueSolar]);
 
   // persist
-  useEffect(() => { try { localStorage.setItem("suan_profile", JSON.stringify(profile)); } catch {} }, [profile]);
-  useEffect(() => { try { localStorage.setItem("suan_question", question); } catch {} }, [question]);
-  useEffect(() => { try { localStorage.setItem("suan_sessions", JSON.stringify(sessions)); } catch {} }, [sessions]);
+  useEffect(() => {
+    try {
+      if (hasProfile && profile) localStorage.setItem("suan_profile", JSON.stringify(profile));
+      else localStorage.removeItem("suan_profile");
+    } catch {}
+  }, [hasProfile, profile]);
+  useEffect(() => {
+    try {
+      if (hasProfile) localStorage.setItem("suan_question", question);
+      else localStorage.removeItem("suan_question");
+    } catch {}
+  }, [hasProfile, question]);
+  useEffect(() => {
+    try {
+      if (hasProfile) localStorage.setItem("suan_sessions", JSON.stringify(sessions));
+      else localStorage.removeItem("suan_sessions");
+    } catch {}
+  }, [hasProfile, sessions]);
   useEffect(() => { try { localStorage.setItem("suan_sealed", hasProfile ? "1" : "0"); } catch {} }, [hasProfile]);
 
   // sync body data attrs from tweaks
@@ -4275,6 +4212,7 @@ function App() {
       place:   data.place?.trim() || "—",
       placeEn: data.place?.trim() || "—",
       scenario: data.scenario || "general",
+      trueSolar: data.trueSolar !== false,
     };
     setProfile(newProfile);
     if (data.question) setQuestion(data.question);
@@ -4308,10 +4246,10 @@ function App() {
         chat: "04 Consult", report: "05 Report", archive: "06 Archive",
       })[screen]}>
         {screen === "home"    && <LandingScreen go={go} hasProfile={hasProfile} profile={profile} />}
-        {screen === "onboard" && <OnboardingScreen go={go} sealProfile={sealProfile} initialProfile={profile} initialQuestion={question} />}
-        {screen === "chart"   && <ChartScreen go={go} profile={profile} charts={charts} chartsLoading={chartsLoading} chartsError={chartsError} />}
-        {screen === "chat"    && <ChatScreen go={go} animSpeed={tweaks.animSpeed || 1} profile={profile} question={question} />}
-        {screen === "report"  && <ReportScreen go={go} profile={profile} charts={charts} />}
+        {screen === "onboard" && <OnboardingScreen go={go} sealProfile={sealProfile} initialProfile={hasProfile ? profile : null} initialQuestion={hasProfile ? question : ""} />}
+        {screen === "chart"   && <ChartScreen go={go} profile={hasProfile ? profile : SAMPLE_PROFILE} charts={charts} chartsLoading={chartsLoading} chartsError={chartsError} hasProfile={hasProfile} />}
+        {screen === "chat"    && (hasProfile && profile && question ? <ChatScreen go={go} animSpeed={tweaks.animSpeed || 1} profile={profile} question={question} /> : <ChatUnavailable go={go} />)}
+        {screen === "report"  && <ReportScreen go={go} profile={hasProfile ? profile : SAMPLE_PROFILE} charts={charts} hasProfile={hasProfile} />}
         {screen === "archive" && <ArchiveScreen go={go} profile={profile} sessions={sessions} hasProfile={hasProfile} />}
       </main>
 

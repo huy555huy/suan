@@ -1,10 +1,10 @@
 """LLM 客户端封装。
 
 约束：
-- 使用 OpenAI 兼容 SDK 调用 ccvibe.cc 端点
-- 强制结构化输出（JSON 模式），失败则降级到正则提取
+- 使用 OpenAI 兼容 SDK 调用配置端点
+- 强制结构化输出（JSON 模式）
 - 支持流式 / 非流式
-- 内置重试与 fallback
+- 内置重试；最终失败则抛错
 """
 from __future__ import annotations
 import asyncio
@@ -31,7 +31,7 @@ class LLMUsage:
 
 _client: AsyncOpenAI | None = None
 
-# 全局健康状态：连续失败 N 次后切到兜底，每 5 分钟重试一次
+# 全局健康状态：连续失败 N 次后标记不可用，每 5 分钟允许重试一次
 LLM_HEALTH = {
     "available": True,
     "consecutive_failures": 0,
@@ -41,7 +41,7 @@ LLM_HEALTH = {
 
 
 def llm_available() -> bool:
-    """对外接口：当前 LLM 是否可用。失败累积后自动切兜底。"""
+    """对外接口：当前 LLM 是否可用。失败累积后短时间内直接报不可用。"""
     import time as _time
     if LLM_HEALTH["available"]:
         return True
@@ -60,7 +60,7 @@ def _record_llm_failure(reason: str) -> None:
     LLM_HEALTH["last_failure_reason"] = reason
     if LLM_HEALTH["consecutive_failures"] >= 3:
         LLM_HEALTH["available"] = False
-        logger.warning("LLM 连续失败 ≥3 次，切到规则兜底模式：%s", reason)
+        logger.warning("LLM 连续失败 ≥3 次，临时标记为不可用：%s", reason)
 
 
 def _record_llm_success() -> None:

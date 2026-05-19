@@ -10,7 +10,6 @@
 from __future__ import annotations
 import json
 import time
-from typing import Any
 
 import aiosqlite
 
@@ -87,27 +86,6 @@ async def save_charts(session_id: str, charts_json: dict) -> None:
         await db.execute(
             "INSERT OR REPLACE INTO charts(session_id, charts_json, created_at) VALUES (?,?,?)",
             (session_id, json.dumps(charts_json, ensure_ascii=False), int(time.time())),
-        )
-        await db.commit()
-
-
-async def save_verdict(session_id: str, verdict: dict, narrative: str,
-                        safety_triggers: list[str]) -> None:
-    async with aiosqlite.connect(str(settings.db_path)) as db:
-        await db.execute(
-            "INSERT OR REPLACE INTO verdicts(session_id, verdict_json, narrative, safety_triggers, created_at) "
-            "VALUES (?,?,?,?,?)",
-            (session_id, json.dumps(verdict, ensure_ascii=False), narrative,
-             json.dumps(safety_triggers, ensure_ascii=False), int(time.time())),
-        )
-        await db.commit()
-
-
-async def save_trace(trace_id: str, session_id: str, trace_json: dict) -> None:
-    async with aiosqlite.connect(str(settings.db_path)) as db:
-        await db.execute(
-            "INSERT OR REPLACE INTO traces(trace_id, session_id, trace_json, created_at) VALUES (?,?,?,?)",
-            (trace_id, session_id, json.dumps(trace_json, ensure_ascii=False), int(time.time())),
         )
         await db.commit()
 

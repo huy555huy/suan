@@ -58,6 +58,7 @@ logs/
 # ── IDE / OS ──────────────────────────────────────────────
 .vscode/
 .idea/
+.claude/
 *.iml
 .DS_Store
 Thumbs.db

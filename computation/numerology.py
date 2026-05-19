@@ -264,7 +264,11 @@ if __name__ == "__main__":
     print(f"验收通过：life_path = {profile.life_path}")
 
     # 示例 2：仅生日，无姓名（使用一个无 name 字段的 BirthInfo）
-    birth_noname = BirthInfo(year=1991, month=8, day=15, hour=14, minute=30)
+    birth_noname = BirthInfo(
+        year=1991, month=8, day=15, hour=14, minute=30,
+        location_name="北京", longitude=116.4074, latitude=39.9042,
+        timezone_offset=8.0,
+    )
     profile2 = compute_numerology(birth_noname, current_year=2026, full_name_pinyin=None)
     print("\n── 仅生日 (无姓名) ──")
     print(f"life_path = {profile2.life_path}, personal_year = {profile2.personal_year}")
@@ -277,7 +281,11 @@ if __name__ == "__main__":
     # 1989-12-29 → 1+9+8+9+1+2+2+9 = 41 → 5
     # 1991-04-29 → 1+9+9+1+4+2+9 = 35 → 8
     # 1990-12-29 → 1+9+9+0+1+2+2+9 = 33 (master!)
-    test_birth = BirthInfo(year=1990, month=12, day=29, hour=12)
+    test_birth = BirthInfo(
+        year=1990, month=12, day=29, hour=12,
+        location_name="北京", longitude=116.4074, latitude=39.9042,
+        timezone_offset=8.0,
+    )
     test_profile = compute_numerology(test_birth, current_year=2026, full_name_pinyin="Test Name")
     print(f"\n── 大师数测试 1990-12-29 ──")
     print(f"life_path = {test_profile.life_path} (应为 33 大师数)")

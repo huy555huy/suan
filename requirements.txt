@@ -8,3 +8,8 @@ jinja2>=3.1.0
 python-multipart>=0.0.9
 aiosqlite>=0.20.0
 httpx>=0.27.0
+lunar_python>=1.4.8
+cpca>=0.5.5
+pyswisseph>=2.10.3.2
+iztro-py==0.3.4
+najia==2.0.1

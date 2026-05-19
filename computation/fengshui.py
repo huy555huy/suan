@@ -1,12 +1,13 @@
-"""风水计算引擎：玄空飞星（下卦） + 八宅。
+"""风水计算引擎：玄空飞星（下卦/替卦） + 八宅。
 
 实现要点：
     1. 三元九运：1864-1883=1运、... 8运=2004-2023、9运=2024-2043、1运=2044-2063
     2. 24 山方位：壬子癸 / 丑艮寅 / 甲卯乙 / 辰巽巳 / 丙午丁 / 未坤申 / 庚酉辛 / 戌乾亥
-    3. 玄空下卦：
+    3. 玄空飞星：
         - 运盘：当令运星入中宫，洛书顺飞 9 宫
-        - 山盘：从运盘"坐山位"取数入中宫；按坐山阴阳决顺/逆飞
-        - 向盘：从运盘"向首位"取数入中宫；按向首阴阳决顺/逆飞
+        - 山盘：从运盘"坐山位"取数；依同元龙山阴阳定顺逆
+        - 向盘：从运盘"向首位"取数；依同元龙山阴阳定顺逆
+        - 罗盘落每山中间 9 度走下卦；两侧 3 度走替卦起星
     4. 旺衰：当运为旺；下一运为生气；上一运为衰；衰退之衰为死气
     5. 八宅命卦：
         - 男：(100 - 出生年末两位) % 9，结果 0 视为 9
@@ -18,7 +19,7 @@
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from core.schemas import BirthInfo, FengshuiChart
 
@@ -84,6 +85,60 @@ SHAN_TO_BAGUA = {
     "戌": "乾", "乾": "乾", "亥": "乾",
 }
 
+SHAN_GROUPS_BY_BAGUA = {
+    "坎": ["壬", "子", "癸"],
+    "艮": ["丑", "艮", "寅"],
+    "震": ["甲", "卯", "乙"],
+    "巽": ["辰", "巽", "巳"],
+    "离": ["丙", "午", "丁"],
+    "坤": ["未", "坤", "申"],
+    "兑": ["庚", "酉", "辛"],
+    "乾": ["戌", "乾", "亥"],
+}
+STAR_TO_SHAN_GROUP = {
+    1: SHAN_GROUPS_BY_BAGUA["坎"],
+    2: SHAN_GROUPS_BY_BAGUA["坤"],
+    3: SHAN_GROUPS_BY_BAGUA["震"],
+    4: SHAN_GROUPS_BY_BAGUA["巽"],
+    6: SHAN_GROUPS_BY_BAGUA["乾"],
+    7: SHAN_GROUPS_BY_BAGUA["兑"],
+    8: SHAN_GROUPS_BY_BAGUA["艮"],
+    9: SHAN_GROUPS_BY_BAGUA["离"],
+}
+YUAN_LONG_NAMES = ["地元龙", "天元龙", "人元龙"]
+SHAN_TO_YUAN_INDEX = {
+    shan: idx
+    for group in SHAN_GROUPS_BY_BAGUA.values()
+    for idx, shan in enumerate(group)
+}
+
+# 沈氏玄空常见替星诀：
+# 子癸并甲申贪狼；壬卯乙未坤巨门；乾亥辰巽巳戌武曲；
+# 酉辛丑艮丙破军；寅午庚丁右弼。
+SHEN_SHI_TI_GUA_STAR_BY_SHAN = {
+    **{shan: 1 for shan in ("子", "癸", "甲", "申")},
+    **{shan: 2 for shan in ("壬", "卯", "乙", "未", "坤")},
+    **{shan: 6 for shan in ("乾", "亥", "辰", "巽", "巳", "戌")},
+    **{shan: 7 for shan in ("酉", "辛", "丑", "艮", "丙")},
+    **{shan: 9 for shan in ("寅", "午", "庚", "丁")},
+}
+
+# 陈泽泰《阳宅镜》一路的完整九星替诀，保留为可选口径。
+FULL_JIUXING_TI_GUA_STAR_BY_SHAN = {
+    **{shan: 1 for shan in ("子", "申", "甲")},
+    **{shan: 2 for shan in ("壬", "坤", "乙")},
+    **{shan: 3 for shan in ("癸", "未", "卯")},
+    **{shan: 4 for shan in ("巳", "戌", "乾")},
+    **{shan: 6 for shan in ("辰", "巽", "亥")},
+    **{shan: 7 for shan in ("辛", "艮", "丙")},
+    **{shan: 8 for shan in ("庚", "寅", "午")},
+    **{shan: 9 for shan in ("酉", "丑", "丁")},
+}
+TI_GUA_TABLES = {
+    "shen_shi": SHEN_SHI_TI_GUA_STAR_BY_SHAN,
+    "full_jiuxing": FULL_JIUXING_TI_GUA_STAR_BY_SHAN,
+}
+
 # 9 宫位置编号（行 row=0..2 自上 → 下，col=0..2 自左 → 右）
 # 洛书：4 9 2 / 3 5 7 / 8 1 6
 LUOSHU_DEFAULT = [
@@ -96,36 +151,6 @@ LUOSHU_NUM_POS: dict[int, tuple[int, int]] = {}
 for r, row in enumerate(LUOSHU_DEFAULT):
     for c, n in enumerate(row):
         LUOSHU_NUM_POS[n] = (r, c)
-
-# 飞星顺序（顺飞）：5 中宫起，6 西北、7 西、8 东北、9 南、1 北、2 西南、3 东、4 东南
-# 标准飞星路径：中 → 西北 → 西 → 东北 → 南 → 北 → 西南 → 东 → 东南
-FLYING_PATH = [
-    (1, 1),  # 中
-    (2, 0),  # 西北? 实际是 6 落西北。这里给出顺飞路径的位置序列
-    (0, 2),  # 西? 不对 — 让我们重新定义。
-]
-# 上面的简单定义有错，下面用直接公式法：
-
-# 标准玄空顺飞表：当某数 N 入中宫时，N+0=中、N+1=西北、N+2=西、N+3=东北、N+4=南、N+5=北、N+6=西南、N+7=东、N+8=东南
-# 反映到行列：中(1,1) → 西北(0,0)? 错。
-# 正确的洛书飞星顺序（按中宫为起点的运行轨迹）：
-#   1. 中宫(1,1)
-#   2. 西北(0,0) -- 乾
-#   错！实际是西北 = 在洛书中数字 6 的位置 = (2,2)！
-# 让我重新查一下洛书排布：
-#   北 = 1 = 底中 = (2,1)
-#   东北 = 8 = 底左 = (2,0)
-#   东 = 3 = 中左 = (1,0)
-#   东南 = 4 = 上左 = (0,0)
-#   南 = 9 = 上中 = (0,1)
-#   西南 = 2 = 上右 = (0,2)
-#   西 = 7 = 中右 = (1,2)
-#   西北 = 6 = 底右 = (2,2)
-#   中宫 = 5 = (1,1)
-# 所以正确洛书：
-#   row 0: 4 9 2  (东南 / 南 / 西南)
-#   row 1: 3 5 7  (东   / 中 / 西)
-#   row 2: 8 1 6  (东北 / 北 / 西北)
 
 # 顺飞路径（中宫起，按"中→乾(西北)→兑(西)→艮(东北)→离(南)→坎(北)→坤(西南)→震(东)→巽(东南)"）:
 FLYING_ORDER_POSITIONS = [
@@ -171,6 +196,40 @@ def _shan_at_degree(degree: float) -> str:
     return SHAN_24[idx]
 
 
+def _circular_distance(a: float, b: float) -> float:
+    return abs((a - b + 180) % 360 - 180)
+
+
+def _shan_center_degree(shan: str) -> float:
+    idx = SHAN_24.index(shan)
+    return (345 + idx * 15) % 360
+
+
+def _degree_detail(degree: float) -> dict[str, Any]:
+    deg = degree % 360
+    shan = _shan_at_degree(deg)
+    center = _shan_center_degree(shan)
+    distance = _circular_distance(deg, center)
+    eps = 1e-9
+    if abs(distance - 7.5) <= eps:
+        zone = "mountain_boundary"
+    elif abs(distance - 4.5) <= eps:
+        zone = "xia_ti_boundary"
+    elif distance < 4.5:
+        zone = "xia_gua"
+    else:
+        zone = "ti_gua"
+    return {
+        "degree": deg,
+        "shan": shan,
+        "center_degree": center,
+        "distance_from_center": round(distance, 6),
+        "zone": zone,
+        "yuan_long": YUAN_LONG_NAMES[SHAN_TO_YUAN_INDEX[shan]],
+        "yinyang": SHAN_YINYANG[shan],
+    }
+
+
 def _opposite_shan(shan: str) -> str:
     """相对的山（朝向 ↔ 坐山）。"""
     idx = SHAN_24.index(shan)
@@ -183,7 +242,25 @@ def _calc_yun_pan(period: int) -> list[list[int]]:
     return _flying_pan(period, forward=True)
 
 
-def _calc_shan_xiang_pan(period: int, sitting_shan: str, facing_shan: str) -> tuple[list[list[int]], list[list[int]]]:
+def _same_yuan_shan_for_star(star_num: int, source_shan: str) -> str:
+    if star_num == 5:
+        return source_shan
+    group = STAR_TO_SHAN_GROUP[star_num]
+    return group[SHAN_TO_YUAN_INDEX[source_shan]]
+
+
+def _ti_gua_seed(star_num: int, source_shan: str, school: str) -> tuple[int, str, bool]:
+    seed_shan = _same_yuan_shan_for_star(star_num, source_shan)
+    if star_num == 5:
+        return 5, seed_shan, False
+    table = TI_GUA_TABLES[school]
+    replaced = table.get(seed_shan, star_num)
+    return replaced, seed_shan, replaced != star_num
+
+
+def _calc_shan_xiang_pan(period: int, sitting_shan: str, facing_shan: str,
+                         use_ti_gua: bool = False,
+                         ti_gua_school: str = "shen_shi") -> tuple[list[list[int]], list[list[int]], dict[str, Any]]:
     """山盘 + 向盘。
 
     山盘种子：运盘上"坐山位"那一格的数字
@@ -205,14 +282,46 @@ def _calc_shan_xiang_pan(period: int, sitting_shan: str, facing_shan: str) -> tu
     shan_seed = yun[sit_pos[0]][sit_pos[1]]
     xiang_seed = yun[face_pos[0]][face_pos[1]]
 
-    # 山盘顺逆：根据"坐山"24 山阴阳，以及种子数对应的"对应山"组（每数对应 3 山，由具体坐山阴阳决定）
-    # 简化规则（玄空通用）：以坐山的阴阳为顺逆飞依据
-    sit_yang = SHAN_YINYANG[sitting_shan] == "阳"
-    face_yang = SHAN_YINYANG[facing_shan] == "阳"
+    shan_seed_used = shan_seed
+    xiang_seed_used = xiang_seed
+    shan_seed_shan = _same_yuan_shan_for_star(shan_seed, sitting_shan)
+    xiang_seed_shan = _same_yuan_shan_for_star(xiang_seed, facing_shan)
+    shan_replaced = False
+    xiang_replaced = False
+    if use_ti_gua:
+        if ti_gua_school not in TI_GUA_TABLES:
+            raise ValueError(f"未知替卦口径：{ti_gua_school}")
+        shan_seed_used, shan_seed_shan, shan_replaced = _ti_gua_seed(shan_seed, sitting_shan, ti_gua_school)
+        xiang_seed_used, xiang_seed_shan, xiang_replaced = _ti_gua_seed(xiang_seed, facing_shan, ti_gua_school)
 
-    shan_pan = _flying_pan(shan_seed, forward=sit_yang)
-    xiang_pan = _flying_pan(xiang_seed, forward=face_yang)
-    return shan_pan, xiang_pan
+    sit_yang = SHAN_YINYANG[shan_seed_shan] == "阳"
+    face_yang = SHAN_YINYANG[xiang_seed_shan] == "阳"
+
+    shan_pan = _flying_pan(shan_seed_used, forward=sit_yang)
+    xiang_pan = _flying_pan(xiang_seed_used, forward=face_yang)
+    trace = {
+        "use_ti_gua": use_ti_gua,
+        "ti_gua_school": ti_gua_school if use_ti_gua else None,
+        "shan": {
+            "source_shan": sitting_shan,
+            "yun_star_at_position": shan_seed,
+            "same_yuan_shan": shan_seed_shan,
+            "same_yuan_yinyang": SHAN_YINYANG[shan_seed_shan],
+            "seed_used": shan_seed_used,
+            "replaced": shan_replaced,
+            "flying_direction": "顺飞" if sit_yang else "逆飞",
+        },
+        "xiang": {
+            "source_shan": facing_shan,
+            "yun_star_at_position": xiang_seed,
+            "same_yuan_shan": xiang_seed_shan,
+            "same_yuan_yinyang": SHAN_YINYANG[xiang_seed_shan],
+            "seed_used": xiang_seed_used,
+            "replaced": xiang_replaced,
+            "flying_direction": "顺飞" if face_yang else "逆飞",
+        },
+    }
+    return shan_pan, xiang_pan, trace
 
 
 # ── 八宅命卦 ────────────────────────────────────────────────
@@ -231,7 +340,7 @@ def _ming_gua(year: int, gender: str) -> str:
 
     男：(100 - YY) mod 9
     女：(YY - 4) mod 9
-    YY = 出生年末 2 位数字之和（含跨千年简化）
+    YY = 出生年末 2 位数字之和
     """
     # 用简单方式取末两位
     yy = year % 100
@@ -285,7 +394,7 @@ BAD_LABELS = {"绝命", "五鬼", "六煞", "祸害"}
 def _star_status(star_num: int, current_period: int) -> str:
     """星数对当令的旺衰判定。
     旺 = 当令; 生气 = 下一运; 衰 = 上一运; 死气 = 相对方; 退气 = 上 2 运; 进气 = 下 2 运
-    简化：只判断旺/生/退/衰/死。
+    判断旺/生/退/衰/死。
     """
     diff = (star_num - current_period) % 9
     if diff == 0:
@@ -302,7 +411,7 @@ def _star_status(star_num: int, current_period: int) -> str:
 
 
 # ── 化煞建议（基于飞星组合） ─────────────────────────────────
-# 简化：根据飞星组合常见凶吉给出建议
+# 根据飞星组合常见凶吉给出建议
 def _build_remedies(combined_pan: list[dict], current_period: int) -> list[str]:
     """对每个 9 宫位置看山+向飞星组合，输出化煞 / 旺位建议。"""
     advice: list[str] = []
@@ -333,10 +442,70 @@ def _build_remedies(combined_pan: list[dict], current_period: int) -> list[str]:
     return list(dict.fromkeys(advice))
 
 
+def _build_site_questions(pan_method: str) -> list[dict[str, str]]:
+    questions = [
+        {
+            "field": "floor_plan",
+            "question": "请提供户型图并标出大门、主卧、厨房灶位、卫生间、阳台/最大采光面的位置。",
+            "why": "玄空飞星需要把九宫落到实际空间；只知道朝向还不能断门、床、灶。",
+        },
+        {
+            "field": "measurement_method",
+            "question": "朝向度数是手机指南针、罗盘，还是地图量测？测量点在大门内外还是客厅中心？",
+            "why": "坐向误差会直接改变二十四山，尤其接近替卦和交界时。",
+        },
+        {
+            "field": "external_forms",
+            "question": "房屋朝向方是否见路、水、空地、高楼压迫、反弓路、尖角或施工动土？",
+            "why": "玄空理气需要结合峦头形势；有形煞时不能只看飞星数字。",
+        },
+        {
+            "field": "renovation_history",
+            "question": "入住、装修、开门改门或大规模动工分别是哪一年？",
+            "why": "三元九运取运与宅运转换依赖入住和动工事实。",
+        },
+    ]
+    if pan_method == "替卦":
+        questions.append({
+            "field": "degree_recheck",
+            "question": "此盘落替卦范围，请用实体罗盘复测 3 次并给出平均度数。",
+            "why": "替卦盘对度数极敏感，误差跨过 4.5 度或 7.5 度边界就会换盘。",
+        })
+    return questions
+
+
+def _rank_nine_palace(combined_pan: list[dict[str, Any]], period: int) -> dict[str, list[dict[str, Any]]]:
+    wealth = []
+    health = []
+    caution = []
+    for cell in combined_pan:
+        item = {
+            "bagua": cell["bagua"],
+            "direction": cell["direction"],
+            "yun_star": cell["yun_star"],
+            "shan_star": cell["shan_star"],
+            "xiang_star": cell["xiang_star"],
+            "shan_status": cell["shan_status"],
+            "xiang_status": cell["xiang_status"],
+        }
+        if cell["xiang_star"] == period or cell["xiang_status"] in ("旺", "生气"):
+            wealth.append(item)
+        if cell["shan_star"] == period or cell["shan_status"] in ("旺", "生气"):
+            health.append(item)
+        if 5 in (cell["shan_star"], cell["xiang_star"]) or 2 in (cell["shan_star"], cell["xiang_star"]):
+            caution.append(item)
+    return {
+        "wealth_or_opening_priority": wealth,
+        "bedroom_or_stability_priority": health,
+        "caution_priority": caution,
+    }
+
+
 # ── 主入口 ───────────────────────────────────────────────────
 def compute_fengshui(facing_degree: float, birth: BirthInfo,
-                      move_in_year: int = 2024) -> FengshuiChart:
-    """计算风水盘（玄空下卦 + 八宅）。
+                      move_in_year: int = 2024,
+                      ti_gua_school: Literal["shen_shi", "full_jiuxing"] = "shen_shi") -> FengshuiChart:
+    """计算风水盘（玄空下卦/替卦 + 八宅）。
 
     参数：
         facing_degree: 房屋朝向角度 (0-360°，正北=0)
@@ -346,6 +515,12 @@ def compute_fengshui(facing_degree: float, birth: BirthInfo,
     period = _period_of_year(move_in_year)
 
     # 朝向 + 坐山
+    facing_detail = _degree_detail(facing_degree)
+    sitting_detail = _degree_detail(facing_degree + 180)
+    boundary_zones = {"mountain_boundary", "xia_ti_boundary"}
+    if facing_detail["zone"] in boundary_zones or sitting_detail["zone"] in boundary_zones:
+        raise ValueError("罗盘度数落在二十四山或下卦/替卦交界线上，无法可靠定盘；请重新测量到 0.1°。")
+    use_ti_gua = facing_detail["zone"] == "ti_gua" or sitting_detail["zone"] == "ti_gua"
     facing_shan = _shan_at_degree(facing_degree)
     sitting_shan = _opposite_shan(facing_shan)
     facing_bagua = SHAN_TO_BAGUA[facing_shan]
@@ -353,7 +528,13 @@ def compute_fengshui(facing_degree: float, birth: BirthInfo,
 
     # 飞星 3 盘
     yun_pan = _calc_yun_pan(period)
-    shan_pan, xiang_pan = _calc_shan_xiang_pan(period, sitting_shan, facing_shan)
+    shan_pan, xiang_pan, flying_trace = _calc_shan_xiang_pan(
+        period,
+        sitting_shan,
+        facing_shan,
+        use_ti_gua=use_ti_gua,
+        ti_gua_school=ti_gua_school,
+    )
 
     # 9 宫每位的合盘
     combined: list[dict] = []
@@ -397,6 +578,9 @@ def compute_fengshui(facing_degree: float, birth: BirthInfo,
 
     # 化煞建议
     notes = _build_remedies(combined, period)
+    pan_method = "替卦" if use_ti_gua else "下卦"
+    site_questions = _build_site_questions(pan_method)
+    palace_priorities = _rank_nine_palace(combined, period)
 
     # 朝向描述（含角度）
     facing_desc = f"{facing_degree:.1f}°/{facing_shan}({SHAN_TO_BAGUA[facing_shan]}/{BAGUA_DIRECTIONS[SHAN_TO_BAGUA[facing_shan]]})"
@@ -417,6 +601,11 @@ def compute_fengshui(facing_degree: float, birth: BirthInfo,
         "period": period,
         "period_name": f"{period}运",
         "period_range": _period_range(period),
+        "pan_method": pan_method,
+        "ti_gua_school": ti_gua_school if use_ti_gua else None,
+        "facing_degree_detail": facing_detail,
+        "sitting_degree_detail": sitting_detail,
+        "flying_trace": flying_trace,
         "facing_shan": facing_shan,
         "sitting_shan": sitting_shan,
         "facing_bagua": facing_bagua,
@@ -428,11 +617,14 @@ def compute_fengshui(facing_degree: float, birth: BirthInfo,
         "flying_stars_order": order,
         "ming_gua_group": east_west,
         "ba_zhai_detail": ba_zhai_detail,
+        "palace_priorities": palace_priorities,
+        "site_questions": site_questions,
         "move_in_year": move_in_year,
         "note": (
-            "玄空下卦顺/逆飞按 24 山阴阳判定; 山盘种子=运盘坐山位数; "
-            "向盘种子=运盘向首位数; 八宅命卦男减女加规则; "
-            "替卦/兼向情况未实现; 远程化煞建议为常规通用规则"
+            "玄空飞星顺/逆飞按运星同元龙山阴阳判定; 山盘种子=运盘坐山位数; "
+            "向盘种子=运盘向首位数; 每山中间 9 度走下卦，两侧 3 度走替卦; "
+            "替卦默认采用沈氏玄空常见替星诀; 八宅命卦男减女加规则; "
+            "远程化煞建议仅作通用环境提示"
         ),
     }
 
@@ -452,30 +644,24 @@ def compute_fengshui(facing_degree: float, birth: BirthInfo,
 
 def _period_range(period: int) -> str:
     """返回某运的年份范围，例如 9 → '2024-2043'。"""
-    starts = {
-        1: 2044, 2: 1864, 3: 1884, 4: 1904,
-        5: 1924, 6: 1944, 7: 1964, 8: 1984, 9: 2004,
-    }
-    # 实际 1864-1883=1, 但 1运还有 2044-2063
-    # 简化：只展示当前流行的范围（8运/9运）
     if period == 8:
-        return "2004-2023"
+        return "2004-2023 / 2184-2203"
     if period == 9:
-        return "2024-2043"
+        return "2024-2043 / 2204-2223"
     if period == 1:
-        return "2044-2063"
+        return "1864-1883 / 2044-2063"
     if period == 2:
-        return "1864-1883"
+        return "1884-1903 / 2064-2083"
     if period == 3:
-        return "1884-1903"
+        return "1904-1923 / 2084-2103"
     if period == 4:
-        return "1904-1923"
+        return "1924-1943 / 2104-2123"
     if period == 5:
-        return "1924-1943"
+        return "1944-1963 / 2124-2143"
     if period == 6:
-        return "1944-1963"
+        return "1964-1983 / 2144-2163"
     if period == 7:
-        return "1964-1983"
+        return "1984-2003 / 2164-2183"
     return "未知"
 
 
@@ -486,6 +672,8 @@ if __name__ == "__main__":
     demo_birth = BirthInfo(
         name="测试", gender="female",
         year=1991, month=8, day=15, hour=14, minute=30,
+        location_name="杭州", longitude=120.1551, latitude=30.2741,
+        timezone_offset=8.0, use_true_solar_time=False,
     )
     # 例：朝南偏西 (面朝丁山，约 200°)
     chart = compute_fengshui(facing_degree=200.0, birth=demo_birth, move_in_year=2024)

@@ -14,13 +14,10 @@
 - year_twelve：年度 12 宫
 - decision_cross：决策十字 5 张
 
-随机：使用 secrets.SystemRandom；提供 seed 复现能力。
-正逆位：每张 50% 概率（除非 allow_reversed=False）。
+抽牌动作必须来自用户输入；本模块只把用户给出的牌序/正逆位映射为牌阵结构。
 """
 from __future__ import annotations
 
-import random
-import secrets
 from typing import Literal
 
 from core.schemas import TarotReading
@@ -721,32 +718,26 @@ SPREADS: dict[str, dict] = {
 
 
 # ════════════════════════════════════════════════════════════
-# 抽牌
+# 抽牌结果映射
 # ════════════════════════════════════════════════════════════
-def _make_rng(seed: int | None) -> random.Random:
-    """创建随机数生成器。seed=None 时使用 secrets.SystemRandom。"""
-    if seed is None:
-        # secrets.SystemRandom 是密码学安全的，但本身不可种子化
-        return random.SystemRandom()
-    return random.Random(seed)
-
-
 def draw_tarot(
     question: str = "",
     spread: str = "celtic_cross",
     deck: str = "rws",
-    seed: int | None = None,
+    card_indexes: list[int] | None = None,
+    reversed_flags: list[bool] | None = None,
     allow_reversed: bool = True,
 ) -> TarotReading:
-    """抽牌主入口。
+    """把用户抽出的牌映射到指定牌阵。
 
     Args:
         question: 占卜的问题
         spread: 牌阵 ID（single / three_card / celtic_cross / relationship_seven /
                 year_twelve / decision_cross）
         deck: 牌组（默认 'rws' = Rider-Waite-Smith）
-        seed: 随机种子（用于可复现）。None 时使用密码学随机。
-        allow_reversed: 是否允许逆位（True 时每张 50% 概率）
+        card_indexes: 用户抽出的牌在 TAROT_DECK 中的 0-based 索引
+        reversed_flags: 每张牌是否逆位；不传则全部正位
+        allow_reversed: 是否读取逆位标记
 
     Returns:
         TarotReading
@@ -764,20 +755,24 @@ def draw_tarot(
         raise ValueError(
             f"牌阵 {spread} 需要 {n_cards} 张，但牌组只有 {len(TAROT_DECK)} 张。"
         )
+    if card_indexes is None:
+        raise ValueError("塔罗需要用户抽牌结果 card_indexes；不能由系统代替用户随机抽牌。")
+    if len(card_indexes) != n_cards:
+        raise ValueError(f"牌阵 {spread} 需要 {n_cards} 张牌，实际收到 {len(card_indexes)} 张。")
+    if len(set(card_indexes)) != len(card_indexes):
+        raise ValueError("塔罗抽牌结果有重复牌。")
+    invalid = [i for i in card_indexes if not isinstance(i, int) or i < 0 or i >= len(TAROT_DECK)]
+    if invalid:
+        raise ValueError(f"塔罗牌索引超出范围：{invalid}")
+    if reversed_flags is None:
+        reversed_flags = [False] * n_cards
+    if len(reversed_flags) != n_cards:
+        raise ValueError(f"逆位标记数量应为 {n_cards}，实际收到 {len(reversed_flags)}。")
 
-    rng = _make_rng(seed)
-    # 1. 洗牌：copy 一份索引表然后 shuffle
-    indices = list(range(len(TAROT_DECK)))
-    rng.shuffle(indices)
-
-    # 2. 取前 n_cards 张
-    drawn = indices[:n_cards]
-
-    # 3. 决定每张的正逆位
     drawn_cards: list[dict] = []
-    for i, card_idx in enumerate(drawn):
+    for i, card_idx in enumerate(card_indexes):
         card = TAROT_DECK[card_idx]
-        is_reversed = bool(rng.random() < 0.5) if allow_reversed else False
+        is_reversed = bool(reversed_flags[i]) if allow_reversed else False
         position = positions[i]
 
         drawn_cards.append({
@@ -808,8 +803,8 @@ def draw_tarot(
         "n_cards": n_cards,
         "deck_size": len(TAROT_DECK),
         "allow_reversed": allow_reversed,
-        "seed": seed,
-        "rng_type": "Random(seed)" if seed is not None else "SystemRandom",
+        "card_indexes": card_indexes,
+        "draw_source": "user_supplied",
     }
 
     return TarotReading(
@@ -841,8 +836,8 @@ if __name__ == "__main__":
     print()
 
     # 单牌
-    r1 = draw_tarot(question="今天我应该关注什么？", spread="single", seed=42)
-    print("── 单牌（seed=42）──")
+    r1 = draw_tarot(question="今天我应该关注什么？", spread="single", card_indexes=[0])
+    print("── 单牌（用户抽牌示例）──")
     for c in r1.drawn_cards:
         print(f"  [{c['position_name']}] {c['card_name']} ({c['orientation']})")
     print()
@@ -851,9 +846,10 @@ if __name__ == "__main__":
     r2 = draw_tarot(
         question="我目前的事业方向？",
         spread="three_card",
-        seed=42,
+        card_indexes=[1, 12, 35],
+        reversed_flags=[False, True, False],
     )
-    print("── 三张牌（seed=42）──")
+    print("── 三张牌（用户抽牌示例）──")
     for c in r2.drawn_cards:
         print(f"  [{c['position_name']}] {c['card_name']} ({c['orientation']})")
     print()
@@ -862,9 +858,9 @@ if __name__ == "__main__":
     r3 = draw_tarot(
         question="未来三个月感情走向如何？",
         spread="celtic_cross",
-        seed=2026,
+        card_indexes=list(range(10)),
     )
-    print("── 凯尔特十字（seed=2026）──")
+    print("── 凯尔特十字（用户抽牌示例）──")
     for c in r3.drawn_cards:
         print(f"  [{c['position_id']:2d}. {c['position_name']}] "
               f"{c['card_name']} ({c['orientation']}) - {c['keywords'][:2]}")
@@ -874,36 +870,36 @@ if __name__ == "__main__":
     r4 = draw_tarot(
         question="我和 X 的关系发展？",
         spread="relationship_seven",
-        seed=2026,
+        card_indexes=list(range(7)),
     )
-    print("── 关系七牌阵（seed=2026）──")
+    print("── 关系七牌阵（用户抽牌示例）──")
     for c in r4.drawn_cards:
         print(f"  [{c['position_id']}. {c['position_name']}] "
               f"{c['card_name']} ({c['orientation']})")
     print()
 
     # 年度 12 宫
-    r5 = draw_tarot(spread="year_twelve", seed=100, question="2026 年怎么走？")
-    print("── 年度十二宫（seed=100）──")
+    r5 = draw_tarot(spread="year_twelve", card_indexes=list(range(12)), question="2026 年怎么走？")
+    print("── 年度十二宫（用户抽牌示例）──")
     for c in r5.drawn_cards:
         print(f"  [{c['position_id']:2d}月] {c['card_name']} ({c['orientation']})")
     print()
 
     # 决策十字
-    r6 = draw_tarot(spread="decision_cross", seed=999,
-                     question="该选择 A 公司还是 B 公司？")
-    print("── 决策十字（seed=999）──")
+    r6 = draw_tarot(spread="decision_cross", card_indexes=list(range(5)),
+                    question="该选择 A 公司还是 B 公司？")
+    print("── 决策十字（用户抽牌示例）──")
     for c in r6.drawn_cards:
         print(f"  [{c['position_id']}. {c['position_name']}] "
               f"{c['card_name']} ({c['orientation']})")
     print()
 
-    # 验证可复现：相同种子两次抽牌结果一致
-    r_a = draw_tarot(spread="single", seed=42)
-    r_b = draw_tarot(spread="single", seed=42)
+    # 验证可复现：相同用户抽牌结果两次映射一致
+    r_a = draw_tarot(spread="single", card_indexes=[42])
+    r_b = draw_tarot(spread="single", card_indexes=[42])
     assert r_a.drawn_cards[0]["card_id"] == r_b.drawn_cards[0]["card_id"]
     assert r_a.drawn_cards[0]["orientation"] == r_b.drawn_cards[0]["orientation"]
-    print("可复现验证通过：seed=42 两次抽牌结果一致。")
+    print("可复现验证通过：同一抽牌结果两次映射一致。")
 
     # 查找单张
     fool = find_card_by_id("major_00_fool")

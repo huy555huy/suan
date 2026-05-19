@@ -191,8 +191,8 @@
     /* ---------- birthForm (用于 index.html / report.html，能互相复用) ---------- */
     Alpine.data('birthForm', () => ({
       form: {
-        name: '', gender: 'female', date: '', time: '',
-        unknownTime: false, place: '北京', question: '',
+        name: '', gender: null, date: '', time: '',
+        unknownTime: false, place: '', question: '',
         scenario: 'chat',
       },
       errors: {},
@@ -206,8 +206,9 @@
       validate() {
         const e = {};
         if (!this.form.name) e.name = '请填称呼';
+        if (!['male', 'female'].includes(this.form.gender)) e.gender = '请选择排盘性别';
         if (!this.form.date) e.date = '请填阳历生日';
-        if (!this.form.unknownTime && !this.form.time) e.time = '请填出生时间，或勾选时辰未知';
+        if (!this.form.time) e.time = '请填精确出生时间；未知时辰不能生成完整盘面';
         if (!this.form.place) e.place = '请填出生地';
         this.errors = e;
         return Object.keys(e).length === 0;
@@ -233,8 +234,8 @@
       profile: null,
       needProfile: false,    // 没填生辰时显示 modal
       profileForm: {
-        name: '', gender: 'female', date: '', time: '',
-        unknownTime: false, place: '北京', question: '',
+        name: '', gender: null, date: '', time: '',
+        unknownTime: false, place: '', question: '',
       },
       profileErrors: {},
 
@@ -335,8 +336,9 @@
       validateProfile() {
         const e = {};
         if (!this.profileForm.name) e.name = '请填称呼';
+        if (!['male', 'female'].includes(this.profileForm.gender)) e.gender = '请选择排盘性别';
         if (!this.profileForm.date) e.date = '请填阳历生日';
-        if (!this.profileForm.unknownTime && !this.profileForm.time) e.time = '请填出生时间，或勾选时辰未知';
+        if (!this.profileForm.time) e.time = '请填精确出生时间；未知时辰不能生成完整盘面';
         if (!this.profileForm.place) e.place = '请填出生地';
         this.profileErrors = e;
         return Object.keys(e).length === 0;

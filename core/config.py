@@ -35,7 +35,6 @@ class Settings:
     # Behavior
     request_timeout: float = 90.0
     max_retries: int = 2
-    enable_planner: bool = os.environ.get("ENABLE_PLANNER", "1") == "1"
 
 
 settings = Settings()
