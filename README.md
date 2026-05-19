@@ -2,6 +2,18 @@
 
 > 一个 LLM，九个工具，九套技能。不是流水线，是真正的 agent。
 
+## 使用截图
+
+以下截图均使用匿名测试档案（`测试用户`），不包含真实姓名或个人信息。
+
+![首页](docs/images/suan-home.jpg)
+
+![匿名立档](docs/images/suan-onboarding.jpg)
+
+![排盘总览](docs/images/suan-chart.jpg)
+
+![研判时间线](docs/images/suan-agent-trace.jpg)
+
 ## 架构
 
 **单 Agent ReAct 循环** — 一个 LLM 自主决定：加载哪些技能、算哪些盘、查哪些典籍、怎么交叉验证、什么时候输出。

@@ -851,9 +851,9 @@ Object.assign(window, {
   <script type="text/babel">
 // Sample profile + chart data (matches the README test case)
 const SAMPLE_PROFILE = {
-  name: "陈书雅",
-  pinyin: "chén shū yǎ",
-  en: "Chen Shuya",
+  name: "测试用户",
+  pinyin: "cè shì yòng hù",
+  en: "Test User",
   gender: "女",
   birth: "1991-08-15 14:30",
   place: "北京",
@@ -2161,8 +2161,8 @@ function OnboardingScreen({ go, sealProfile, initialProfile, initialQuestion }) 
 
   const fillSample = () => {
     setData({
-      name: "陈书雅", gender: "女", date: "1991-08-15", time: "14:30",
-      place: "北京", scenario: "career", calendar: "solar", trueSolar: true,
+      name: "测试用户", gender: "女", date: "1991-08-15", time: "14:30",
+      place: "杭州", scenario: "career", calendar: "solar", trueSolar: true,
       question: SAMPLE_QUESTION,
     });
   };
@@ -2239,7 +2239,7 @@ function OnboardingScreen({ go, sealProfile, initialProfile, initialQuestion }) 
           {step === 1 && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
               <Field label="姓名" en="NAME">
-                <input value={data.name} onChange={e => setData({ ...data, name: e.target.value })} placeholder="如 · 陈书雅" />
+                <input value={data.name} onChange={e => setData({ ...data, name: e.target.value })} placeholder="如 · 测试用户" />
               </Field>
               <Field label="性别" en="GENDER">
                 <Segmented options={[{v:"女", l:"女 / female"},{v:"男", l:"男 / male"}]}
@@ -2549,7 +2549,7 @@ function BaziView({ bazi, isDemo }) {
           </div>
         )}
 
-        {/* hardcoded 命局速断 only valid for the 陈书雅 demo */}
+        {/* hardcoded 命局速断 only valid for the anonymous demo */}
         {isDemo && (
           <div style={{ marginTop: 48, padding: 28, background: "color-mix(in oklch, var(--paper) 50%, var(--paper-2))", borderLeft: "2px solid var(--cinnabar)" }}>
             <div className="caps" style={{ fontSize: 10 }}>命局速断 · QUICK READ</div>
@@ -2854,6 +2854,19 @@ function inferPhase(toolCalls, thoughts, reachedNarr, done) {
   return td.phase || 0;
 }
 
+function describeToolArgs(tool, args = {}) {
+  if (tool === "load_skill") return args.name || "";
+  if (tool === "compute_chart") return args.chart_type || "";
+  if (tool === "grep_classics" || tool === "grep_rules") return args.pattern || "";
+  if (tool === "read_classic" || tool === "read_rule") return args.id || "";
+  if (tool === "verify_chart_ref") return `${args.path || ""} = ${args.expected ?? ""}`;
+  if (tool === "verify_claim") return (args.claim || "").slice(0, 56);
+  if (tool === "load_golden_cases") return args.system || "";
+  if (tool === "apply_safety") return "最终措辞";
+  if (tool === "ask_user") return args.question || "";
+  return "";
+}
+
 function ChatUnavailable({ go }) {
   return (
     <div className="fade-in screen" style={{ position: "relative" }}>
@@ -2889,6 +2902,7 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
   const [askUserPrompt, setAskUserPrompt] = useState(null);
   const [askUserReply, setAskUserReply]   = useState("");
   const [eventLog, setEventLog]     = useState([]);
+  const [workItems, setWorkItems]   = useState([]);
   const [agentStats, setAgentStats] = useState(null);  // {turns, total_tokens, elapsed_ms}
 
   // Follow-up state
@@ -2918,10 +2932,13 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
       thought: (d) => {
         log("thought", d);
         setThoughts(prev => [...prev, d.content || ""]);
+        setWorkItems(prev => [...prev, { kind: "thought", content: d.content || "", ts: Date.now() }]);
       },
       tool_call: (d) => {
         log("tool_call", d);
-        setToolCalls(prev => [...prev, { tool: d.tool, args: d.args || {}, result: null, ts: Date.now() }]);
+        const item = { tool: d.tool, args: d.args || {}, result: null, ts: Date.now() };
+        setToolCalls(prev => [...prev, item]);
+        setWorkItems(prev => [...prev, { kind: "tool", ...item }]);
       },
       tool_result: (d) => {
         log("tool_result", d);
@@ -2929,6 +2946,16 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
           const copy = [...prev];
           for (let i = copy.length - 1; i >= 0; i--) {
             if (copy[i].tool === d.tool && !copy[i].result) {
+              copy[i] = { ...copy[i], result: d.result || "" };
+              break;
+            }
+          }
+          return copy;
+        });
+        setWorkItems(prev => {
+          const copy = [...prev];
+          for (let i = copy.length - 1; i >= 0; i--) {
+            if (copy[i].kind === "tool" && copy[i].tool === d.tool && !copy[i].result) {
               copy[i] = { ...copy[i], result: d.result || "" };
               break;
             }
@@ -2992,7 +3019,7 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
     setRunning(true); setDone(false); setError(null);
     setThoughts([]); setToolCalls([]); setSkills([]);
     setNarrative(""); setCaveats([]); setAskUserPrompt(null);
-    setAskUserReply(""); setEventLog([]); setFollowUps([]);
+    setAskUserReply(""); setEventLog([]); setWorkItems([]); setFollowUps([]);
     setAgentStats(null);
     activeFollowupIdxRef.current = -1;
 
@@ -3039,6 +3066,7 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
     activeFollowupIdxRef.current = idx;
     setDone(false); setAskUserPrompt(null);
     setThoughts([]); setToolCalls([]); setSkills([]);
+    setWorkItems([]);
     try {
       const es = new EventSource(`/api/v1/sessions/${sessionId}/stream`);
       eventSourceRef.current = es;
@@ -3188,16 +3216,25 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
                 </div>
               )}
 
-              {/* tool call feed — enhanced cards */}
+              {/* unified reasoning timeline */}
               <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
-                {toolCalls.filter(tc => tc.tool !== "load_skill").map((tc, i) => {
+                {workItems.map((item, i) => {
+                  if (item.kind === "thought") {
+                    return (
+                      <div key={i} style={{
+                        padding: "10px 16px",
+                        background: "color-mix(in oklch, var(--gild) 5%, transparent)",
+                        borderLeft: "2px solid var(--gild)",
+                        fontFamily: "var(--serif-cn)", fontSize: 13, lineHeight: 1.7, color: "var(--ink-2)",
+                        animation: "card-in 0.3s ease-out both",
+                      }}>
+                        <span style={{ fontSize: 10, color: "var(--gild)", marginRight: 8 }}>思</span>{item.content}
+                      </div>
+                    );
+                  }
+                  const tc = item;
                   const td = TOOL_DISPLAY[tc.tool] || { cn: tc.tool, icon: "⚙" };
-                  const argStr = tc.tool === "compute_chart" ? tc.args.chart_type :
-                    tc.tool === "grep_classics" || tc.tool === "grep_rules" ? tc.args.pattern :
-                    tc.tool === "read_classic" || tc.tool === "read_rule" ? tc.args.id :
-                    tc.tool === "verify_chart_ref" ? `${tc.args.path} = ${tc.args.expected}` :
-                    tc.tool === "verify_claim" ? tc.args.claim?.slice(0, 40) :
-                    tc.tool === "apply_safety" ? "(审查中...)" : "";
+                  const argStr = describeToolArgs(tc.tool, tc.args);
                   const isVerify = tc.tool === "verify_chart_ref" || tc.tool === "verify_claim";
                   const passed = isVerify && tc.result && (tc.result.includes("✓") || tc.result.includes("VERIFIED"));
                   const rejected = isVerify && tc.result && (tc.result.includes("❌") || tc.result.includes("REJECTED"));
@@ -3274,23 +3311,6 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
                 })}
                 <style>{`@keyframes card-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
               </div>
-
-              {/* thoughts */}
-              {thoughts.length > 0 && (
-                <div style={{ marginTop: 18 }}>
-                  {thoughts.map((t, i) => (
-                    <div key={i} style={{
-                      padding: "10px 16px", marginBottom: 6,
-                      background: "color-mix(in oklch, var(--gild) 5%, transparent)",
-                      borderLeft: "2px solid var(--gild)",
-                      fontFamily: "var(--serif-cn)", fontSize: 13, lineHeight: 1.7, color: "var(--ink-2)",
-                      animation: "card-in 0.3s ease-out both",
-                    }}>
-                      <span style={{ fontSize: 10, color: "var(--gild)", marginRight: 8 }}>思</span>{t}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
             );
           })()}
@@ -3985,7 +4005,7 @@ function ArchiveScreen({ go, profile, sessions, hasProfile }) {
 
         {/* Detail rows */}
         <div style={{ marginTop: 40 }}>
-          <ArchiveRow cn="生辰"   en="DATE OF BIRTH" v={date}     sub={p.name === "陈书雅" ? "辛未年 · 丙申月 · 丁巳日" : null} first />
+          <ArchiveRow cn="生辰"   en="DATE OF BIRTH" v={date}     sub={p.name === "测试用户" ? "辛未年 · 丙申月 · 丁巳日" : null} first />
           <ArchiveRow cn="时辰"   en="HOUR"          v={time}     sub="真太阳时已校正" />
           <ArchiveRow cn="出生地" en="BIRTHPLACE"    v={p.place}  sub={p.placeEn !== p.place ? p.placeEn : null} />
           <ArchiveRow cn="性别"   en="GENDER"        v={p.gender} />
