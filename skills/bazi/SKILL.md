@@ -1,13 +1,13 @@
 ---
 name: bazi
-description: 子平派八字解读。当用户问事业/婚配/财运/时机/格局/健康(中医视角)/性格时加载。
+description: 子平派八字方法论，提供四柱、日主、十神、格局、用神、大运流年、岁运触发等分析框架。
 ---
 
 # 子平派八字解读
 
-被加载后，按以下流程做。**不要跳步**。
+先把八字当人的结构来读，找"盘眼"：日主如何成事，月令给了什么环境，财官印食哪一类最能解释用户的问题，当前大运/流年动到哪里。
 
-## Step 1: 算盘
+## 取盘
 
 ```
 compute_chart("bazi")
@@ -15,7 +15,7 @@ compute_chart("bazi")
 
 拿到四柱（年柱/月柱/日柱/时柱）、日主、五行分布、十神、神煞、大运、流年等完整结构。
 
-## Step 2: 读关键字段，判旺衰
+## 先立盘眼
 
 从返回的 chart JSON 里读：
 - `day_pillar.stem` → 日主天干（如"丁"）
@@ -27,8 +27,14 @@ compute_chart("bazi")
 1. 日主在月令是否得气（得令 vs 失令）
 2. 五行分布看身旺还是身弱
 3. 有无特殊格局（从格、化格等）
+4. 当前用户问题落在哪条十神线：官杀、财星、印星、食伤、比劫，还是日支/时柱/父母六亲线
 
-## Step 3: 定格局与用神
+盘眼用一句话说清楚：
+- "此盘事业先看官杀和印，因为问题是职位/规则/平台。"
+- "此盘婚恋看日支被岁运触发后是合、冲、刑、害还是领域提示。"
+- "此盘迁移看驿马、迁移年份和大运承接。"
+
+## 定格局与用神
 
 - 看 `pattern`（如果 computation 已判定）和 `yong_shen`
 - 如果 pattern 为空或你不认同，根据旺衰自己判：
@@ -36,7 +42,7 @@ compute_chart("bazi")
   - 身弱 → 用印星/比劫生扶
 - 看 `xi_ji`（喜忌）辅助判断
 
-## Step 4: 看神煞与大运流年
+## 看神煞与大运流年
 
 - `shen_sha` 列表 → 驿马/桃花/华盖/天乙贵人等
 - `da_yun` → 大运走势（每步十年）
@@ -49,9 +55,9 @@ compute_chart("bazi")
 - `metadata.event_timing.*.branch_triggers[].target_branch_preference` → 被触发地支五行对命局喜忌的方向
 - `metadata.event_timing.*.stem_triggers[].relation_types` → 天干五合、天干相克等事实关系数组
 - `metadata.event_timing.*.branch_triggers[].relation_types` → 地支六合、地支六冲、地支六害、地支刑等事实关系数组
-- `metadata.event_timing.*.branch_triggers[].requires_context` → 是否必须结合力量、喜忌、大运和问题背景再解释
-- `metadata.event_timing.*.branch_triggers[].domain_hint` → 领域提示，只能作为翻译线索，不能单独当结论
-- `metadata.calibration_questions` → 需要向用户追问的校盘问题
+- `metadata.event_timing.*.branch_triggers[].requires_context` → 是否需要结合力量、喜忌、大运和问题背景再解释
+- `metadata.event_timing.*.branch_triggers[].domain_hint` → 领域提示（翻译线索，结合用户反馈具体化）
+- `metadata.calibration_questions` → 可向用户追问的校盘问题
 
 结合用户问题，重点看：
 - 事业 → 官杀星、食伤星、大运走向
@@ -59,62 +65,49 @@ compute_chart("bazi")
 - 财运 → 财星旺衰、流年是否透财
 - 健康 → 五行偏枯、受克之行对应脏腑
 
-如果 `metadata.event_timing.*.branch_triggers` 冲合刑害到日柱、月柱或当前大运，必须说明：
-- 触发哪一柱；
-- 被触发的 `target_ten_god` 是什么；
-- `target_branch_preference` 是喜、忌还是中性；
-- `domain_hint` 里哪些领域与用户问题相关。
+## 问诊与校盘
 
-不要只说“今年变动大”。`domain_hint` 是领域提示，不是实断；如果没有用户问题或事件反馈承接，只能说“该领域更容易被触发”，不能断“必离职/必分手/必生病”。如果出现 `metadata.calibration_questions`，优先挑 1-2 个和用户问题最相关的问题追问或在结尾给出。
+追问不是固定流程，只有当用户回答会改变判断时才问：
 
-如果出现 `stem_triggers` 或 `branch_triggers[].relation_types`，只能说“存在天干/地支关系事实，需要结合上下文判断”。不能直接把合说成合动或吉，不能把冲直接说成坏事。必须同时看：
-- 合到哪一柱；
-- 合到的十神是什么；
-- 合来之神与被合之神的喜忌；
-- 是否有冲刑害或大运承接。
+- 时辰不稳、时柱影响判断时，先问出生时间来源和可能误差。
+- 要精断过往、六亲、婚恋、教育、事业、迁移时，问 3 个已发生大事年份和事件类型。
+- 用户问题太泛时，问一个会改变取象的问题，例如"你这次更想看职位变化、收入、换城市，还是团队关系？"
 
-`relation_types` 只是事实标签，不是断语。合动、合绊、合入、合出、合而不化、冲动、冲散、冲开等词只能在盘面力量、岁运承接和用户问题都支持时作为解释写出；证据不足时必须保留不确定。
+当用户反馈出生时间可能偏差（如"可能早半小时"/"可能是下午两点不是三点"），用 `recompute_chart` 重算盘面并对比差异。
 
-## Step 5: 查引证
+问完后把反馈作为校验和定焦点，盘面事实仍是断语基础。
 
-找 1-2 条典籍佐证你的核心判断：
+## 岁运触发解读
+
+解读 `event_timing` 里的触发点时，关键是把事实标签翻译成有意义的判断。
+
+`branch_triggers` 冲合刑害到日柱、月柱或当前大运时，看：
+- 触发哪一柱
+- 被触发的 `target_ten_god` 是什么
+- `target_branch_preference` 是喜、忌还是中性
+- `domain_hint` 里哪些领域与用户问题相关
+
+`domain_hint` 是领域线索，结合用户反馈和事件承接后可以具体化；没有具体事件承接时，表述为"该领域更容易被触发"。`metadata.calibration_questions` 里的追问可以帮助具体化。
+
+`stem_triggers` 和 `branch_triggers[].relation_types` 是事实关系标签（天干五合、地支六冲等）。合动/合绊/合入/合出/冲动/冲散等进一步判断，需要同时看合到哪一柱、合到的十神、喜忌关系、以及大运承接，才能定性。
+
+## 查引证
+
+找 1-2 条典籍佐证核心判断：
 
 ```
 grep_classics("用神|扶抑|调候", system="bazi")
-```
-
-挑相关性高的：
-```
 read_classic("<source_id>")
-```
-
-同样查规则：
-```
 grep_rules("驿马|桃花|...", system="bazi")
 ```
 
-## Step 6: 校验结论（三元组）
+## 盘面阅读
 
-每条核心结论必须过 `verify_claim`，提供完整三元组：
+核心判断从 `compute_chart("bazi")` 返回的 JSON 取材。引用日主、月令、大运、流年、触发点前，先确认对应字段在盘里真实存在。典籍、规则、黄金案例服务于案眼。
 
-```
-verify_claim(
-  claim="日主丁火坐巳，得令身旺，宜用食伤泄秀",
-  chart_ref="bazi.day_pillar.stem=丁",
-  rule_ref="bazi_rule_003",
-  source_ref="ziping_zhenquan_p072",
-  tier="A_core"
-)
-```
+## 输出
 
-- Tier A（格局判断、用神、流年趋势）→ 三元组必须齐全
-- Tier B（辅助论证）→ 至少 chart_ref
-- FACT_VIOLATION → 硬拒，必须修正后重新 verify
-
-## Step 7: 输出
-
-- 先概述格局：日主 X，月令 Y，身旺/身弱，格局 Z
+- 先说盘眼：这个盘最关键的结构是什么，和用户的问题有什么关系
 - 再针对用户具体问题展开
 - 每个论断附 inline 引证（如"四柱显示日主丁火坐午，得令身旺"）
-- 置信度标注：如果某项判断依据单薄，标"此项仅供参考"
-- 不说"100%"/"必然"/"一定"
+- 围绕案眼展开，不需要四柱每个都讲到

@@ -26,9 +26,12 @@ _load_env(Path(__file__).resolve().parent.parent / ".env")
 class Settings:
     llm_base_url: str = os.environ.get("LLM_BASE_URL", "https://api.deepseek.com")
     llm_api_key: str = os.environ.get("LLM_API_KEY", "")
-    # Model tiers — DeepSeek V3 ("deepseek-chat") + R1 ("deepseek-reasoner")
-    model_high: str = os.environ.get("MODEL_HIGH", "deepseek-chat")
-    model_low: str = os.environ.get("MODEL_LOW", "deepseek-chat")
+    # Model — MODEL is the single knob; MODEL_HIGH / MODEL_LOW override per-tier
+    model_high: str = os.environ.get("MODEL", os.environ.get("MODEL_HIGH", "deepseek-chat"))
+    model_low: str = os.environ.get("MODEL_LOW", os.environ.get("MODEL", "deepseek-chat"))
+    # Optional admin token for private maintenance endpoints. Leave empty to
+    # disable those endpoints on public deployments.
+    admin_api_token: str = os.environ.get("ADMIN_API_TOKEN", "")
     # Storage
     data_dir: Path = Path(__file__).resolve().parent.parent / "data"
     db_path: Path = Path(__file__).resolve().parent.parent / "data" / "suan.db"

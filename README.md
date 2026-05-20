@@ -1,6 +1,6 @@
 # 算 suan · 中西命理 AI Agent
 
-> 一个 LLM，九个工具，九套技能。不是流水线，是真正的 agent。
+> 一个 LLM，九个工具，八套技能。不是流水线，是真正的 agent。
 
 ## 使用截图
 
@@ -29,10 +29,8 @@ compute_chart("bazi")  → 四柱数据
 compute_chart("natal_astro") → 行星数据
 grep_classics("七杀|驿马") → 找到引证
 read_classic("ziping_zhenquan_p072") → 读全文
-verify_chart_ref("bazi.day_master", "辛") → ✓
   ↓
 load_skill("cross_synthesis") → 交叉比对
-apply_safety(final_text)      → 合规审查
   ↓
 输出 1200 字综合研判（流式 SSE）
 ```
@@ -46,9 +44,9 @@ apply_safety(final_text)      → 合规审查
 agents/
   agent.py          ReAct 主循环（单 LLM + tool dispatch）
   tools.py          9 个工具实现 + JSON Schema
-  safety.py         合规红线检查（regex，不走 LLM）
+  safety.py         心理危机检测（最后安全网）
 
-skills/             按需加载的方法论（Anthropic Skills 模式）
+skills/             按需加载的方法论
   bazi/SKILL.md     子平派八字
   ziwei/SKILL.md    紫微斗数
   astrology/SKILL.md 西洋占星
@@ -57,7 +55,6 @@ skills/             按需加载的方法论（Anthropic Skills 模式）
   numerology/SKILL.md 数字命理
   fengshui/SKILL.md 玄空飞星风水
   cross_synthesis/SKILL.md 跨体系综合
-  safety_psych/SKILL.md    心理安全
 
 computation/        纯 Python 排盘引擎（不走 LLM）
   bazi.py           八字（农历/节气/真太阳时/干支/十神/神煞/大运）
@@ -72,8 +69,6 @@ computation/        纯 Python 排盘引擎（不走 LLM）
 knowledge/
   classics/*.md     81 篇命理典籍（YAML frontmatter + 正文）
   rules/*.md        61 条命理规则
-  classics.json     原始 JSON（备份）
-  rules.json        原始 JSON（备份）
 
 core/
   config.py         环境配置（LLM_BASE_URL / LLM_API_KEY）
@@ -96,8 +91,8 @@ web/v2.html         单文件 React SPA（Babel standalone）
 | `read_classic(id)` | 读一篇典籍全文 |
 | `grep_rules(pattern)` | ripgrep 搜索 61 条规则 |
 | `read_rule(id)` | 读一条规则全文 |
-| `verify_chart_ref(path, expected)` | 校验盘面引用防幻觉 |
-| `apply_safety(text)` | 合规审查 |
+| `load_golden_cases(system)` | 读取同体系专业盘例 |
+| `update_profile(...)` | 写入用户补充的事实 |
 | `ask_user(question)` | 阻塞等用户回复 |
 
 ## SSE 事件
@@ -132,7 +127,6 @@ python3 server.py
 ## 设计原则
 
 1. **Agent not workflow** — LLM 自主决策，不是固定流水线
-2. **Skills teach tools** — 技能教 LLM 怎么用工具，而不是替代 LLM 思考
+2. **Skills teach methodology** — 技能教方法论，不替代 LLM 思考，不微管输出
 3. **ripgrep > embeddings** — 小语料用 grep 比 BM25/embedding 更直接
-4. **verify before cite** — 每个盘面引用必须 verify_chart_ref，防幻觉
-5. **safety as tool** — 合规检查是工具不是 LLM，regex 不会出错
+4. **Read charts, then reason** — 盘面 JSON 是材料，agent 自己抓案眼和取象

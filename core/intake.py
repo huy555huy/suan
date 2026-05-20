@@ -93,16 +93,16 @@ def validate_profile_for_birthinfo(profile: dict[str, Any]) -> list[IntakeIssue]
     if not _valid_date(profile.get("date")):
         issues.append(IntakeIssue("date", "请补充阳历出生日期，格式为 YYYY-MM-DD。"))
     if not _valid_time(profile.get("time")):
-        issues.append(IntakeIssue("time", "请补充出生时间，精确到分钟；未知时辰不能生成完整盘面。"))
+        issues.append(IntakeIssue("time", "缺少出生时间（精确到分钟）。未知时辰无法生成完整盘面。"))
     has_place = bool((profile.get("place") or "").strip())
     has_coord = profile.get("longitude") is not None and profile.get("latitude") is not None
     if not has_place and not has_coord:
-        issues.append(IntakeIssue("place", "请补充出生地城市/区县，或直接提供经纬度。"))
+        issues.append(IntakeIssue("place", "缺少出生地（城市/区县或经纬度）。"))
     if has_coord:
         from core.geo import is_china_coordinate
 
         if not is_china_coordinate(float(profile["longitude"]), float(profile["latitude"])):
-            issues.append(IntakeIssue("place", "当前只支持中国境内出生地；海外出生地暂不计算。"))
+            issues.append(IntakeIssue("place", "当前只支持中国境内出生地。"))
     return issues
 
 
@@ -116,7 +116,7 @@ def validate_chart_request(chart_type: str, profile: dict[str, Any], question: s
     if chart_type in TIME_SENSITIVE_CHARTS and profile.get("unknownTime"):
         issues.append(IntakeIssue(
             "time",
-            f"{chart_type} 需要出生时辰；未知时辰只能做低精度参考，不应生成完整盘面。",
+            f"{chart_type} 需要出生时辰。未知时辰只能做低精度参考。",
         ))
 
     if chart_type in PLACE_SENSITIVE_CHARTS:
@@ -130,17 +130,17 @@ def validate_chart_request(chart_type: str, profile: dict[str, Any], question: s
         if not _explicit_timezone(profile):
             issues.append(IntakeIssue(
                 "timezone_offset",
-                f"{chart_type} 需要可验证的出生地时区；请提供 timezone_offset 或更明确的出生地。",
+                f"{chart_type} 缺少可验证的出生地时区（timezone_offset 或更明确的出生地）。",
             ))
 
     if chart_type in {"bazi", "ziwei"} and profile.get("gender") not in ("male", "female"):
         issues.append(IntakeIssue(
             "gender",
-            f"{chart_type} 排大运/大限需要明确男/女；请补充 gender=male 或 gender=female。",
+            f"{chart_type} 排大运/大限需要性别（gender=male 或 gender=female）。",
         ))
 
     if chart_type == "hexagram" and not question.strip():
-        issues.append(IntakeIssue("question", "易经/六爻需要一个具体问题，不能只问泛泛运势。"))
+        issues.append(IntakeIssue("question", "易经/六爻缺少具体占事问题。"))
     if chart_type == "hexagram":
         has_numbers = isinstance(profile.get("hexagram_numbers"), list) and len(profile["hexagram_numbers"]) in (2, 3)
         has_coins = isinstance(profile.get("coin_results"), list) and len(profile["coin_results"]) == 6
@@ -148,33 +148,33 @@ def validate_chart_request(chart_type: str, profile: dict[str, Any], question: s
         if not (has_numbers or has_coins or has_divination_time):
             issues.append(IntakeIssue(
                 "divination_input",
-                "易经起卦需要用户提供数字、六次铜钱结果，或明确起卦时间；不能由系统随机或偷偷取当前时间。",
+                "易经起卦缺少输入（数字、六次铜钱结果，或明确起卦时间）。",
             ))
         if not has_divination_time:
             issues.append(IntakeIssue(
                 "divination_time",
-                "易经盘需要明确起卦时间用于日辰/六神计算，不能默认取系统当前时间。",
+                "易经盘缺少明确起卦时间（日辰/六神计算需要）。",
             ))
 
     if chart_type == "tarot" and not question.strip():
-        issues.append(IntakeIssue("question", "塔罗需要一个具体问题或当下情境。"))
+        issues.append(IntakeIssue("question", "塔罗缺少具体问题或当下情境。"))
     if chart_type == "tarot":
         if not profile.get("tarot_spread"):
-            issues.append(IntakeIssue("tarot_spread", "塔罗需要用户明确牌阵；不能默认使用某个牌阵。"))
+            issues.append(IntakeIssue("tarot_spread", "塔罗缺少牌阵选择。"))
         card_indexes = profile.get("tarot_card_indexes")
         if card_indexes is None:
             issues.append(IntakeIssue(
                 "tarot_card_indexes",
-                "塔罗需要用户抽牌结果；不能由系统代替用户随机抽牌。",
+                "塔罗缺少抽牌结果（牌序或牌名）。",
             ))
         elif not isinstance(card_indexes, list) or not card_indexes:
             issues.append(IntakeIssue("tarot_card_indexes", "塔罗抽牌结果格式错误。"))
 
     if chart_type == "fengshui":
         if profile.get("facing_degree") is None:
-            issues.append(IntakeIssue("facing_degree", "风水盘需要房屋朝向度数，不能默认朝南。"))
+            issues.append(IntakeIssue("facing_degree", "风水盘缺少房屋朝向度数。"))
         if profile.get("move_in_year") is None and profile.get("built_year") is None:
-            issues.append(IntakeIssue("move_in_year", "玄空飞星需要入住年或建成年，用于定元运。"))
+            issues.append(IntakeIssue("move_in_year", "玄空飞星缺少入住年或建成年（用于定元运）。"))
 
     return ChartIntake(chart_type=chart_type, ok=not any(i.blocking for i in issues), issues=issues)
 

@@ -42,6 +42,9 @@ def test_ziwei_uses_iztro_reference_chart():
     assert chart.metadata["time"] == "未时"
     assert chart.main_stars["命宫"] == ["天相"]
     assert chart.main_stars["福德宫"] == ["武曲", "七杀"]
+    assert chart.main_stars["官禄宫"] == []
+    assert chart.palaces_by_name["财帛宫"]["stars"] == ["天府"]
+    assert chart.palaces_by_name["官禄宫"]["stars"] == []
     assert chart.si_hua == {
         "化忌": "文昌",
         "化权": "太阳",

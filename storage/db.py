@@ -37,7 +37,6 @@ CREATE TABLE IF NOT EXISTS verdicts (
     session_id TEXT PRIMARY KEY,
     verdict_json TEXT NOT NULL,
     narrative TEXT,
-    safety_triggers TEXT,
     created_at INTEGER NOT NULL
 );
 

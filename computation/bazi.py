@@ -87,6 +87,19 @@ BRANCH_PUNISHMENTS = {
 }
 BRANCH_SELF_PUNISH = {"辰", "午", "酉", "亥"}
 
+SAN_HE_GROUPS = [
+    (("申", "子", "辰"), "水"),
+    (("寅", "午", "戌"), "火"),
+    (("巳", "酉", "丑"), "金"),
+    (("亥", "卯", "未"), "木"),
+]
+SAN_HUI_GROUPS = [
+    (("寅", "卯", "辰"), "木"),
+    (("巳", "午", "未"), "火"),
+    (("申", "酉", "戌"), "金"),
+    (("亥", "子", "丑"), "水"),
+]
+
 PILLAR_DOMAIN_HINTS = {
     "year": ["家族长辈", "早年背景", "外部名声"],
     "month": ["事业环境", "团队制度", "父母/上级", "工作节奏"],
@@ -182,7 +195,49 @@ def _branch_interactions(a: str, b: str) -> list[str]:
             result.append(label)
     if a == b and a in BRANCH_SELF_PUNISH:
         result.append("自刑")
+    for members, element in SAN_HE_GROUPS:
+        if a in members and b in members and a != b:
+            result.append(f"半合{element}局")
     return result
+
+
+def _calc_kong_wang(day_stem: str, day_branch: str) -> list[str]:
+    """Calculate 空亡 (void branches) from the day pillar's 旬."""
+    s_idx = TIAN_GAN.index(day_stem)
+    b_idx = DI_ZHI.index(day_branch)
+    xun_start_branch_idx = (b_idx - s_idx) % 12
+    kong1 = DI_ZHI[(xun_start_branch_idx + 10) % 12]
+    kong2 = DI_ZHI[(xun_start_branch_idx + 11) % 12]
+    return [kong1, kong2]
+
+
+def _chart_three_way_interactions(four_pillars: dict) -> list[dict[str, Any]]:
+    """检查四柱中是否存在完整三合局或三会局（需要 3 个地支同时出现）。"""
+    positions = ("year", "month", "day", "hour")
+    all_branches = {pos: four_pillars[f"{pos}_pillar"]["branch"] for pos in positions}
+    branch_set = set(all_branches.values())
+    results: list[dict[str, Any]] = []
+    for members, element in SAN_HE_GROUPS:
+        if set(members) <= branch_set:
+            involved = [pos for pos in positions if all_branches[pos] in members]
+            results.append({
+                "type": "三合局",
+                "element": element,
+                "branches": list(members),
+                "label": f"{''.join(members)}合{element}",
+                "positions": involved,
+            })
+    for members, element in SAN_HUI_GROUPS:
+        if set(members) <= branch_set:
+            involved = [pos for pos in positions if all_branches[pos] in members]
+            results.append({
+                "type": "三会局",
+                "element": element,
+                "branches": list(members),
+                "label": f"{''.join(members)}会{element}",
+                "positions": involved,
+            })
+    return results
 
 
 def _chart_interactions(four_pillars: dict) -> list[dict[str, Any]]:
@@ -204,6 +259,7 @@ def _chart_interactions(four_pillars: dict) -> list[dict[str, Any]]:
                     "stem_interactions": stems,
                     "branch_interactions": branches,
                 })
+    interactions.extend(_chart_three_way_interactions(four_pillars))
     return interactions
 
 
@@ -344,12 +400,6 @@ def _judge_pattern(four_pillars: dict, day_stem: str, ten_gods: dict,
 
     # ── 从格 ──
     if cat == "极弱（可能从格）" and strength["same_party_ratio"] < 20:
-        # 看他党最旺者
-        other_strong = max(
-            ["财", "官杀", "食伤"],
-            key=lambda x: 1,
-        )
-        # 直接根据月令归一化
         if month_main_god in ("正官", "七杀"):
             pattern = "从官杀格"
         elif month_main_god in ("正财", "偏财"):
@@ -406,20 +456,14 @@ def _judge_yong_shen(four_pillars: dict, day_stem: str, strength: dict,
     """
     day_wx = GAN_WUXING[day_stem]
     cat = strength["category"]
-
-    # 我党 / 他党五行
-    same_set = {day_wx, WUXING_BEI_SHENG[day_wx]}  # 比 + 印
-    other_set = {WUXING_SHENG[day_wx], WUXING_KE[day_wx], WUXING_BEI_KE[day_wx]}
-
     method = "扶抑"
     if cat in ("身强", "中和偏强"):
         # 用神：克泄
         favorable = [WUXING_SHENG[day_wx], WUXING_KE[day_wx], WUXING_BEI_KE[day_wx]]
         unfavorable = [day_wx, WUXING_BEI_SHENG[day_wx]]
-        primary_yong = WUXING_KE[day_wx]  # 优先用财（克我所克）
-        # 但若官杀已多则反用印比
+        primary_yong = WUXING_KE[day_wx]  # 优先用财
         if five_counts.get(WUXING_BEI_KE[day_wx], 0) >= 3:
-            primary_yong = WUXING_BEI_SHENG[day_wx]  # 用印化杀
+            primary_yong = WUXING_SHENG[day_wx]  # 官杀多→食伤制杀
     elif cat in ("中和偏弱", "身弱"):
         favorable = [day_wx, WUXING_BEI_SHENG[day_wx]]
         unfavorable = [WUXING_KE[day_wx], WUXING_BEI_KE[day_wx]]
@@ -432,23 +476,21 @@ def _judge_yong_shen(four_pillars: dict, day_stem: str, strength: dict,
 
     # 调候候选（按月令）
     month_branch = four_pillars["month_pillar"]["branch"]
-    tiao_hou = None
-    if month_branch in ("巳", "午", "未"):  # 夏
-        if day_wx == "火":
-            tiao_hou = "水"
-        elif day_wx == "金":
-            tiao_hou = "水"
-    elif month_branch in ("亥", "子", "丑"):  # 冬
-        if day_wx == "水":
-            tiao_hou = "火"
-        elif day_wx == "金":
-            tiao_hou = "火"
-    elif month_branch in ("寅", "卯", "辰"):  # 春
-        if day_wx == "木":
-            tiao_hou = "火"  # 暖木
-    elif month_branch in ("申", "酉", "戌"):  # 秋
-        if day_wx == "金":
-            tiao_hou = "水"  # 润金
+    tiao_hou_map: dict[str, dict[str, str]] = {
+        "巳": {"火": "水", "土": "水", "木": "水", "金": "水"},
+        "午": {"火": "水", "土": "水", "木": "水", "金": "水"},
+        "未": {"火": "水", "土": "水", "木": "水", "金": "水"},
+        "亥": {"水": "火", "木": "火", "金": "火", "土": "火"},
+        "子": {"水": "火", "木": "火", "金": "火", "土": "火"},
+        "丑": {"水": "火", "木": "火", "金": "火", "土": "火"},
+        "寅": {"木": "火", "金": "火"},
+        "卯": {"木": "火", "金": "火"},
+        "辰": {},
+        "申": {"金": "水", "火": "水"},
+        "酉": {"金": "水", "火": "水"},
+        "戌": {},
+    }
+    tiao_hou = tiao_hou_map.get(month_branch, {}).get(day_wx)
 
     return {
         "primary": primary_yong,
@@ -675,6 +717,8 @@ def _relation_types(interactions: list[str]) -> list[str]:
         add("地支六害")
     if any(item.endswith("刑") or item == "自刑" for item in interactions):
         add("地支刑")
+    if any("半合" in item for item in interactions):
+        add("地支半合")
     if not relation_types:
         add("待判断")
     return relation_types
@@ -840,6 +884,47 @@ def _calibration_questions(four_pillars: dict, shen_sha: list[str], pattern_info
     return questions
 
 
+def _detect_ten_god_patterns(four_pillars: dict, ten_gods: dict[str, str]) -> list[dict[str, Any]]:
+    """检测经典十神相互 interaction patterns。"""
+    gods_present: set[str] = set()
+    for pos in ("year", "month", "day", "hour"):
+        god = ten_gods.get(pos)
+        if god:
+            gods_present.add(god)
+        branch = four_pillars[f"{pos}_pillar"]["branch"]
+        main_hidden = ZHI_HIDDEN[branch][0]
+        hidden_god = ten_god_relation(four_pillars["day_pillar"]["stem"], main_hidden)
+        gods_present.add(hidden_god)
+
+    patterns: list[dict[str, Any]] = []
+
+    if "伤官" in gods_present and "正官" in gods_present:
+        patterns.append({"name": "伤官见官", "gods": ["伤官", "正官"]})
+
+    if "食神" in gods_present and "七杀" in gods_present:
+        patterns.append({"name": "食神制杀", "gods": ["食神", "七杀"]})
+
+    if "正官" in gods_present and ("正印" in gods_present or "偏印" in gods_present):
+        patterns.append({"name": "官印相生", "gods": ["正官", "正印" if "正印" in gods_present else "偏印"]})
+
+    if "七杀" in gods_present and ("正印" in gods_present or "偏印" in gods_present):
+        patterns.append({"name": "杀印相生", "gods": ["七杀", "正印" if "正印" in gods_present else "偏印"]})
+
+    if ("正财" in gods_present or "偏财" in gods_present) and ("正印" in gods_present or "偏印" in gods_present):
+        patterns.append({
+            "name": "财印交战",
+            "gods": [
+                "正财" if "正财" in gods_present else "偏财",
+                "正印" if "正印" in gods_present else "偏印",
+            ],
+        })
+
+    if "伤官" in gods_present and ("正印" in gods_present or "偏印" in gods_present):
+        patterns.append({"name": "伤官佩印", "gods": ["伤官", "正印" if "正印" in gods_present else "偏印"]})
+
+    return patterns
+
+
 # ── 主入口 ────────────────────────────────────────────────
 def compute_bazi(birth: BirthInfo, current_year: int = 2026) -> BaziChart:
     """计算八字命盘 + 大运 + 流年。
@@ -861,7 +946,15 @@ def compute_bazi(birth: BirthInfo, current_year: int = 2026) -> BaziChart:
     shen_sha = find_shensha(four_pillars)
 
     day_stem = four_pillars["day_pillar"]["stem"]
+    day_branch = four_pillars["day_pillar"]["branch"]
     year_stem = four_pillars["year_pillar"]["stem"]
+
+    # 空亡
+    kong_wang = _calc_kong_wang(day_stem, day_branch)
+    kong_wang_pillars = [
+        pos for pos in ("year", "month", "day", "hour")
+        if four_pillars[f"{pos}_pillar"]["branch"] in kong_wang
+    ]
 
     # 强弱 / 格局 / 用神
     strength = _calc_day_master_strength(four_pillars, day_stem)
@@ -890,6 +983,7 @@ def compute_bazi(birth: BirthInfo, current_year: int = 2026) -> BaziChart:
         da_yun, liu_nian, four_pillars, yong_shen, current_year
     )
     chart_interactions = _chart_interactions(four_pillars)
+    ten_god_patterns = _detect_ten_god_patterns(four_pillars, ten_gods)
     calibration_questions = _calibration_questions(four_pillars, shen_sha, pattern_info, yong_shen)
 
     # xi_ji
@@ -908,7 +1002,10 @@ def compute_bazi(birth: BirthInfo, current_year: int = 2026) -> BaziChart:
         "five_elements_balance_pct": balance,
         "five_elements_most": most_wx,
         "five_elements_least": least_wx,
+        "kong_wang": kong_wang,
+        "kong_wang_pillars": kong_wang_pillars,
         "chart_interactions": chart_interactions,
+        "ten_god_patterns": ten_god_patterns,
         "event_timing": event_timing,
         "calibration_questions": calibration_questions,
         "gender": gender,

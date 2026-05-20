@@ -1,11 +1,11 @@
 ---
 name: numerology
-description: 生命灵数/数字命理解读。当用户问性格特质、年度主题、人生课题时加载。计算快、解读轻，适合入门或辅助。
+description: 生命灵数/数字命理方法论，提供生命路径、表达数、灵魂数、人格数、个人年与阶段主题分析框架。
 ---
 
 # 数字命理解读
 
-## Step 1: 算数
+## 取数
 
 ```
 compute_chart("numerology")
@@ -13,7 +13,7 @@ compute_chart("numerology")
 
 拿到生命路径数、表达数、灵魂冲动数、人格数、命运数、个人年数等。
 
-## Step 2: 读核心数字
+## 核心数字
 
 - `life_path` → 生命路径数（最重要，从生日算出，代表人生主线）
 - `expression` → 表达数（从全名算出，代表天赋才能）
@@ -23,9 +23,9 @@ compute_chart("numerology")
 - `personal_year` → 个人年数（今年的主题）
 - `master_number_flag` → 是否有大师数字（11/22/33）
 
-## Step 3: 解读各数字
+## 各数字含义
 
-**生命路径数含义**（1-9 + 大师数）：
+**生命路径数**（1-9 + 大师数）：
 - 1: 独立开创、领导力
 - 2: 合作、敏感、平衡
 - 3: 表达、创意、社交
@@ -45,17 +45,16 @@ compute_chart("numerology")
 - 感情 → soul_urge + personality
 - 今年 → personal_year（1=新开始，9=完成期，5=变动期）
 
-## Step 4: 查引证
+## 查引证
 
 ```
 grep_classics("生命路径|灵数", system="numerology")
 grep_rules("个人年|大师数字", system="numerology")
 ```
 
-## Step 5: 输出
+## 输出
 
 - 数字命理相对"轻量"，适合作为辅助印证
-- 不要过度解读单个数字
 - 重点看数字之间的呼应（如 life_path=1 + personal_year=1 → 强烈的开创能量叠加）
 - 个人年周期（1-9 循环）是实用的时间框架
 - 大师数字要特别说明其"双面性"（高振动 vs 压力）

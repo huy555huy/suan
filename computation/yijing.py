@@ -22,6 +22,7 @@ from typing import Any
 from core.schemas import HexagramChart
 from computation.calendar import (
     DI_ZHI,
+    ZHI_WUXING,
 )
 
 
@@ -55,6 +56,11 @@ TRIGRAM_TO_FIVEELEMENT = {
 }
 WUXING_SHENG = {"木": "火", "火": "土", "土": "金", "金": "水", "水": "木"}
 WUXING_KE = {"木": "土", "土": "水", "水": "火", "火": "金", "金": "木"}
+BRANCH_CLASH_MAP = {
+    "子": "午", "午": "子", "丑": "未", "未": "丑",
+    "寅": "申", "申": "寅", "卯": "酉", "酉": "卯",
+    "辰": "戌", "戌": "辰", "巳": "亥", "亥": "巳",
+}
 MONTH_BRANCH_BY_GANZHI_MONTH = {
     "寅": {"旺": {"木"}, "相": {"火"}, "休": {"水"}, "囚": {"金"}, "死": {"土"}},
     "卯": {"旺": {"木"}, "相": {"火"}, "休": {"水"}, "囚": {"金"}, "死": {"土"}},
@@ -425,11 +431,19 @@ def _analyze_liuyao(question: str, yong_shen_info: dict[str, Any], data: dict[st
             score -= 1
         if line["moving"]:
             score += 1
+        is_month_po = BRANCH_CLASH_MAP.get(line["branch"]) == month_branch
+        is_day_po = BRANCH_CLASH_MAP.get(line["branch"]) == day_branch
+        if is_month_po:
+            score -= 1
+        if is_day_po:
+            score -= 1
         enriched_yong_lines.append({
             **line,
             "month_state": month_state,
             "day_same_branch": line["branch"] == day_branch,
             "is_xun_kong": line["branch"] in xun_kong,
+            "is_month_po": is_month_po,
+            "is_day_po": is_day_po,
             "strength_score": score,
             "strength_label": "旺" if score >= 2 else "有气" if score == 1 else "偏弱" if score == 0 else "空弱",
         })
@@ -675,6 +689,29 @@ def _compile_najia(params: list[int], dt: datetime, question: str):
     return Najia(0).compile(params=params, date=dt, title=question)
 
 
+def _detect_fanyin_fuyin(ben_gua: dict, bian_gua: dict | None) -> dict[str, Any]:
+    """Detect 反吟 (mutual clash) and 伏吟 (hidden repetition) patterns."""
+    result: dict[str, Any] = {"fan_yin": False, "fu_yin": False, "details": []}
+    if bian_gua is None:
+        return result
+
+    ben_name = ben_gua.get("name")
+    bian_name = bian_gua.get("name")
+
+    if ben_name and bian_name and ben_name == bian_name:
+        result["fu_yin"] = True
+        result["details"].append("卦级伏吟：变卦与本卦相同")
+
+    ben_lines = ben_gua.get("lines", [])
+    bian_lines = bian_gua.get("lines", [])
+    if len(ben_lines) == 6 and len(bian_lines) == 6:
+        if all(ben_lines[i] != bian_lines[i] for i in range(6)):
+            result["fan_yin"] = True
+            result["details"].append("卦级反吟：变卦六爻全变")
+
+    return result
+
+
 def _build_chart_from_najia(method: str, question: str, params: list[int],
                             dt: datetime, hu_lines: list[int] | None = None) -> HexagramChart:
     gua = _compile_najia(params, dt, question)
@@ -749,6 +786,21 @@ def _build_chart_from_najia(method: str, question: str, params: list[int],
         "render": gua.render(),
         "yong_shen_note": "用神按明确占事关键词给候选；感情等涉及身份的问题若缺求测者信息，会标记 needs_clarification，不输出确定吉凶。",
     }
+
+    metadata["fan_yin_fu_yin"] = _detect_fanyin_fuyin(ben, bian)
+
+    hun_type = None
+    ben_name = ben.get("name")
+    if ben_name and ben_name in PALACE_OF_HEXAGRAM:
+        try:
+            _, p_idx = _palace_index(ben_name)
+            if p_idx == 6:
+                hun_type = "游魂"
+            elif p_idx == 7:
+                hun_type = "归魂"
+        except (KeyError, ValueError):
+            pass
+    metadata["hun_type"] = hun_type
 
     return HexagramChart(
         method=method,

@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
@@ -33,6 +33,15 @@ router = APIRouter(prefix="/api/v1")
 # ── 内存会话 ─────────────────────────────────────────────────
 SESSION_REGISTRY: dict[str, dict] = {}
 SESSION_QUEUES: dict[str, asyncio.Queue] = {}
+
+
+def _require_admin(x_admin_token: str | None) -> None:
+    from core.config import settings
+
+    if not settings.admin_api_token:
+        raise HTTPException(status_code=404, detail="not found")
+    if x_admin_token != settings.admin_api_token:
+        raise HTTPException(status_code=403, detail="forbidden")
 
 
 # ── 请求模型 ─────────────────────────────────────────────────
@@ -162,7 +171,8 @@ async def create_or_update_session(req: CreateOrUpdateSession):
 
 
 @router.delete("/sessions/{session_id}")
-async def delete_session(session_id: str):
+async def delete_session(session_id: str, x_admin_token: str | None = Header(default=None)):
+    _require_admin(x_admin_token)
     import aiosqlite
     from core.config import settings as _settings
     SESSION_REGISTRY.pop(session_id, None)
@@ -178,7 +188,8 @@ async def delete_session(session_id: str):
 
 
 @router.delete("/sessions")
-async def purge_all_sessions():
+async def purge_all_sessions(x_admin_token: str | None = Header(default=None)):
+    _require_admin(x_admin_token)
     import aiosqlite
     from core.config import settings as _settings
     SESSION_REGISTRY.clear()
@@ -194,13 +205,15 @@ async def purge_all_sessions():
 
 
 @router.get("/sessions")
-async def list_all_sessions():
+async def list_all_sessions(x_admin_token: str | None = Header(default=None)):
+    _require_admin(x_admin_token)
     await init_db()
     return await list_sessions(50)
 
 
 @router.get("/sessions/{session_id}")
-async def get_session(session_id: str):
+async def get_session(session_id: str, x_admin_token: str | None = Header(default=None)):
+    _require_admin(x_admin_token)
     await init_db()
     full = await fetch_session_full(session_id)
     if not full:

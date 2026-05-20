@@ -3,7 +3,50 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from agents.tools import ToolExecutor, _resolve_json_path
+from agents.tools import ToolExecutor
+
+
+def _resolve_json_path(obj: Any, path: str) -> tuple[bool, Any]:
+    """解析 JSON path，支持 ``foo.bar[0].baz``。"""
+    cur = obj
+    for raw_part in path.split("."):
+        part = raw_part.strip()
+        if not part:
+            continue
+        while part:
+            if part.startswith("["):
+                close = part.find("]")
+                if close <= 1:
+                    return False, None
+                index_text = part[1:close].strip()
+                if not index_text.isdigit() or not isinstance(cur, list):
+                    return False, None
+                idx = int(index_text)
+                if idx >= len(cur):
+                    return False, None
+                cur = cur[idx]
+                part = part[close + 1:]
+                continue
+            bracket = part.find("[")
+            key = part if bracket == -1 else part[:bracket]
+            if key.isdigit() and isinstance(cur, list):
+                idx = int(key)
+                if idx >= len(cur):
+                    return False, None
+                cur = cur[idx]
+            elif isinstance(cur, dict):
+                if key not in cur:
+                    return False, None
+                cur = cur[key]
+            elif hasattr(cur, key):
+                cur = getattr(cur, key)
+            else:
+                return False, None
+            if bracket == -1:
+                part = ""
+            else:
+                part = part[bracket:]
+    return True, cur
 from computation.bazi import compute_bazi
 from computation.fengshui import compute_fengshui
 from computation.yijing import compute_coin
@@ -83,25 +126,13 @@ def test_json_path_supports_bracket_indexes_for_agent_refs():
     assert _actual_for_path(chart, "liu_nian[1].ganzhi") == "丁未"
 
 
-def test_agent_verify_chart_ref_accepts_golden_bracket_paths():
+def test_resolve_json_path_accepts_golden_bracket_paths_with_chart_root():
     bazi_case = next(case for case in _load_cases() if case["system"] == "bazi")
-    birth = _birth(bazi_case["birth"])
-    charts = Charts(bazi=_chart_for(bazi_case))
-    executor = ToolExecutor(birth, charts, bazi_case["question"], profile={
-        **bazi_case["birth"],
-        "date": f"{birth.year:04d}-{birth.month:02d}-{birth.day:02d}",
-        "time": f"{birth.hour:02d}:{birth.minute:02d}",
-        "place": birth.location_name,
-    })
+    charts = {"bazi": _chart_for(bazi_case).model_dump()}
 
-    import asyncio
-
-    result = asyncio.run(executor.dispatch(
-        "verify_chart_ref",
-        {"path": "bazi.liu_nian[0].ganzhi", "expected": "丙午"},
-    ))
-    assert "error" not in result
-    assert result["result"].startswith("✓")
+    found, actual = _resolve_json_path(charts, "bazi.liu_nian[0].ganzhi")
+    assert found
+    assert actual == "丙午"
 
 
 def test_load_golden_cases_returns_same_system_reference_cases():

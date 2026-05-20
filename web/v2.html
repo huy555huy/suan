@@ -1142,13 +1142,12 @@ function AnimatedAstroWheel({ size = 460, astro }) {
     <div style={{ position: "relative", width: size, height: size, color: "var(--ink)" }}>
       <style>{`
         @keyframes spin-cw  { to { transform: rotate(360deg); } }
-        @keyframes spin-ccw { to { transform: rotate(-360deg); } }
         @keyframes draw-line { from { stroke-dasharray: 1000; stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
         @keyframes fade-in   { from { opacity: 0; } to { opacity: 1; } }
         @keyframes pulse-r   { 0%,100% { r: 5; } 50% { r: 7; } }
         @keyframes planet-breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
       `}</style>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", inset: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", inset: 0, transformOrigin: "center", animation: "spin-cw 600s linear infinite" }}>
         <defs>
           {/* 中心微辉 */}
           <radialGradient id="aw-core">
@@ -1166,7 +1165,7 @@ function AnimatedAstroWheel({ size = 460, astro }) {
         <circle cx={cx} cy={cy} r={rAspectAnchor + 14} fill="url(#aw-core)" />
 
         {/* 黄道带（12 扇按元素染色） */}
-        <g style={{ transformOrigin: "center", animation: "spin-cw 220s linear infinite" }}>
+        <g>
           {ZODIAC.map((z, i) => (
             <path key={`zfill-${i}`} d={sector(i*30, (i+1)*30, rZodiacInner, rZodiacOuter)}
               fill={ELEMENT_FILL[z.el]}
@@ -1204,7 +1203,7 @@ function AnimatedAstroWheel({ size = 460, astro }) {
         </g>
 
         {/* 12 宫位虚线圈 */}
-        <g style={{ transformOrigin: "center", animation: "spin-ccw 380s linear infinite" }}>
+        <g>
           <circle cx={cx} cy={cy} r={rHouseRing} fill="none"
             stroke="var(--ink)" strokeOpacity="0.18" strokeDasharray="2 4" />
           {houses.map(i => {
@@ -1236,30 +1235,29 @@ function AnimatedAstroWheel({ size = 460, astro }) {
           })}
         </g>
 
-        {/* 行星 — 按真实经度位置 + 各自旋转 */}
+        {/* 行星 — x/y 定位，文字始终正向 */}
         {ASTRO_DATA.bodies.map((b, i) => {
-          const dur = 70 + i * 22;
           const color = PLANET_COLOR[b.name] || "var(--ink)";
+          const a = (b.longitude - 90) * Math.PI / 180;
+          const px = cx + Math.cos(a) * rPlanet;
+          const py = cy + Math.sin(a) * rPlanet;
+          const lx = cx + Math.cos(a) * (rPlanet - 20);
+          const ly = cy + Math.sin(a) * (rPlanet - 20);
           return (
-            <g key={b.name} style={{ transformOrigin: "center", animation: `spin-cw ${dur}s linear infinite` }}>
-              <g transform={`translate(${cx},${cy}) rotate(${b.longitude - 90})`}>
-                {/* halo */}
-                <circle cx={rPlanet} cy={0} r={14} fill={color} fillOpacity="0.18" filter="url(#aw-glow)" />
-                {/* body */}
-                <circle cx={rPlanet} cy={0} r={11}
-                  fill="var(--paper)"
-                  stroke={color} strokeWidth="1.4"
-                  style={{ animation: `planet-breathe ${4 + i*0.3}s ease-in-out infinite`, transformOrigin: `${rPlanet}px 0px` }} />
-                {/* glyph */}
-                <text x={rPlanet} y={0} fontSize={14} fill={color}
-                  textAnchor="middle" dominantBaseline="central"
-                  fontFamily="var(--serif-en)" fontWeight="600">{b.glyph}</text>
-                {/* 度数小标 */}
-                <text x={rPlanet} y={20} fontSize={8.5} fill="var(--ink-3)"
-                  textAnchor="middle" fontFamily="var(--mono)" letterSpacing="0.04em">
-                  {Math.round(b.deg)}°
-                </text>
-              </g>
+            <g key={b.name}>
+              <circle cx={px} cy={py} r={14} fill={color} fillOpacity="0.18" filter="url(#aw-glow)" />
+              <circle cx={px} cy={py} r={11}
+                fill="var(--paper)"
+                stroke={color} strokeWidth="1.4"
+                style={{ animation: `planet-breathe ${4 + i*0.3}s ease-in-out infinite`, transformOrigin: `${px}px ${py}px` }} />
+              <text x={px} y={py} fontSize={14} fill={color}
+                textAnchor="middle" dominantBaseline="central"
+                fontFamily="var(--serif-en)" fontWeight="600">{b.glyph}</text>
+              <text x={lx} y={ly} fontSize={8.5} fill="var(--ink-3)"
+                textAnchor="middle" dominantBaseline="central"
+                fontFamily="var(--mono)" letterSpacing="0.04em">
+                {Math.round(b.deg)}°
+              </text>
             </g>
           );
         })}
@@ -1918,12 +1916,6 @@ function Footer() {
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
         <Seal char="算" size={36} />
         <div style={{ flex: 1, minWidth: 240 }}>
-          <div style={{ fontSize: 13, color: "var(--ink-3)", lineHeight: 1.6 }}>
-            本系统输出仅供文化参考与自我反思。重大人生决定请结合自身判断与专业人士意见。
-          </div>
-          <div className="em" style={{ fontSize: 13, color: "var(--ink-4)", marginTop: 6 }}>
-            Output is for cultural reference and self-reflection. Significant life decisions should be made with personal judgment and professional counsel.
-          </div>
         </div>
         <div className="caps" style={{ fontSize: 10, color: "var(--ink-4)", textAlign: "right", lineHeight: 1.8 }}>
           严肃的工程<br/>敬畏的工艺<br/>—— v1.4 · MMXXVI
@@ -2108,10 +2100,9 @@ function LandingScreen({ go, hasProfile, profile }) {
         <div>
           <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>市面上没有的 · WHAT OTHERS DON'T</div>
           <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 0", fontSize: 17, lineHeight: 1.9, color: "var(--ink)" }}>
-            <li>· 结论三元组校验：盘面 + 规则 + 典籍缺一不可</li>
-            <li>· 事实不符 → 硬拒绝，不会编一句漂亮的废话糊弄你</li>
+            <li>· 盘面事实先核对，再结合规则、典籍和案例研判</li>
+            <li>· 事实不符 → 先修正或追问，不会编一句漂亮的废话糊弄你</li>
             <li>· 中西两套体系指向同一方向 = 强信号，不是巧合</li>
-            <li>· 涉及心理危机自动转介，不做你的情绪依赖</li>
           </ul>
         </div>
         <FrameBox style={{ gridColumn: "1 / -1", padding: 40 }}>
@@ -2120,7 +2111,7 @@ function LandingScreen({ go, hasProfile, profile }) {
             <span style={{ color: "var(--cinnabar)" }}>我们告诉你凭什么这么说。</span>
           </div>
           <div style={{ fontSize: 14, color: "var(--ink-3)", marginTop: 24, fontFamily: "var(--serif-en)", fontStyle: "italic" }}>
-            Every claim traceable. Every reading verifiable.
+            Every reading grounded. Every chart fact checked.
           </div>
         </FrameBox>
       </section>
@@ -2288,12 +2279,6 @@ function OnboardingScreen({ go, sealProfile, initialProfile, initialQuestion }) 
                   onChange={e => setData({ ...data, question: e.target.value })}
                   style={{ resize: "none", fontSize: 17, lineHeight: 1.6 }} />
               </Field>
-              <div style={{ marginTop: 32, padding: 20, background: "color-mix(in oklch, var(--cinnabar) 4%, transparent)", border: "1px dashed color-mix(in oklch, var(--cinnabar) 30%, transparent)" }}>
-                <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>合规 · COMPLIANCE</div>
-                <div style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.7, marginTop: 8 }}>
-                  涉及医疗、法律、自残相关的问题，系统会自动切换到专业建议或心理援助热线。这不是限制，是边界。
-                </div>
-              </div>
               {!canSeal && (
                 <div className="em" style={{ marginTop: 20, fontSize: 13, color: "var(--ink-3)" }}>
                   · 请补全：姓名 / 排盘性别 / 生日 / 时辰 / 出生地 / 本次议题
@@ -2826,9 +2811,6 @@ const TOOL_DISPLAY = {
   read_classic:     { cn: "读取典籍",  icon: "📜", phase: 3 },
   grep_rules:       { cn: "搜索规则",  icon: "🔍", phase: 3 },
   read_rule:        { cn: "读取规则",  icon: "📋", phase: 3 },
-  verify_chart_ref: { cn: "校验引用",  icon: "✓",  phase: 4 },
-  verify_claim:     { cn: "三元组校验", icon: "⚖",  phase: 4 },
-  apply_safety:     { cn: "安全审查",  icon: "🛡", phase: 5 },
   ask_user:         { cn: "反问用户",  icon: "💬", phase: 0 },
 };
 
@@ -2837,15 +2819,13 @@ const AGENT_PHASES = [
   { key: "skill",   cn: "备术", en: "Prepare" },
   { key: "compute", cn: "排盘", en: "Compute" },
   { key: "search",  cn: "查证", en: "Search" },
-  { key: "verify",  cn: "校验", en: "Verify" },
-  { key: "safety",  cn: "审查", en: "Safety" },
   { key: "write",   cn: "输出", en: "Write" },
 ];
 
 // Map tool calls to phase index
 function inferPhase(toolCalls, thoughts, reachedNarr, done) {
-  if (done) return 6;
-  if (reachedNarr) return 6;
+  if (done) return 4;
+  if (reachedNarr) return 4;
   const last = toolCalls[toolCalls.length - 1];
   if (!last && thoughts.length === 0) return 0;
   if (!last) return 0;
@@ -2859,10 +2839,7 @@ function describeToolArgs(tool, args = {}) {
   if (tool === "compute_chart") return args.chart_type || "";
   if (tool === "grep_classics" || tool === "grep_rules") return args.pattern || "";
   if (tool === "read_classic" || tool === "read_rule") return args.id || "";
-  if (tool === "verify_chart_ref") return `${args.path || ""} = ${args.expected ?? ""}`;
-  if (tool === "verify_claim") return (args.claim || "").slice(0, 56);
   if (tool === "load_golden_cases") return args.system || "";
-  if (tool === "apply_safety") return "最终措辞";
   if (tool === "ask_user") return args.question || "";
   return "";
 }
@@ -3107,7 +3084,7 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
               <button className="btn" onClick={startRun}>
                 请教 · consult <span className="arr">→</span>
               </button>
-              <span className="em" style={{ fontSize: 14, color: "var(--ink-3)" }}>七术交叉研判 · 约 40-60 秒</span>
+              <span className="em" style={{ fontSize: 14, color: "var(--ink-3)" }}>缺资料会在本页反问；算完可继续追问 · 约 40-60 秒</span>
             </div>
           )}
 
@@ -3191,7 +3168,7 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
                   </div>
                   <div>
                     <div style={{ fontFamily: "var(--serif-cn)", fontSize: 15, fontWeight: 500, color: "var(--ink)" }}>
-                      {phase <= 1 ? "正在准备研判..." : phase === 2 ? "正在起盘排卦..." : phase === 3 ? "正在翻阅典籍..." : phase === 4 ? "正在逐条校验..." : "正在审查措辞..."}
+                      {phase <= 1 ? "正在准备研判..." : phase === 2 ? "正在起盘排卦..." : phase === 3 ? "正在翻阅典籍..." : "正在整理断语..."}
                     </div>
                     <div className="mono" style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 2 }}>
                       {toolCalls.length} 步推演 · {skills.length} 术已备
@@ -3235,57 +3212,7 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
                   const tc = item;
                   const td = TOOL_DISPLAY[tc.tool] || { cn: tc.tool, icon: "⚙" };
                   const argStr = describeToolArgs(tc.tool, tc.args);
-                  const isVerify = tc.tool === "verify_chart_ref" || tc.tool === "verify_claim";
-                  const passed = isVerify && tc.result && (tc.result.includes("✓") || tc.result.includes("VERIFIED"));
-                  const rejected = isVerify && tc.result && (tc.result.includes("❌") || tc.result.includes("REJECTED"));
-                  const softFlag = isVerify && tc.result && tc.result.includes("SOFT_FLAG");
-                  const borderColor = rejected ? "var(--cinnabar)" : passed ? "#3a7a5a" : softFlag ? "var(--gild)" : "color-mix(in oklch, var(--ink) 12%, transparent)";
-
-                  // Special render for verify_claim — show three legs
-                  if (tc.tool === "verify_claim" && tc.result) {
-                    const hasChart = tc.result.includes("chart_ref:");
-                    const chartOk = tc.result.includes("✓ chart_ref");
-                    const hasRule = tc.result.includes("rule_ref:");
-                    const ruleOk = tc.result.includes("✓ rule_ref");
-                    const hasSource = tc.result.includes("source_ref:");
-                    const sourceOk = tc.result.includes("✓ source_ref");
-                    return (
-                      <div key={i} className="tool-card" style={{
-                        padding: "10px 14px", borderLeft: `3px solid ${borderColor}`,
-                        background: rejected ? "color-mix(in oklch, var(--cinnabar) 4%, transparent)" : "color-mix(in oklch, var(--ink) 2%, transparent)",
-                        animation: "card-in 0.3s ease-out both",
-                      }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                          <span style={{ fontSize: 14 }}>⚖</span>
-                          <span style={{ fontFamily: "var(--mono)", fontSize: 11, fontWeight: 600, color: "var(--ink-2)" }}>三元组校验</span>
-                          <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {tc.args.claim?.slice(0, 50)}
-                          </span>
-                          <span style={{ fontFamily: "var(--mono)", fontSize: 10, fontWeight: 600, color: rejected ? "var(--cinnabar)" : passed ? "#3a7a5a" : "var(--gild)" }}>
-                            {tc.args.tier}
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
-                          {[
-                            { label: "chart", ok: chartOk, has: hasChart || tc.args.chart_ref },
-                            { label: "rule",  ok: ruleOk,  has: hasRule || (tc.args.rule_ref && tc.args.rule_ref !== "none") },
-                            { label: "source", ok: sourceOk, has: hasSource || (tc.args.source_ref && tc.args.source_ref !== "none") },
-                          ].map(leg => (
-                            <div key={leg.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                              <div style={{
-                                width: 16, height: 16, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700,
-                                background: leg.ok ? "#3a7a5a" : !leg.has ? "color-mix(in oklch, var(--ink) 10%, transparent)" : "var(--cinnabar)",
-                                color: (leg.ok || leg.has) ? "white" : "var(--ink-4)",
-                              }}>
-                                {leg.ok ? "✓" : leg.has ? "✗" : "—"}
-                              </div>
-                              <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{leg.label}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  }
+                  const borderColor = "color-mix(in oklch, var(--ink) 12%, transparent)";
 
                   return (
                     <div key={i} className="tool-card" style={{
@@ -3301,7 +3228,7 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
                         {argStr}
                       </span>
                       {tc.result && (
-                        <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: passed ? "#3a7a5a" : rejected ? "var(--cinnabar)" : "var(--ink-4)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {tc.result.slice(0, 60)}
                         </span>
                       )}
@@ -3335,7 +3262,7 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
                 { n: agentStats.turns, label: "步推演" },
                 { n: skills.length, label: "术参照" },
                 { n: Math.round(agentStats.elapsed_ms / 1000), label: "秒用时" },
-                { n: toolCalls.filter(tc => tc.tool === "verify_claim" || tc.tool === "verify_chart_ref").length, label: "项校验" },
+                { n: toolCalls.filter(tc => tc.tool === "compute_chart").length, label: "盘已起" },
               ].map((s, i) => (
                 <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <div style={{ fontFamily: "var(--serif-cn)", fontSize: 24, fontWeight: 600, color: "var(--ink)", lineHeight: 1 }}>{s.n}</div>
@@ -3366,11 +3293,14 @@ function ChatScreen({ go, animSpeed = 1, profile, question }) {
 
           {/* follow-up input */}
           {done && narrative.length > 0 && (followUps.length === 0 || followUps[followUps.length - 1].status === "done") && (
-            <div style={{ marginTop: 48, paddingTop: 28, borderTop: "1px solid var(--ink)" }}>
-              <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>追问 · FOLLOW-UP</div>
+            <div style={{ marginTop: 48, padding: "28px 0 0", borderTop: "1px solid var(--ink)" }}>
+              <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>继续请教 · ASK MORE</div>
+              <div style={{ fontFamily: "var(--serif-cn)", fontSize: 18, fontWeight: 500, marginTop: 8, color: "var(--ink)" }}>
+                可以继续问细节、要求解释证据，也可以补充刚才缺的事实。
+              </div>
               <textarea rows={3} value={followUp} onChange={e => setFollowUp(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendFollowUp(); }}
-                placeholder="继续追问..."
+                placeholder="例如：刚才说事业有变动，依据是哪几条？如果我要看风水，我的房子朝向约 195°，2024 年入住。"
                 style={{ marginTop: 12, width: "100%", fontSize: 16, lineHeight: 1.65, resize: "none" }} />
               <div style={{ marginTop: 12, display: "flex", gap: 14, justifyContent: "flex-end", flexWrap: "wrap" }}>
                 <button className="btn btn-ghost" onClick={startRun}>↻ 重新研判</button>
@@ -3464,7 +3394,7 @@ function ReportScreen({ go, profile, charts, hasProfile }) {
             不能用示例研报代替你的命盘
           </h1>
           <p style={{ fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.9, color: "var(--ink-2)", marginTop: 18 }}>
-            深度研报必须由当前档案、当前问题和已校验盘面生成。请先进入咨询，让 Agent 完成排盘、追问、校验和综合后再归档成研报。
+            深度研报必须由当前档案、当前问题和真实盘面生成。请先进入咨询，让 Agent 完成排盘、追问和综合后再归档成研报。
           </p>
           <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
             <button className="btn btn-ghost" onClick={() => go("chart")}>回本命盘 · chart</button>
@@ -4113,6 +4043,7 @@ const SCENARIO_MAP = {
 // Root app — wires it all up
 function App() {
   const [screen, setScreen] = useState("home");
+  const [chatEverOpened, setChatEverOpened] = useState(false);
 
   const readSealed = () => {
     try { return localStorage.getItem("suan_sealed") === "1"; } catch { return false; }
@@ -4217,6 +4148,7 @@ function App() {
   }, [tweaks.mode, tweaks.palette, tweaks.density]);
 
   const go = (id) => {
+    if (id === "chat") setChatEverOpened(true);
     setScreen(id);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
@@ -4268,7 +4200,12 @@ function App() {
         {screen === "home"    && <LandingScreen go={go} hasProfile={hasProfile} profile={profile} />}
         {screen === "onboard" && <OnboardingScreen go={go} sealProfile={sealProfile} initialProfile={hasProfile ? profile : null} initialQuestion={hasProfile ? question : ""} />}
         {screen === "chart"   && <ChartScreen go={go} profile={hasProfile ? profile : SAMPLE_PROFILE} charts={charts} chartsLoading={chartsLoading} chartsError={chartsError} hasProfile={hasProfile} />}
-        {screen === "chat"    && (hasProfile && profile && question ? <ChatScreen go={go} animSpeed={tweaks.animSpeed || 1} profile={profile} question={question} /> : <ChatUnavailable go={go} />)}
+        {screen === "chat" && !(hasProfile && profile && question) && <ChatUnavailable go={go} />}
+        {chatEverOpened && hasProfile && profile && question && (
+          <div style={{ display: screen === "chat" ? "block" : "none" }}>
+            <ChatScreen go={go} animSpeed={tweaks.animSpeed || 1} profile={profile} question={question} />
+          </div>
+        )}
         {screen === "report"  && <ReportScreen go={go} profile={hasProfile ? profile : SAMPLE_PROFILE} charts={charts} hasProfile={hasProfile} />}
         {screen === "archive" && <ArchiveScreen go={go} profile={profile} sessions={sessions} hasProfile={hasProfile} />}
       </main>

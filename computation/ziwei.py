@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import datetime as _dt
 from datetime import datetime
 from importlib.metadata import version
 from typing import Any
@@ -18,6 +19,19 @@ from computation.calendar import to_true_solar_time
 GENDER_TO_IZTRO = {
     "male": "男",
     "female": "女",
+}
+
+SI_HUA_TABLE: dict[str, dict[str, str]] = {
+    "甲": {"化禄": "廉贞", "化权": "破军", "化科": "武曲", "化忌": "太阳"},
+    "乙": {"化禄": "天机", "化权": "天梁", "化科": "紫微", "化忌": "太阴"},
+    "丙": {"化禄": "天同", "化权": "天机", "化科": "文昌", "化忌": "廉贞"},
+    "丁": {"化禄": "太阴", "化权": "天同", "化科": "天机", "化忌": "巨门"},
+    "戊": {"化禄": "贪狼", "化权": "太阴", "化科": "右弼", "化忌": "天机"},
+    "己": {"化禄": "武曲", "化权": "贪狼", "化科": "天梁", "化忌": "文曲"},
+    "庚": {"化禄": "太阳", "化权": "武曲", "化科": "太阴", "化忌": "天同"},
+    "辛": {"化禄": "巨门", "化权": "太阳", "化科": "文曲", "化忌": "文昌"},
+    "壬": {"化禄": "天梁", "化权": "紫微", "化科": "左辅", "化忌": "武曲"},
+    "癸": {"化禄": "破军", "化权": "巨门", "化科": "太阴", "化忌": "贪狼"},
 }
 
 
@@ -250,6 +264,78 @@ def _build_ziwei_focus(palaces: list[dict[str, Any]], life_palace: str,
     }
 
 
+def _si_hua_for_stem(stem: str, palaces: list[dict[str, Any]]) -> dict[str, Any]:
+    """Given a heavenly stem, find the four transformations and which palaces they land in."""
+    table = SI_HUA_TABLE.get(stem, {})
+    result: dict[str, Any] = {}
+    for hua_type, star_name in table.items():
+        for palace in palaces:
+            all_star_names = []
+            for detail_group in ("major", "minor", "adjective"):
+                for star in palace.get("star_details", {}).get(detail_group, []):
+                    all_star_names.append(star["name"])
+            if star_name in all_star_names:
+                result[hua_type] = {
+                    "star": star_name,
+                    "palace": palace["name"],
+                    "branch": palace["branch"],
+                }
+                break
+        else:
+            result[hua_type] = {"star": star_name, "palace": None, "branch": None}
+    return result
+
+
+_BRANCH_ORDER = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+_STEM_ORDER = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
+_PALACE_NAMES_CYCLE = [
+    "命宫", "兄弟宫", "夫妻宫", "子女宫", "财帛宫", "疾厄宫",
+    "迁移宫", "交友宫", "官禄宫", "田宅宫", "福德宫", "父母宫",
+]
+
+
+def _compute_liu_nian(palaces: list[dict[str, Any]], year: int) -> dict[str, Any]:
+    """Compute 流年 (annual fortune) for a given year.
+
+    The year's earthly branch determines which natal palace becomes 流年命宫.
+    """
+    year_branch_idx = (year - 4) % 12  # 4 AD = 甲子
+    year_branch = _BRANCH_ORDER[year_branch_idx]
+    year_stem_idx = (year - 4) % 10
+    year_stem = _STEM_ORDER[year_stem_idx]
+
+    branch_map = {p["branch"]: p for p in palaces}
+    liu_nian_ming = branch_map.get(year_branch)
+    if not liu_nian_ming:
+        return {"year": year, "error": f"找不到地支 {year_branch} 对应的宫位"}
+
+    start_idx = _BRANCH_ORDER.index(year_branch)
+    liu_nian_palaces: dict[str, Any] = {}
+    for i, ln_name in enumerate(_PALACE_NAMES_CYCLE):
+        branch = _BRANCH_ORDER[(start_idx + i) % 12]
+        natal_palace = branch_map.get(branch)
+        if natal_palace:
+            liu_nian_palaces[f"流年{ln_name}"] = {
+                "natal_palace": natal_palace["name"],
+                "branch": branch,
+                "stars": natal_palace["stars"],
+                "auxiliary": natal_palace["auxiliary"],
+                "si_hua": natal_palace["si_hua"],
+            }
+
+    liu_nian_si_hua = _si_hua_for_stem(year_stem, palaces)
+
+    return {
+        "year": year,
+        "year_ganzhi": f"{year_stem}{year_branch}",
+        "year_stem": year_stem,
+        "year_branch": year_branch,
+        "liu_nian_ming_gong": liu_nian_ming["name"],
+        "liu_nian_palaces": liu_nian_palaces,
+        "liu_nian_si_hua": liu_nian_si_hua,
+    }
+
+
 def _ziwei_calibration_questions(life_palace: str, body_palace: str) -> list[dict[str, str]]:
     return [
         {
@@ -285,7 +371,8 @@ def compute_ziwei(birth: BirthInfo) -> ZiweiChart:
     raw = chart.model_dump()
 
     palaces = [_palace_to_schema(p) for p in raw["palaces"]]
-    main_stars = {p["name"]: list(p["stars"]) for p in palaces if p["stars"]}
+    palaces_by_name = {p["name"]: p for p in palaces}
+    main_stars = {p["name"]: list(p["stars"]) for p in palaces}
     da_xian: list[dict[str, Any]] = []
     for palace in palaces:
         decadal_range = palace["decadal"]["range"]
@@ -300,6 +387,19 @@ def compute_ziwei(birth: BirthInfo) -> ZiweiChart:
 
     life_palace = _find_palace_by_branch(palaces, raw["earthly_branch_of_soul_palace"])
     body_palace = _find_palace_by_branch(palaces, raw["earthly_branch_of_body_palace"])
+
+    current_year = _dt.datetime.now().year
+    liu_nian = _compute_liu_nian(palaces, current_year)
+
+    current_da_xian = None
+    current_age = current_year - birth.year
+    for dx in da_xian:
+        if dx["age_start"] <= current_age <= dx["age_end"]:
+            current_da_xian = dx
+            break
+    da_xian_si_hua = None
+    if current_da_xian:
+        da_xian_si_hua = _si_hua_for_stem(current_da_xian["stem"], palaces)
 
     metadata: dict[str, Any] = {
         "engine": "iztro-py",
@@ -329,18 +429,21 @@ def compute_ziwei(birth: BirthInfo) -> ZiweiChart:
         "body_star": _translate_raw_star(raw.get("body")),
         "focus": _build_ziwei_focus(palaces, life_palace, body_palace),
         "calibration_questions": _ziwei_calibration_questions(life_palace, body_palace),
+        "da_xian_si_hua": da_xian_si_hua,
+        "current_da_xian": current_da_xian,
         "raw_chart": raw,
     }
 
     return ZiweiChart(
         palaces=palaces,
+        palaces_by_name=palaces_by_name,
         main_stars=main_stars,
         body_palace=body_palace,
         life_palace=life_palace,
         five_element_bureau=raw["five_elements_class"],
         si_hua=_collect_si_hua(raw["palaces"]),
         da_xian=da_xian,
-        liu_nian=None,
+        liu_nian=liu_nian,
         school="iztro",
         metadata=metadata,
     )

@@ -119,5 +119,5 @@ def test_profile_to_birthinfo_rejects_unknown_birth_time():
         unknownTime=True,
         place="杭州",
     )
-    with pytest.raises(ValueError, match="未知时辰不能生成完整盘面"):
+    with pytest.raises(ValueError, match="未知时辰无法生成完整盘面"):
         _profile_to_birthinfo(req.model_dump())

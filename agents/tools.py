@@ -30,14 +30,14 @@ TOOL_SCHEMAS: list[dict] = [
         "type": "function",
         "function": {
             "name": "load_skill",
-            "description": "加载一个命理技能的完整方法论到上下文。技能会教你怎么用其它工具做这个系统的解读。可用技能: bazi, ziwei, yijing, fengshui, astrology, tarot, numerology, cross_synthesis, safety_psych",
+            "description": "加载一个命理技能的完整方法论到上下文。技能会教你怎么用其它工具做这个系统的解读。可用技能: bazi, ziwei, yijing, fengshui, astrology, tarot, numerology, cross_synthesis",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "name": {
                         "type": "string",
                         "description": "技能名称",
-                        "enum": ["bazi", "ziwei", "yijing", "fengshui", "astrology", "tarot", "numerology", "cross_synthesis", "safety_psych"],
+                        "enum": ["bazi", "ziwei", "yijing", "fengshui", "astrology", "tarot", "numerology", "cross_synthesis"],
                     }
                 },
                 "required": ["name"],
@@ -48,7 +48,7 @@ TOOL_SCHEMAS: list[dict] = [
         "type": "function",
         "function": {
             "name": "compute_chart",
-            "description": "计算命理盘面。返回完整 JSON 结构（四柱、宫位、行星等）。必须先算盘才能解读。",
+            "description": "计算命理盘面，返回完整 JSON 结构（四柱、宫位、行星等）。盘面数据来自此工具的计算结果。",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -66,7 +66,7 @@ TOOL_SCHEMAS: list[dict] = [
         "type": "function",
         "function": {
             "name": "update_profile",
-            "description": "把用户明确补充的事实写入本轮计算档案。只可写用户明示字段，不能猜测或补默认值。常用于 ask_user 后补入性别、风水朝向/入住年、起卦输入、塔罗抽牌结果。",
+            "description": "把用户明确补充的事实写入本轮计算档案。记录用户明确提供的字段，常用于 ask_user 后补入性别、风水朝向/入住年、起卦输入、塔罗抽牌结果。",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -204,7 +204,7 @@ TOOL_SCHEMAS: list[dict] = [
         "type": "function",
         "function": {
             "name": "load_golden_cases",
-            "description": "读取同体系专业黄金案例。用于在输出核心判断前参考人工盘例的事实锚点和解释锚点；案例不能替代当前盘面校验。",
+            "description": "读取同体系专业黄金案例。提供人工盘例的事实锚点、取象方式和解释锚点，作为解读参考。",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -227,78 +227,6 @@ TOOL_SCHEMAS: list[dict] = [
     {
         "type": "function",
         "function": {
-            "name": "verify_chart_ref",
-            "description": "校验你引用的盘面字段是否正确。path 用点分隔如 'bazi.day_pillar.stem'，expected 是你认为的值。防止幻觉。",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {
-                        "type": "string",
-                        "description": "盘面 JSON 路径，如 'bazi.day_pillar.stem'",
-                    },
-                    "expected": {
-                        "type": "string",
-                        "description": "你预期的值",
-                    },
-                },
-                "required": ["path", "expected"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "verify_claim",
-            "description": "校验一条核心结论的三元组完整性（chart_ref + rule_ref + source_ref）。每条 Tier A 核心判断在输出前必须过此工具。返回校验结果和置信等级。",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "claim": {
-                        "type": "string",
-                        "description": "你要输出的核心结论（一句话）",
-                    },
-                    "chart_ref": {
-                        "type": "string",
-                        "description": "盘面引用路径+预期值，如 'bazi.day_pillar.stem=丁' 或 'bazi.liu_nian[0].ganzhi=丙午'。多条引用用分号分隔；路径必须带盘面体系前缀，且同一结论不能混用多个体系。",
-                    },
-                    "rule_ref": {
-                        "type": "string",
-                        "description": "规则引用 ID，如 'BZ_R_0001'。Tier A 核心判断必须提供真实存在的规则 ID。",
-                    },
-                    "source_ref": {
-                        "type": "string",
-                        "description": "典籍引用 ID，如 'ziping_zhenquan_p072'。Tier A 核心判断必须提供真实存在的典籍 ID。",
-                    },
-                    "tier": {
-                        "type": "string",
-                        "description": "结论级别：A_core=核心判断(三元组必须齐全), B_support=辅助论述(至少chart_ref), C_narrative=叙事性语言(无需引用)",
-                        "enum": ["A_core", "B_support", "C_narrative"],
-                    },
-                },
-                "required": ["claim", "chart_ref", "rule_ref", "source_ref", "tier"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "apply_safety",
-            "description": "对最终输出文本做合规审查：替换绝对化用语、软化强行动建议、检测心理危机词、追加免责声明。在输出给用户前必须调用。",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "text": {
-                        "type": "string",
-                        "description": "待审查的文本",
-                    }
-                },
-                "required": ["text"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "ask_user",
             "description": "向用户提问以获取更多信息（如缺少出生时辰、需要确认方向等）。会阻塞等待用户回复。",
             "parameters": {
@@ -314,6 +242,32 @@ TOOL_SCHEMAS: list[dict] = [
                     },
                 },
                 "required": ["question"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "recompute_chart",
+            "description": "用修正后的出生信息重新计算盘面。当用户反馈出生时间可能有偏差时使用。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "system": {
+                        "type": "string",
+                        "enum": ["bazi", "ziwei", "astrology"],
+                        "description": "要重算的体系",
+                    },
+                    "hour_offset": {
+                        "type": "integer",
+                        "description": "小时偏移（-2 到 +2），比如用户说'可能早一小时'则传 -1",
+                    },
+                    "minute_offset": {
+                        "type": "integer",
+                        "description": "分钟偏移（-120 到 +120）",
+                    },
+                },
+                "required": ["system"],
             },
         },
     },
@@ -360,21 +314,38 @@ def _system_files(directory: Path, system: str) -> list[Path]:
     )
 
 
-def _system_from_chart_ref(chart_ref: str) -> str | None:
-    path = chart_ref.split("=", 1)[0].strip()
-    if not path:
-        return None
-    prefix = path.split(".", 1)[0].split("[", 1)[0].strip()
-    aliases = {
-        "hexagram": "yijing",
-        "natal_astro": "astrology",
-        "transit_astro": "astrology",
+def _llm_chart_dump(chart_type: str, chart: Any) -> dict[str, Any]:
+    data = chart.model_dump()
+    if chart_type != "ziwei":
+        return data
+
+    return {
+        "life_palace": data.get("life_palace"),
+        "body_palace": data.get("body_palace"),
+        "five_element_bureau": data.get("five_element_bureau"),
+        "si_hua": data.get("si_hua", {}),
+        "main_stars": data.get("main_stars", {}),
+        "palaces_by_name": data.get("palaces_by_name", {}),
+        "da_xian": data.get("da_xian", []),
+        "metadata": {
+            key: value
+            for key, value in data.get("metadata", {}).items()
+            if key in {
+                "engine",
+                "engine_version",
+                "effective_datetime",
+                "time",
+                "time_range",
+                "lunar_date",
+                "soul_palace_branch",
+                "body_palace_branch",
+                "soul_star",
+                "body_star",
+                "focus",
+                "calibration_questions",
+            }
+        },
     }
-    return aliases.get(prefix, prefix)
-
-
-def _split_chart_refs(chart_ref: str) -> list[str]:
-    return [part.strip() for part in chart_ref.split(";") if part.strip()]
 
 
 def _load_golden_cases() -> list[dict[str, Any]]:
@@ -403,7 +374,8 @@ def _rg_search(directory: Path, pattern: str, system: str | None = None) -> str:
         output = result.stdout.strip()
         if not output:
             return "未找到匹配结果。"
-        # 截断避免 token 爆炸
+        dir_prefix = str(directory) + "/"
+        output = output.replace(dir_prefix, "")
         lines = output.split("\n")
         if len(lines) > 20:
             lines = lines[:20]
@@ -414,49 +386,6 @@ def _rg_search(directory: Path, pattern: str, system: str | None = None) -> str:
     except FileNotFoundError:
         return "ripgrep (rg) 未安装。"
 
-
-def _resolve_json_path(obj: Any, path: str) -> tuple[bool, Any]:
-    """解析 JSON path，支持 ``foo.bar[0].baz``。"""
-    cur = obj
-    for raw_part in path.split("."):
-        part = raw_part.strip()
-        if not part:
-            continue
-        while part:
-            if part.startswith("["):
-                close = part.find("]")
-                if close <= 1:
-                    return False, None
-                index_text = part[1:close].strip()
-                if not index_text.isdigit() or not isinstance(cur, list):
-                    return False, None
-                idx = int(index_text)
-                if idx >= len(cur):
-                    return False, None
-                cur = cur[idx]
-                part = part[close + 1:]
-                continue
-
-            bracket = part.find("[")
-            key = part if bracket == -1 else part[:bracket]
-            if key.isdigit() and isinstance(cur, list):
-                idx = int(key)
-                if idx >= len(cur):
-                    return False, None
-                cur = cur[idx]
-            elif isinstance(cur, dict):
-                if key not in cur:
-                    return False, None
-                cur = cur[key]
-            elif hasattr(cur, key):
-                cur = getattr(cur, key)
-            else:
-                return False, None
-            if bracket == -1:
-                part = ""
-            else:
-                part = part[bracket:]
-    return True, cur
 
 
 class ToolExecutor:
@@ -516,12 +445,12 @@ class ToolExecutor:
         if chart_type == "bazi":
             from computation.bazi import compute_bazi
             self.charts.bazi = compute_bazi(self.birth, current_year=current_year)
-            return json.dumps(self.charts.bazi.model_dump(), ensure_ascii=False, indent=1)
+            return json.dumps(_llm_chart_dump(chart_type, self.charts.bazi), ensure_ascii=False, indent=1)
 
         if chart_type == "ziwei":
             from computation.ziwei import compute_ziwei
             self.charts.ziwei = compute_ziwei(self.birth)
-            return json.dumps(self.charts.ziwei.model_dump(), ensure_ascii=False, indent=1)
+            return json.dumps(_llm_chart_dump(chart_type, self.charts.ziwei), ensure_ascii=False, indent=1)
 
         if chart_type == "hexagram":
             from computation.yijing import compute_coin, compute_meihua
@@ -540,19 +469,19 @@ class ToolExecutor:
                     numbers=number_tuple,
                     dt=divination_time,
                 )
-            return json.dumps(self.charts.hexagram.model_dump(), ensure_ascii=False, indent=1)
+            return json.dumps(_llm_chart_dump(chart_type, self.charts.hexagram), ensure_ascii=False, indent=1)
 
         if chart_type == "fengshui":
             from computation.fengshui import compute_fengshui
             facing_degree = float(self.profile["facing_degree"])
             move_in_year = int(self.profile.get("move_in_year") or self.profile.get("built_year"))
             self.charts.fengshui = compute_fengshui(facing_degree, self.birth, move_in_year=move_in_year)
-            return json.dumps(self.charts.fengshui.model_dump(), ensure_ascii=False, indent=1)
+            return json.dumps(_llm_chart_dump(chart_type, self.charts.fengshui), ensure_ascii=False, indent=1)
 
         if chart_type == "natal_astro":
             from computation.astrology import compute_natal_chart
             self.charts.natal_astro = compute_natal_chart(self.birth)
-            return json.dumps(self.charts.natal_astro.model_dump(), ensure_ascii=False, indent=1)
+            return json.dumps(_llm_chart_dump(chart_type, self.charts.natal_astro), ensure_ascii=False, indent=1)
 
         if chart_type == "transit_astro":
             from computation.astrology import compute_natal_chart, compute_transits
@@ -561,7 +490,7 @@ class ToolExecutor:
             self.charts.transit_astro = compute_transits(
                 self.charts.natal_astro, now_utc, self.birth
             )
-            return json.dumps(self.charts.transit_astro.model_dump(), ensure_ascii=False, indent=1)
+            return json.dumps(_llm_chart_dump(chart_type, self.charts.transit_astro), ensure_ascii=False, indent=1)
 
         if chart_type == "tarot":
             from computation.tarot import draw_tarot
@@ -571,16 +500,79 @@ class ToolExecutor:
                 card_indexes=self.profile.get("tarot_card_indexes"),
                 reversed_flags=self.profile.get("tarot_reversed_flags"),
             )
-            return json.dumps(self.charts.tarot.model_dump(), ensure_ascii=False, indent=1)
+            return json.dumps(_llm_chart_dump(chart_type, self.charts.tarot), ensure_ascii=False, indent=1)
 
         if chart_type == "numerology":
             from computation.numerology import compute_numerology
             self.charts.numerology = compute_numerology(
                 self.birth, current_year=current_year, full_name_pinyin=self.birth.name
             )
-            return json.dumps(self.charts.numerology.model_dump(), ensure_ascii=False, indent=1)
+            return json.dumps(_llm_chart_dump(chart_type, self.charts.numerology), ensure_ascii=False, indent=1)
 
         return f"未知盘面类型: {chart_type}"
+
+    async def _tool_recompute_chart(self, args: dict) -> dict:
+        """用修正后的出生时间重新计算盘面。"""
+        system = args["system"]
+        hour_offset = args.get("hour_offset", 0)
+        minute_offset = args.get("minute_offset", 0)
+        total_minutes = hour_offset * 60 + minute_offset
+
+        if not -120 <= total_minutes <= 120:
+            return {"error": "偏移量超出范围，合计须在 -120 到 +120 分钟之间。"}
+
+        from datetime import timedelta
+        original_dt = datetime(self.birth.year, self.birth.month, self.birth.day,
+                               self.birth.hour, self.birth.minute)
+        adjusted_dt = original_dt + timedelta(minutes=total_minutes)
+
+        adjusted_birth = self.birth.model_copy(update={
+            "year": adjusted_dt.year,
+            "month": adjusted_dt.month,
+            "day": adjusted_dt.day,
+            "hour": adjusted_dt.hour,
+            "minute": adjusted_dt.minute,
+        })
+
+        now_utc = datetime.now(timezone.utc)
+        current_year = now_utc.year
+        offset_desc = f"{'+' if total_minutes >= 0 else ''}{total_minutes} 分钟"
+
+        if system == "bazi":
+            from computation.bazi import compute_bazi
+            chart = compute_bazi(adjusted_birth, current_year=current_year)
+            self.charts.bazi = chart
+            return {
+                "offset_applied": offset_desc,
+                "adjusted_time": adjusted_dt.strftime("%Y-%m-%d %H:%M"),
+                "chart": json.loads(json.dumps(
+                    _llm_chart_dump("bazi", chart), ensure_ascii=False, indent=1
+                )),
+            }
+        elif system == "ziwei":
+            from computation.ziwei import compute_ziwei
+            chart = compute_ziwei(adjusted_birth)
+            self.charts.ziwei = chart
+            return {
+                "offset_applied": offset_desc,
+                "adjusted_time": adjusted_dt.strftime("%Y-%m-%d %H:%M"),
+                "chart": json.loads(json.dumps(
+                    _llm_chart_dump("ziwei", chart), ensure_ascii=False, indent=1
+                )),
+            }
+        elif system == "astrology":
+            from computation.astrology import compute_natal_chart
+            chart = compute_natal_chart(adjusted_birth)
+            self.charts.natal_astro = chart
+            return {
+                "offset_applied": offset_desc,
+                "adjusted_time": adjusted_dt.strftime("%Y-%m-%d %H:%M"),
+                "chart": json.loads(json.dumps(
+                    _llm_chart_dump("natal_astro", chart), ensure_ascii=False, indent=1
+                )),
+            }
+        else:
+            return {"error": f"不支持重算的体系: {system}"}
 
     async def _tool_update_profile(self, args: dict) -> str:
         updates: dict[str, Any] = {}
@@ -680,7 +672,7 @@ class ToolExecutor:
 
         matches = [case for case in _load_golden_cases() if case.get("system") == system]
         if not matches:
-            raise ValueError(f"专业黄金集中没有 {system} 案例，不能伪造参考案例。")
+            raise ValueError(f"专业黄金集中没有 {system} 案例。")
 
         result = []
         for case in matches[:limit]:
@@ -689,128 +681,7 @@ class ToolExecutor:
                 "system": case.get("system"),
                 "source_type": case.get("source_type"),
                 "question": case.get("question"),
-                "expected": case.get("expected", {}),
+                "chart_facts": case.get("expected", {}),
                 "interpretation_anchors": case.get("interpretation_anchors", []),
             })
         return json.dumps({"cases": result}, ensure_ascii=False, indent=1)
-
-    async def _tool_verify_chart_ref(self, args: dict) -> str:
-        path = args["path"]
-        expected = args["expected"]
-        charts_dict = self.charts.model_dump()
-        found, actual = _resolve_json_path(charts_dict, path)
-        if not found:
-            return f"❌ 路径 {path} 不存在于盘面中。请检查路径拼写。"
-        actual_str = str(actual).strip()
-        expected_str = str(expected).strip()
-        if expected_str == actual_str:
-            return f"✓ {path} = {actual}（与预期 {expected} 一致）"
-        if isinstance(actual, list) and expected_str in [str(x).strip() for x in actual]:
-            return f"✓ {path} 包含 {expected}（实际列表: {actual}）"
-        return f"❌ 不一致！{path} = {actual}，但你说的是 {expected}。请修正你的论述。"
-
-    async def _tool_verify_claim(self, args: dict) -> str:
-        """三元组校验：chart_ref 查盘面，rule_ref 查规则文件是否存在，source_ref 查典籍文件是否存在。"""
-        claim = args["claim"]
-        chart_ref = args.get("chart_ref", "")
-        rule_ref = args.get("rule_ref", "none")
-        source_ref = args.get("source_ref", "none")
-        tier = args.get("tier", "A_core")
-
-        issues: list[str] = []
-        checks: list[str] = []
-        chart_system = None
-
-        def _missing_ref(value: str | None) -> bool:
-            return not value or value.strip().lower() in {"none", "null", "n/a", "na", "无"}
-
-        # 1. chart_ref 验证 — 解析 path=expected 格式
-        if not _missing_ref(chart_ref):
-            chart_refs = _split_chart_refs(chart_ref)
-            chart_systems = {_system_from_chart_ref(ref) for ref in chart_refs}
-            chart_systems.discard(None)
-            if len(chart_systems) > 1:
-                issues.append(f"CHART_SYSTEM_MISMATCH: 同一结论引用了多个盘面体系 {sorted(chart_systems)}")
-            chart_system = next(iter(chart_systems), None)
-
-            for ref in chart_refs:
-                if "=" not in ref:
-                    issues.append(f"BAD_REF: chart_ref 格式应为 'path=value'，收到: {ref}")
-                    continue
-                path, expected = ref.split("=", 1)
-                charts_dict = self.charts.model_dump()
-                found, actual = _resolve_json_path(charts_dict, path.strip())
-                if not found:
-                    issues.append(f"FACT_VIOLATION: chart_ref 路径 '{path}' 不存在于盘面中")
-                else:
-                    expected_value = str(expected).strip()
-                    if isinstance(actual, list):
-                        matched = expected_value in [str(x).strip() for x in actual]
-                    else:
-                        matched = expected_value == str(actual).strip()
-                    if not matched:
-                        issues.append(f"FACT_VIOLATION: {path}={actual}，但你说的是 {expected}")
-                    else:
-                        checks.append(f"✓ chart_ref: {path}={actual}")
-        elif tier == "A_core":
-            issues.append("MISSING: Tier A 核心判断缺少 chart_ref")
-        elif tier == "B_support":
-            issues.append("MISSING: Tier B 辅助论述缺少 chart_ref")
-
-        # 2. rule_ref 验证 — 检查规则文件是否存在
-        if not _missing_ref(rule_ref):
-            rid = rule_ref.replace(".md", "")
-            rule_path = RULES_DIR / f"{rid}.md"
-            if rule_path.exists():
-                rule_system = _frontmatter_system(rule_path)
-                if chart_system and not rule_system:
-                    issues.append(f"RULE_SYSTEM_MISSING: 规则 {rid} 缺少 system frontmatter，不能用于核心结论")
-                elif chart_system and rule_system != chart_system:
-                    issues.append(f"RULE_SYSTEM_MISMATCH: 规则 {rid} 属于 {rule_system}，但 chart_ref 属于 {chart_system}")
-                else:
-                    checks.append(f"✓ rule_ref: {rid} 存在")
-            else:
-                issues.append(f"RULE_MISSING: 规则 {rid} 不在库中")
-        elif tier == "A_core":
-            issues.append("MISSING: Tier A 核心判断缺少 rule_ref")
-
-        # 3. source_ref 验证 — 检查典籍文件是否存在
-        if not _missing_ref(source_ref):
-            sid = source_ref.replace(".md", "")
-            source_path = CLASSICS_DIR / f"{sid}.md"
-            if source_path.exists():
-                source_system = _frontmatter_system(source_path)
-                if chart_system and not source_system:
-                    issues.append(f"SOURCE_SYSTEM_MISSING: 典籍 {sid} 缺少 system frontmatter，不能用于核心结论")
-                elif chart_system and source_system != chart_system:
-                    issues.append(f"SOURCE_SYSTEM_MISMATCH: 典籍 {sid} 属于 {source_system}，但 chart_ref 属于 {chart_system}")
-                else:
-                    checks.append(f"✓ source_ref: {sid} 存在")
-            else:
-                issues.append(f"SOURCE_MISSING: 典籍 {sid} 不在库中")
-        elif tier == "A_core":
-            issues.append("MISSING: Tier A 核心判断缺少 source_ref")
-
-        # 判定
-        has_fact_violation = any("FACT_VIOLATION" in i for i in issues)
-        if has_fact_violation or (tier == "A_core" and issues):
-            verdict = "❌ REJECTED — 核心结论证据链不完整或盘面事实不符，此结论不可输出，必须修正。"
-        elif issues:
-            verdict = "⚠ SOFT_FLAG — 存在引用缺失/偏差，建议补充或标注置信度偏低。"
-        else:
-            verdict = "✅ VERIFIED — 三元组完整，可输出。"
-
-        parts = [f"结论: {claim}", f"级别: {tier}", verdict]
-        if checks:
-            parts.append("通过: " + " | ".join(checks))
-        if issues:
-            parts.append("问题: " + " | ".join(issues))
-
-        return "\n".join(parts)
-
-    async def _tool_apply_safety(self, args: dict) -> str:
-        from agents.safety import apply_safety as _apply
-        text, triggers = _apply(args["text"])
-        if triggers:
-            return json.dumps({"text": text, "triggers": triggers}, ensure_ascii=False)
-        return text

@@ -53,19 +53,22 @@ async def _on_startup():
     logger.info("数据库已就绪")
 
 
+def _serve_v2():
+    p = WEB_ROOT / "v2.html"
+    if not p.exists():
+        return RedirectResponse("/health")
+    return FileResponse(p, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+
 @app.get("/")
 async def index():
-    """主页：v2.html"""
-    p = WEB_ROOT / "v2.html"
-    if p.exists():
-        return FileResponse(p)
-    return RedirectResponse("/health")
+    return _serve_v2()
 
 
 @app.get("/v2")
 @app.get("/v2.html")
 async def v2_page():
-    return FileResponse(WEB_ROOT / "v2.html")
+    return _serve_v2()
 
 
 @app.get("/health")

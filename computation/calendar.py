@@ -445,6 +445,16 @@ HUAGAI_TABLE = {  # 华盖
     "巳": "丑", "酉": "丑", "丑": "丑",
     "亥": "未", "卯": "未", "未": "未",
 }
+YANGREN_TABLE = {
+    "甲": "卯", "乙": "寅", "丙": "午", "丁": "巳",
+    "戊": "午", "己": "巳", "庚": "酉", "辛": "申",
+    "壬": "子", "癸": "亥",
+}
+LUSHEN_TABLE = {
+    "甲": "寅", "乙": "卯", "丙": "巳", "丁": "午",
+    "戊": "巳", "己": "午", "庚": "申", "辛": "酉",
+    "壬": "亥", "癸": "子",
+}
 
 
 def find_shensha(four_pillars: dict) -> list[str]:
@@ -471,4 +481,8 @@ def find_shensha(four_pillars: dict) -> list[str]:
         if HUAGAI_TABLE.get(ref) in branches:
             shensha.append("华盖")
             break
+    if YANGREN_TABLE[day_stem] in branches:
+        shensha.append("羊刃")
+    if LUSHEN_TABLE[day_stem] in branches:
+        shensha.append("禄神")
     return list(dict.fromkeys(shensha))  # 去重保序

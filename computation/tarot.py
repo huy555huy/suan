@@ -14,7 +14,7 @@
 - year_twelve：年度 12 宫
 - decision_cross：决策十字 5 张
 
-抽牌动作必须来自用户输入；本模块只把用户给出的牌序/正逆位映射为牌阵结构。
+抽牌动作必须来自用户在当前咨询中的选择或输入；本模块只把用户给出的牌序/正逆位映射为牌阵结构。
 """
 from __future__ import annotations
 
@@ -728,7 +728,7 @@ def draw_tarot(
     reversed_flags: list[bool] | None = None,
     allow_reversed: bool = True,
 ) -> TarotReading:
-    """把用户抽出的牌映射到指定牌阵。
+    """把用户在当前咨询中抽取的牌映射到指定牌阵。
 
     Args:
         question: 占卜的问题
@@ -756,7 +756,7 @@ def draw_tarot(
             f"牌阵 {spread} 需要 {n_cards} 张，但牌组只有 {len(TAROT_DECK)} 张。"
         )
     if card_indexes is None:
-        raise ValueError("塔罗需要用户抽牌结果 card_indexes；不能由系统代替用户随机抽牌。")
+        raise ValueError("塔罗需要用户在当前咨询中抽牌或报出 card_indexes；请先让用户完成抽牌选择。")
     if len(card_indexes) != n_cards:
         raise ValueError(f"牌阵 {spread} 需要 {n_cards} 张牌，实际收到 {len(card_indexes)} 张。")
     if len(set(card_indexes)) != len(card_indexes):

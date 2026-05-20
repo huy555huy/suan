@@ -58,6 +58,7 @@ class BaziChart(BaseModel):
 
 class ZiweiChart(BaseModel):
     palaces: list[dict]
+    palaces_by_name: dict[str, dict] = Field(default_factory=dict)
     main_stars: dict[str, list[str]]
     body_palace: str
     life_palace: str
