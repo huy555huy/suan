@@ -82,14 +82,24 @@ def _build_messages(
     caveats: list[str] | None,
     prior_context: str,
 ) -> list[dict]:
+    from datetime import datetime, timezone, timedelta
+    now_bj = datetime.now(timezone(timedelta(hours=8)))
     user_parts: list[str] = []
+
+    user_parts.append(
+        f"【当前时间】\n"
+        f"{now_bj.strftime('%Y年%m月%d日 %H:%M')}（北京时间），"
+        f"公历 {now_bj.year} 年。"
+    )
+
     if prior_context:
         user_parts.append(f"【之前的对话摘要】\n{prior_context}")
 
     birth_desc = (
         f"用户：{birth.name or '未知'}，{birth.gender}，"
         f"{birth.year}年{birth.month}月{birth.day}日 {birth.hour}:{birth.minute:02d}，"
-        f"{birth.location_name}（{birth.longitude:.2f}°E, {birth.latitude:.2f}°N）"
+        f"{birth.location_name}（{birth.longitude:.2f}°E, {birth.latitude:.2f}°N），"
+        f"现年约 {now_bj.year - birth.year} 岁"
     )
     user_parts.append(f"【用户档案】\n{birth_desc}")
 

@@ -882,22 +882,70 @@ const BAZI = {
   yongShenEn: "Wood",
   shenSha: ["驿马","华盖","太极贵人"],
   daYun: [
-    { age: "5",  ganzhi: "丁酉", note: "童运" },
-    { age: "15", ganzhi: "戊戌", note: "" },
-    { age: "25", ganzhi: "己亥", note: "" },
-    { age: "35", ganzhi: "庚子", note: "← 当前", current: true },
-    { age: "45", ganzhi: "辛丑", note: "" },
-    { age: "55", ganzhi: "壬寅", note: "" },
+    { age: "5",  ganzhi: "丁酉", note: "童运", tenGod: "比肩" },
+    { age: "15", ganzhi: "戊戌", note: "", tenGod: "伤官" },
+    { age: "25", ganzhi: "己亥", note: "", tenGod: "食神" },
+    { age: "35", ganzhi: "庚子", note: "← 当前", current: true, tenGod: "正财" },
+    { age: "45", ganzhi: "辛丑", note: "", tenGod: "偏财" },
+    { age: "55", ganzhi: "壬寅", note: "", tenGod: "正官" },
   ],
   fiveElements: { 木: 1, 火: 4, 土: 2, 金: 2, 水: 0 },
+  tenGods: { year: "偏财", month: "劫财", day: "日主", hour: "比肩" },
+  strength: { category: "身弱", score_0_100: 28, same_party_score: 10.5, other_party_score: 26.5, same_party_ratio: 28.38 },
+  xiJi: { favorable: ["火","木"], unfavorable: ["金","水"], tiao_hou: ["水"] },
+  kongWang: ["子","丑"],
+  interactions: [
+    { positions: "year-month", labels: ["年柱","月柱"], stem_interactions: ["丙辛合水"], branch_interactions: [] },
+    { positions: "day-hour", labels: ["日柱","时柱"], stem_interactions: [], branch_interactions: ["巳未拱午"] },
+  ],
+  tenGodPatterns: ["伤官见官"],
+  liuNian: [
+    { year: 2026, ganzhi: "丙午" },
+    { year: 2027, ganzhi: "丁未" },
+    { year: 2028, ganzhi: "戊申" },
+    { year: 2029, ganzhi: "己酉" },
+    { year: 2030, ganzhi: "庚戌" },
+    { year: 2031, ganzhi: "辛亥" },
+  ],
 };
 
 const ZIWEI = {
   局: "水二局",
-  ming: "巳宫",
-  shen: "酉宫",
-  zhuxing: ["巨门(化禄)","太阳"],
+  ming: "命宫",
+  mingBranch: "巳",
+  shen: "迁移宫",
+  shenBranch: "亥",
+  zhuxing: ["巨门","太阳"],
   bihua: { 禄: "巨门", 权: "太阳", 科: "天梁", 忌: "文昌" },
+  palaces: [
+    { name:"命宫", branch:"巳", stem:"丙", stars:["巨门","太阳"], auxiliary:["文昌","天魁"], si_hua:["巨门化禄","太阳化权"], decadal:{range:[32,41]}, is_body_palace:false },
+    { name:"兄弟宫", branch:"午", stem:"丁", stars:["天机"], auxiliary:["擎羊"], si_hua:[], decadal:{range:[22,31]} },
+    { name:"夫妻宫", branch:"未", stem:"戊", stars:["紫微","贪狼"], auxiliary:["火星"], si_hua:[], decadal:{range:[12,21]} },
+    { name:"子女宫", branch:"申", stem:"己", stars:[], auxiliary:["天空"], si_hua:[], decadal:{range:[2,11]} },
+    { name:"财帛宫", branch:"酉", stem:"庚", stars:["武曲","天相"], auxiliary:["右弼"], si_hua:[], decadal:{range:[112,121]} },
+    { name:"疾厄宫", branch:"戌", stem:"辛", stars:["天同"], auxiliary:["铃星","地劫"], si_hua:[], decadal:{range:[102,111]} },
+    { name:"迁移宫", branch:"亥", stem:"壬", stars:["廉贞","天府"], auxiliary:["文曲"], si_hua:["文曲化忌"], decadal:{range:[92,101]}, is_body_palace:true },
+    { name:"交友宫", branch:"子", stem:"癸", stars:["太阴"], auxiliary:["天钺"], si_hua:[], decadal:{range:[82,91]} },
+    { name:"官禄宫", branch:"丑", stem:"甲", stars:["天梁"], auxiliary:["左辅"], si_hua:["天梁化科"], decadal:{range:[72,81]} },
+    { name:"田宅宫", branch:"寅", stem:"乙", stars:["七杀"], auxiliary:["陀罗"], si_hua:[], decadal:{range:[62,71]} },
+    { name:"福德宫", branch:"卯", stem:"丙", stars:["破军"], auxiliary:["天马"], si_hua:[], decadal:{range:[52,61]} },
+    { name:"父母宫", branch:"辰", stem:"丁", stars:["天同","天梁"], auxiliary:[], si_hua:[], decadal:{range:[42,51]} },
+  ],
+  byName: {},
+  lifePalaceName: "命宫",
+  bodyPalaceName: "迁移宫",
+  daXian: [
+    { palace_name:"子女宫", branch:"申", stem:"己", age_start:2, age_end:11 },
+    { palace_name:"夫妻宫", branch:"未", stem:"戊", age_start:12, age_end:21 },
+    { palace_name:"兄弟宫", branch:"午", stem:"丁", age_start:22, age_end:31 },
+    { palace_name:"命宫", branch:"巳", stem:"丙", age_start:32, age_end:41 },
+    { palace_name:"父母宫", branch:"辰", stem:"丁", age_start:42, age_end:51 },
+  ],
+  currentDaXian: { palace_name:"命宫", branch:"巳", stem:"丙", age_start:32, age_end:41 },
+  daXianSiHua: null,
+  liuNian: null,
+  soulStar: "廉贞",
+  bodyStar: "天机",
 };
 
 // Astrology
@@ -908,22 +956,33 @@ const ASTRO = {
   mc: { sign: "Virgo", deg: 12, glyph: "♍" },
   phase: "蛾眉月 · waxing crescent",
   bodies: [
-    { name: "Sun",     glyph: "☉", sign: "Leo",       deg: 21.95, house: 9, longitude: 141.95 },
-    { name: "Moon",    glyph: "☾", sign: "Libra",     deg: 14.2,  house: 11, longitude: 194.2 },
-    { name: "Mercury", glyph: "☿", sign: "Leo",       deg: 5.4,   house: 9, longitude: 125.4 },
-    { name: "Venus",   glyph: "♀", sign: "Cancer",    deg: 28.7,  house: 8, longitude: 118.7 },
-    { name: "Mars",    glyph: "♂", sign: "Cancer",    deg: 12.1,  house: 7, longitude: 102.1 },
-    { name: "Jupiter", glyph: "♃", sign: "Leo",       deg: 0.8,   house: 9, longitude: 120.8 },
-    { name: "Saturn",  glyph: "♄", sign: "Capricorn", deg: 4.5,   house: 1, longitude: 274.5 },
-    { name: "Uranus",  glyph: "♅", sign: "Capricorn", deg: 11.0,  house: 2, longitude: 281.0 },
-    { name: "Neptune", glyph: "♆", sign: "Capricorn", deg: 14.8,  house: 2, longitude: 284.8 },
-    { name: "Pluto",   glyph: "♇", sign: "Scorpio",   deg: 17.2,  house: 11, longitude: 227.2 },
+    { name: "Sun",     glyph: "☉", sign: "Leo",       deg: 21.95, house: 9, longitude: 141.95, retrograde: false },
+    { name: "Moon",    glyph: "☾", sign: "Libra",     deg: 14.2,  house: 11, longitude: 194.2, retrograde: false },
+    { name: "Mercury", glyph: "☿", sign: "Leo",       deg: 5.4,   house: 9, longitude: 125.4, retrograde: false },
+    { name: "Venus",   glyph: "♀", sign: "Cancer",    deg: 28.7,  house: 8, longitude: 118.7, retrograde: false },
+    { name: "Mars",    glyph: "♂", sign: "Cancer",    deg: 12.1,  house: 7, longitude: 102.1, retrograde: false },
+    { name: "Jupiter", glyph: "♃", sign: "Leo",       deg: 0.8,   house: 9, longitude: 120.8, retrograde: false },
+    { name: "Saturn",  glyph: "♄", sign: "Capricorn", deg: 4.5,   house: 1, longitude: 274.5, retrograde: true },
+    { name: "Uranus",  glyph: "♅", sign: "Capricorn", deg: 11.0,  house: 2, longitude: 281.0, retrograde: false },
+    { name: "Neptune", glyph: "♆", sign: "Capricorn", deg: 14.8,  house: 2, longitude: 284.8, retrograde: false },
+    { name: "Pluto",   glyph: "♇", sign: "Scorpio",   deg: 17.2,  house: 11, longitude: 227.2, retrograde: false },
   ],
   aspects: [
     { a: "Sun", b: "Saturn", type: "square", orb: 1.6 },
     { a: "Moon", b: "Mercury", type: "trine", orb: 2.0 },
     { a: "Venus", b: "Pluto", type: "opposition", orb: 1.5 },
   ],
+  angles: { ASC: 249.2, MC: 176.8, DSC: 69.2, IC: 356.8 },
+  houses: [
+    {id:1,cusp:249.2},{id:2,cusp:282.2},{id:3,cusp:320.5},{id:4,cusp:356.8},
+    {id:5,cusp:26.1},{id:6,cusp:49.3},{id:7,cusp:69.2},{id:8,cusp:102.2},
+    {id:9,cusp:140.5},{id:10,cusp:176.8},{id:11,cusp:206.1},{id:12,cusp:229.3},
+  ],
+  distributions: {
+    elements: { fire: 2, earth: 5, air: 2, water: 1 },
+    modalities: { cardinal: 3, fixed: 4, mutable: 3 },
+    polarities: { yang: 4, yin: 6 },
+  },
 };
 
 const NUMER = {
@@ -981,6 +1040,7 @@ function adaptBazi(b) {
     age: String(Math.round(d.age_start || 0)),
     ganzhi: d.ganzhi || `${d.stem || ""}${d.branch || ""}`,
     current: cur >= (d.year_start || 0) && cur < (d.year_end || 0),
+    tenGod: d.ten_god || "",
   }));
   const dmEl = b.day_pillar?.wuxing_stem || "";
   return {
@@ -992,17 +1052,29 @@ function adaptBazi(b) {
     yongShenEn: (FIVE_PHASES_EN[b.yong_shen] || "").replace(/^./, c => c.toUpperCase()),
     shenSha: (b.shen_sha || []).slice(0, 6),
     fiveElements: b.five_elements || { 木:0, 火:0, 土:0, 金:0, 水:0 },
+    tenGods: b.ten_gods || {},
+    strength: b.metadata?.strength || null,
+    xiJi: b.xi_ji || null,
+    kongWang: b.metadata?.kong_wang || [],
+    interactions: b.metadata?.chart_interactions || [],
+    tenGodPatterns: b.metadata?.ten_god_patterns || [],
+    liuNian: (b.liu_nian || []).slice(0, 6),
   };
 }
 
 function adaptZiwei(z) {
   if (!z) return null;
-  const lifeP = (z.palaces || []).find(p => p?.name === z.life_palace) || (z.palaces || [])[0] || {};
-  const bodyP = (z.palaces || []).find(p => p?.name === z.body_palace) || {};
+  const palaces = z.palaces || [];
+  const lifeP = palaces.find(p => p?.name === z.life_palace) || palaces[0] || {};
+  const bodyP = palaces.find(p => p?.name === z.body_palace) || {};
+  const byName = {};
+  palaces.forEach(p => { if (p?.name) byName[p.name] = p; });
   return {
     局: z.five_element_bureau || "—",
-    ming: lifeP.branch ? `${lifeP.branch}宫` : (z.life_palace || "—"),
-    shen: bodyP.branch ? `${bodyP.branch}宫` : (z.body_palace || "—"),
+    ming: z.life_palace || "命宫",
+    mingBranch: lifeP.branch || "",
+    shen: z.body_palace || "",
+    shenBranch: bodyP.branch || "",
     zhuxing: (lifeP.stars || []).slice(0, 3),
     bihua: {
       禄: z.si_hua?.["化禄"] || "—",
@@ -1010,8 +1082,22 @@ function adaptZiwei(z) {
       科: z.si_hua?.["化科"] || "—",
       忌: z.si_hua?.["化忌"] || "—",
     },
-    palaces: z.palaces || [],
+    palaces,
+    byName,
     lifePalaceName: z.life_palace || "命宫",
+    bodyPalaceName: z.body_palace || "",
+    daXian: z.da_xian || [],
+    liuNian: z.liu_nian ? {
+      year: z.liu_nian.year,
+      ganzhi: z.liu_nian.year_ganzhi,
+      ming_gong: z.liu_nian.liu_nian_ming_gong,
+      si_hua: z.liu_nian.liu_nian_si_hua,
+      palaces: z.liu_nian.liu_nian_palaces,
+    } : null,
+    currentDaXian: z.metadata?.current_da_xian || null,
+    daXianSiHua: z.metadata?.da_xian_si_hua || null,
+    soulStar: z.metadata?.soul_star || null,
+    bodyStar: z.metadata?.body_star || null,
   };
 }
 
@@ -1031,6 +1117,7 @@ function adaptAstro(a) {
         deg: p.sign_degree || 0,
         house: p.house || 1,
         longitude: p.longitude || 0,
+        retrograde: p.retrograde || false,
       };
     });
   const sunB = bodies.find(b => b.name === "Sun");
@@ -1044,11 +1131,17 @@ function adaptAstro(a) {
     mc:   { sign: SIGN_EN[mcSignIdx]  || "—", deg: (angles.MC  || 0) % 30, glyph: "⇧" },
     phase: a.moon_phase || "—",
     bodies,
-    aspects: (a.aspects || []).slice(0, 6).map(asp => ({
+    aspects: (a.aspects || []).slice(0, 12).map(asp => ({
       a: PLANET_NAME_CN[asp.planet_a] || asp.planet_a || "",
       b: PLANET_NAME_CN[asp.planet_b] || asp.planet_b || "",
       type: asp.aspect_type || asp.type || "",
       orb: Number((asp.orb || 0).toFixed(1)),
+    })),
+    distributions: a.distributions || null,
+    angles: { ASC: angles.ASC || 0, MC: angles.MC || 0, DSC: angles.DSC || 0, IC: angles.IC || 0 },
+    houses: (a.houses || []).map(h => ({
+      id: h.house_id, sign: h.sign_en || h.sign, deg: h.sign_degree, ruler: h.ruler,
+      cusp: h.cusp_longitude || 0,
     })),
   };
 }
@@ -1074,198 +1167,181 @@ Object.assign(window, { SAMPLE_PROFILE, DEMO_SESSIONS, BAZI, ZIWEI, ASTRO, NUMER
   <script type="text/babel">
 // Animated visuals — SVG-based, no external assets
 
-// 占星轮（升级版）— 黄道带按元素染色 + 行星按属性配色 + 相位线分色
+// 占星盘 — 传统文字风格，ASC 朝左，宫位按实际宫头划分
 function AnimatedAstroWheel({ size = 460, astro }) {
   if (!astro) return null;
-  const ASTRO_DATA = astro;
+  const D = astro;
+  if (!D.bodies || !D.angles) return null;
   const r = size / 2, cx = r, cy = r;
-  const rOuterEdge = r - 4;
-  const rZodiacOuter = r - 8;       // 黄道带外圈
-  const rZodiacInner = r - 38;      // 黄道带内圈（共 30px 厚带）
-  const rHouseRing  = r - 60;        // 12 宫位圈（虚线）
-  const rPlanet     = r - 56;        // 行星轨道
-  const rAspectAnchor = r - 92;      // 相位线收口
-  const houses = Array.from({ length: 12 }, (_, i) => i);
-  // 12 黄道：符号 / 中文 / 元素
+  const rOuter    = r - 2;
+  const rZodOuter = r - 4;
+  const rZodInner = r - 48;
+  const rHouseOut = rZodInner;
+  const rHouseIn  = r - 80;
+  const rPlanet   = r - 110;
+  const rAspect   = r - 140;
+  const ASC = D.angles?.ASC || 0;
+
   const ZODIAC = [
-    { g: "♈", cn: "白羊", el: "fire"  }, { g: "♉", cn: "金牛", el: "earth" },
-    { g: "♊", cn: "双子", el: "air"   }, { g: "♋", cn: "巨蟹", el: "water" },
-    { g: "♌", cn: "狮子", el: "fire"  }, { g: "♍", cn: "处女", el: "earth" },
-    { g: "♎", cn: "天秤", el: "air"   }, { g: "♏", cn: "天蝎", el: "water" },
-    { g: "♐", cn: "射手", el: "fire"  }, { g: "♑", cn: "摩羯", el: "earth" },
-    { g: "♒", cn: "水瓶", el: "air"   }, { g: "♓", cn: "双鱼", el: "water" },
+    { cn:"白羊", short:"牡羊", el:"fire"  }, { cn:"金牛", short:"金牛", el:"earth" },
+    { cn:"双子", short:"雙子", el:"air"   }, { cn:"巨蟹", short:"巨蟹", el:"water" },
+    { cn:"狮子", short:"獅子", el:"fire"  }, { cn:"处女", short:"處女", el:"earth" },
+    { cn:"天秤", short:"天秤", el:"air"   }, { cn:"天蝎", short:"天蠍", el:"water" },
+    { cn:"射手", short:"射手", el:"fire"  }, { cn:"摩羯", short:"魔羯", el:"earth" },
+    { cn:"水瓶", short:"水瓶", el:"air"   }, { cn:"双鱼", short:"雙魚", el:"water" },
   ];
-  const ELEMENT_FILL = {
-    fire:  "color-mix(in oklch, var(--cinnabar) 14%, transparent)",
-    earth: "color-mix(in oklch, var(--jade) 12%, transparent)",
-    air:   "color-mix(in oklch, var(--gild) 18%, transparent)",
-    water: "color-mix(in oklch, oklch(0.52 0.05 230) 14%, transparent)",
+  const BAND_A = "oklch(0.94 0.016 78)";
+  const BAND_B = "oklch(0.97 0.008 78)";
+  const P_CN = { Sun:"日", Moon:"月", Mercury:"水", Venus:"金", Mars:"火", Jupiter:"木", Saturn:"土", Uranus:"天", Neptune:"海", Pluto:"冥", "N.Node":"北", Chiron:"幸" };
+  const P_COLOR = {
+    Sun:"var(--cinnabar)", Moon:"var(--ink-2)", Mercury:"var(--ink-3)",
+    Venus:"var(--jade)", Mars:"var(--cinnabar)", Jupiter:"var(--jade)",
+    Saturn:"var(--ink-2)", Uranus:"var(--ink-3)", Neptune:"var(--ink-3)",
+    Pluto:"var(--ink-2)", "N.Node":"var(--ink-4)", Chiron:"var(--gild)",
   };
-  const ELEMENT_STROKE = {
-    fire:  "var(--cinnabar)",   earth: "var(--jade)",
-    air:   "var(--gild)",       water: "oklch(0.52 0.05 230)",
-  };
-  // 行星按属性配色
-  const PLANET_COLOR = {
-    Sun:     "oklch(0.78 0.16 78)",   // 金黄
-    Moon:    "oklch(0.86 0.02 260)",  // 银白
-    Mercury: "oklch(0.62 0.05 268)",  // 墨灰
-    Venus:   "oklch(0.78 0.10 12)",   // 粉桃
-    Mars:    "var(--cinnabar)",        // 朱砂
-    Jupiter: "var(--gild)",            // 鎏金
-    Saturn:  "oklch(0.42 0.04 268)",  // 黛青深
-    Uranus:  "oklch(0.62 0.10 220)",  // 青蓝
-    Neptune: "oklch(0.55 0.10 240)",  // 深蓝紫
-    Pluto:   "oklch(0.30 0.08 320)",  // 深紫
-  };
-  // 相位线配色
-  const ASPECT_COLOR = {
-    trine:      { stroke: "var(--jade)", dash: "0", width: 1.2 },
-    sextile:    { stroke: "var(--gild)", dash: "0", width: 0.8 },
-    conjunction:{ stroke: "var(--gild)", dash: "0", width: 1.0 },
-    square:     { stroke: "var(--cinnabar)", dash: "3 2", width: 1.0 },
-    opposition: { stroke: "oklch(0.52 0.05 230)", dash: "5 3", width: 1.2 },
+  const ASP_COLOR = {
+    trine:      { stroke: "var(--jade)",      width: 1.0 },
+    sextile:    { stroke: "var(--gild)",      width: 0.8 },
+    conjunction:{ stroke: "var(--ink-4)",     width: 1.0 },
+    square:     { stroke: "var(--cinnabar)",  width: 1.0 },
+    opposition: { stroke: "var(--ink-2)",     width: 1.0 },
   };
 
-  // SVG path 扇形
-  const sector = (a1d, a2d, rIn, rOut) => {
-    const a1 = (a1d - 90) * Math.PI / 180;
-    const a2 = (a2d - 90) * Math.PI / 180;
-    const x1 = cx + rIn  * Math.cos(a1), y1 = cy + rIn  * Math.sin(a1);
-    const x2 = cx + rOut * Math.cos(a1), y2 = cy + rOut * Math.sin(a1);
-    const x3 = cx + rOut * Math.cos(a2), y3 = cy + rOut * Math.sin(a2);
-    const x4 = cx + rIn  * Math.cos(a2), y4 = cy + rIn  * Math.sin(a2);
-    return `M${x1} ${y1} L${x2} ${y2} A${rOut} ${rOut} 0 0 1 ${x3} ${y3} L${x4} ${y4} A${rIn} ${rIn} 0 0 0 ${x1} ${y1} Z`;
+  const toRad = (deg) => deg * Math.PI / 180;
+  const lonToSvg = (lon) => 180 + (ASC - lon);
+  const lonXY = (lon, radius) => {
+    const a = toRad(lonToSvg(lon));
+    return [cx + Math.cos(a) * radius, cy + Math.sin(a) * radius];
   };
+  const arcPath = (a1d, a2d, rIn, rOut) => {
+    const a1 = toRad(a1d), a2 = toRad(a2d);
+    const sweep = ((a2d - a1d + 360) % 360) > 180 ? 1 : 0;
+    const x1=cx+rIn*Math.cos(a1),  y1=cy+rIn*Math.sin(a1);
+    const x2=cx+rOut*Math.cos(a1), y2=cy+rOut*Math.sin(a1);
+    const x3=cx+rOut*Math.cos(a2), y3=cy+rOut*Math.sin(a2);
+    const x4=cx+rIn*Math.cos(a2),  y4=cy+rIn*Math.sin(a2);
+    return `M${x1} ${y1}L${x2} ${y2}A${rOut} ${rOut} 0 ${sweep} 0 ${x3} ${y3}L${x4} ${y4}A${rIn} ${rIn} 0 ${sweep} 1 ${x1} ${y1}Z`;
+  };
+
+  const houseCusps = (D.houses || []).map(h => h.cusp || 0);
 
   return (
-    <div style={{ position: "relative", width: size, height: size, color: "var(--ink)" }}>
+    <div style={{ position: "relative", width: size, maxWidth: "100%", aspectRatio: "1/1", color: "var(--ink)", margin: "0 auto" }}>
       <style>{`
-        @keyframes spin-cw  { to { transform: rotate(360deg); } }
-        @keyframes draw-line { from { stroke-dasharray: 1000; stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
-        @keyframes fade-in   { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes pulse-r   { 0%,100% { r: 5; } 50% { r: 7; } }
-        @keyframes planet-breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+        @keyframes aw-fade { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", inset: 0, transformOrigin: "center", animation: "spin-cw 600s linear infinite" }}>
-        <defs>
-          {/* 中心微辉 */}
-          <radialGradient id="aw-core">
-            <stop offset="0%"  stopColor="var(--cinnabar)" stopOpacity="0.28" />
-            <stop offset="60%" stopColor="var(--cinnabar)" stopOpacity="0.04" />
-            <stop offset="100%" stopColor="var(--cinnabar)" stopOpacity="0" />
-          </radialGradient>
-          {/* 行星 halo */}
-          <filter id="aw-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2.5" />
-          </filter>
-        </defs>
-
-        {/* 中心辉光 */}
-        <circle cx={cx} cy={cy} r={rAspectAnchor + 14} fill="url(#aw-core)" />
-
-        {/* 黄道带（12 扇按元素染色） */}
-        <g>
-          {ZODIAC.map((z, i) => (
-            <path key={`zfill-${i}`} d={sector(i*30, (i+1)*30, rZodiacInner, rZodiacOuter)}
-              fill={ELEMENT_FILL[z.el]}
-              stroke={ELEMENT_STROKE[z.el]} strokeOpacity="0.35" strokeWidth="0.6" />
-          ))}
-          {/* 黄道分隔线 */}
-          {houses.map(i => {
-            const a = (i * 30 - 90) * Math.PI / 180;
-            return <line key={`zline-${i}`}
-              x1={cx + Math.cos(a) * rZodiacInner} y1={cy + Math.sin(a) * rZodiacInner}
-              x2={cx + Math.cos(a) * rZodiacOuter} y2={cy + Math.sin(a) * rZodiacOuter}
-              stroke="var(--ink)" strokeOpacity="0.18" strokeWidth="0.8" />;
-          })}
-          {/* 黄道带最外圈 */}
-          <circle cx={cx} cy={cy} r={rZodiacOuter} fill="none" stroke="var(--ink)" strokeOpacity="0.35" />
-          <circle cx={cx} cy={cy} r={rZodiacInner} fill="none" stroke="var(--ink)" strokeOpacity="0.18" />
-          {/* 12 黄道符号 */}
-          {ZODIAC.map((z, i) => {
-            const a = (i * 30 + 15 - 90) * Math.PI / 180;
-            const tx = cx + Math.cos(a) * (rZodiacOuter - 16);
-            const ty = cy + Math.sin(a) * (rZodiacOuter - 16);
-            return (
-              <g key={`zsym-${i}`}>
-                <text x={tx} y={ty - 4} fontSize={18}
-                  fill={ELEMENT_STROKE[z.el]}
-                  textAnchor="middle" dominantBaseline="central"
-                  fontFamily="var(--serif-en)" fontWeight="600">{z.g}</text>
-                <text x={tx} y={ty + 11} fontSize={9}
-                  fill="var(--ink-3)" fillOpacity="0.85"
-                  textAnchor="middle" dominantBaseline="central"
-                  fontFamily="var(--serif-cn)" letterSpacing="0.1em">{z.cn}</text>
-              </g>
-            );
-          })}
-        </g>
-
-        {/* 12 宫位虚线圈 */}
-        <g>
-          <circle cx={cx} cy={cy} r={rHouseRing} fill="none"
-            stroke="var(--ink)" strokeOpacity="0.18" strokeDasharray="2 4" />
-          {houses.map(i => {
-            const a = (i * 30 - 90) * Math.PI / 180;
-            return <line key={`hline-${i}`}
-              x1={cx + Math.cos(a) * (rHouseRing - 12)} y1={cy + Math.sin(a) * (rHouseRing - 12)}
-              x2={cx + Math.cos(a) * (rHouseRing + 12)} y2={cy + Math.sin(a) * (rHouseRing + 12)}
-              stroke="var(--ink)" strokeOpacity="0.10" strokeWidth="0.6" />;
-          })}
-        </g>
-
-        {/* 相位线（按类型分色 + 入场动画） */}
-        <g style={{ animation: "fade-in 2s ease both" }}>
-          {ASTRO_DATA.aspects.map((asp, i) => {
-            const A = ASTRO_DATA.bodies.find(b => b.name === asp.a);
-            const B = ASTRO_DATA.bodies.find(b => b.name === asp.b);
-            if (!A || !B) return null;
-            const aa = (A.longitude - 90) * Math.PI / 180;
-            const ab = (B.longitude - 90) * Math.PI / 180;
-            const ax = cx + Math.cos(aa) * rAspectAnchor;
-            const ay = cy + Math.sin(aa) * rAspectAnchor;
-            const bx = cx + Math.cos(ab) * rAspectAnchor;
-            const by = cy + Math.sin(ab) * rAspectAnchor;
-            const cfg = ASPECT_COLOR[asp.type] || ASPECT_COLOR.conjunction;
-            return <line key={`asp-${i}`} x1={ax} y1={ay} x2={bx} y2={by}
-              stroke={cfg.stroke} strokeOpacity="0.65"
-              strokeDasharray={cfg.dash} strokeWidth={cfg.width}
-              style={{ animation: `draw-line 3s ${0.4 + i * 0.3}s ease both` }} />;
-          })}
-        </g>
-
-        {/* 行星 — x/y 定位，文字始终正向 */}
-        {ASTRO_DATA.bodies.map((b, i) => {
-          const color = PLANET_COLOR[b.name] || "var(--ink)";
-          const a = (b.longitude - 90) * Math.PI / 180;
-          const px = cx + Math.cos(a) * rPlanet;
-          const py = cy + Math.sin(a) * rPlanet;
-          const lx = cx + Math.cos(a) * (rPlanet - 20);
-          const ly = cy + Math.sin(a) * (rPlanet - 20);
+      <svg viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", background: "var(--paper)" }}>
+        {/* 黄道带 — 12星座按元素染色 + 中文名 */}
+        {ZODIAC.map((z, i) => {
+          const s1 = lonToSvg(i * 30), s2 = lonToSvg((i + 1) * 30);
+          const mid = lonToSvg(i * 30 + 15);
+          const [tx, ty] = [cx + Math.cos(toRad(mid)) * (rZodOuter - 24), cy + Math.sin(toRad(mid)) * (rZodOuter - 24)];
           return (
-            <g key={b.name}>
-              <circle cx={px} cy={py} r={14} fill={color} fillOpacity="0.18" filter="url(#aw-glow)" />
-              <circle cx={px} cy={py} r={11}
-                fill="var(--paper)"
-                stroke={color} strokeWidth="1.4"
-                style={{ animation: `planet-breathe ${4 + i*0.3}s ease-in-out infinite`, transformOrigin: `${px}px ${py}px` }} />
-              <text x={px} y={py} fontSize={14} fill={color}
-                textAnchor="middle" dominantBaseline="central"
-                fontFamily="var(--serif-en)" fontWeight="600">{b.glyph}</text>
-              <text x={lx} y={ly} fontSize={8.5} fill="var(--ink-3)"
-                textAnchor="middle" dominantBaseline="central"
-                fontFamily="var(--mono)" letterSpacing="0.04em">
-                {Math.round(b.deg)}°
-              </text>
+            <g key={`z-${i}`}>
+              <path d={arcPath(s2, s1, rZodInner, rZodOuter)} fill={i % 2 === 0 ? BAND_A : BAND_B} stroke="var(--ink)" strokeWidth="0.3" strokeOpacity="0.15" />
+              <text x={tx} y={ty} fontSize={16} fill="var(--ink-2)" textAnchor="middle" dominantBaseline="central" fontFamily="var(--serif-cn)" fontWeight="700">{z.cn}</text>
+            </g>
+          );
+        })}
+        <circle cx={cx} cy={cy} r={rZodOuter} fill="none" stroke="var(--ink)" strokeOpacity="0.25" strokeWidth="1" />
+        <circle cx={cx} cy={cy} r={rZodInner} fill="none" stroke="var(--ink)" strokeOpacity="0.3" strokeWidth="0.8" />
+        {/* 黄道分隔线 */}
+        {Array.from({length:12}, (_,i) => {
+          const [x1,y1] = lonXY(i*30, rZodInner);
+          const [x2,y2] = lonXY(i*30, rZodOuter);
+          return <line key={`zl-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--ink)" strokeOpacity="0.2" strokeWidth="0.6" />;
+        })}
+
+        {/* 宫位环 — 按实际宫头划分 */}
+        <circle cx={cx} cy={cy} r={rHouseIn} fill="none" stroke="var(--ink)" strokeOpacity="0.15" strokeWidth="0.5" />
+        {houseCusps.map((cusp, i) => {
+          const [x1,y1] = lonXY(cusp, rHouseIn);
+          const [x2,y2] = lonXY(cusp, rHouseOut);
+          const isAxis = i === 0 || i === 3 || i === 6 || i === 9;
+          return <line key={`hl-${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
+            stroke="var(--ink)" strokeOpacity={isAxis ? 0.5 : 0.15} strokeWidth={isAxis ? 1.2 : 0.5} />;
+        })}
+        {/* 宫位编号 */}
+        {houseCusps.map((cusp, i) => {
+          const next = houseCusps[(i + 1) % 12];
+          const mid = cusp + ((next - cusp + 360) % 360) / 2;
+          const [tx, ty] = lonXY(mid, (rHouseOut + rHouseIn) / 2);
+          return <text key={`hn-${i}`} x={tx} y={ty} fontSize={11} fill="var(--ink-3)" fillOpacity="0.6"
+            textAnchor="middle" dominantBaseline="central" fontFamily="var(--mono)">{i + 1}</text>;
+        })}
+
+        {/* 四轴标签 ASC / MC / DES / IC */}
+        {[
+          { label: "ASC", lon: ASC, dx: -10, dy: 0 },
+          { label: "MC",  lon: D.angles?.MC || 0, dx: 0, dy: -8 },
+          { label: "DES", lon: D.angles?.DSC || 0, dx: 10, dy: 0 },
+          { label: "IC",  lon: D.angles?.IC || 0, dx: 0, dy: 8 },
+        ].map(ax => {
+          const [x, y] = lonXY(ax.lon, rZodOuter + 14);
+          return <text key={ax.label} x={x + ax.dx} y={y + ax.dy} fontSize={9} fill="var(--ink-3)"
+            textAnchor="middle" dominantBaseline="central" fontFamily="var(--mono)" fontWeight="600">{ax.label}</text>;
+        })}
+
+        {/* 相位线 */}
+        <g style={{ animation: "aw-fade 1.5s ease both" }}>
+          {D.aspects.map((asp, i) => {
+            const A = D.bodies.find(b => b.name === asp.a);
+            const B = D.bodies.find(b => b.name === asp.b);
+            if (!A || !B) return null;
+            const [ax, ay] = lonXY(A.longitude, rAspect);
+            const [bx, by] = lonXY(B.longitude, rAspect);
+            const cfg = ASP_COLOR[asp.type] || ASP_COLOR.conjunction;
+            return <line key={`a-${i}`} x1={ax} y1={ay} x2={bx} y2={by}
+              stroke={cfg.stroke} strokeOpacity="0.55" strokeWidth={cfg.width} />;
+          })}
+        </g>
+
+        {/* 行星 — 中文单字标签（含碰撞回避） */}
+        {(() => {
+          const sorted = [...D.bodies].sort((a, b) => a.longitude - b.longitude);
+          const placed = sorted.map(b => ({ ...b, displayLon: b.longitude }));
+          const MIN_GAP = 12;
+          for (let pass = 0; pass < 4; pass++) {
+            for (let i = 0; i < placed.length; i++) {
+              for (let j = i + 1; j < placed.length; j++) {
+                const svgA = lonToSvg(placed[i].displayLon), svgB = lonToSvg(placed[j].displayLon);
+                let diff = ((svgB - svgA + 540) % 360) - 180;
+                if (Math.abs(diff) < MIN_GAP) {
+                  const push = (MIN_GAP - Math.abs(diff)) / 2;
+                  placed[i].displayLon += push * (diff > 0 ? 1 : -1);
+                  placed[j].displayLon -= push * (diff > 0 ? 1 : -1);
+                }
+              }
+            }
+          }
+          return placed;
+        })().map((b, i) => {
+          const cn = P_CN[b.name] || b.name.charAt(0);
+          const color = P_COLOR[b.name] || "var(--ink)";
+          const [px, py] = lonXY(b.displayLon, rPlanet);
+          return (
+            <g key={b.name} style={{ animation: `aw-fade 0.8s ${i * 0.1}s ease both` }}>
+              <text x={px} y={py} fontSize={15} fill={color} fontWeight="700"
+                textAnchor="middle" dominantBaseline="central" fontFamily="var(--serif-cn)">{cn}</text>
+              {b.retrograde && <text x={px + 10} y={py - 6} fontSize={7} fill="var(--cinnabar)" fontFamily="var(--mono)">℞</text>}
             </g>
           );
         })}
 
-        {/* 中心朱砂脉冲（合议焦点） */}
-        <circle cx={cx} cy={cy} r={5} fill="var(--cinnabar)"
-          style={{ animation: "pulse-r 2.5s ease-in-out infinite" }} />
-        <circle cx={cx} cy={cy} r={1.5} fill="var(--paper)" />
+        {/* 图例 */}
+        {[
+          { label: "120°", color: ASP_COLOR.trine.stroke },
+          { label: "60°",  color: ASP_COLOR.sextile.stroke },
+          { label: "180°", color: ASP_COLOR.opposition.stroke },
+          { label: "90°",  color: ASP_COLOR.square.stroke },
+        ].map((leg, i) => (
+          <g key={leg.label}>
+            <line x1={size - 56} y1={size - 60 + i * 14} x2={size - 40} y2={size - 60 + i * 14}
+              stroke={leg.color} strokeWidth="1.5" />
+            <text x={size - 36} y={size - 60 + i * 14} fontSize={9} fill="var(--ink-3)"
+              dominantBaseline="central" fontFamily="var(--mono)">{leg.label}</text>
+          </g>
+        ))}
       </svg>
     </div>
   );
@@ -2349,6 +2425,7 @@ window.OnboardingScreen = OnboardingScreen;
 // Chart visualization — BaZi pillars + ZiWei + astrology + numerology
 function ChartScreen({ go, profile, charts, chartsLoading, chartsError, hasProfile }) {
   const [tab, setTab] = useState("bazi");
+  const [daily, setDaily] = useState(null);
   const p = profile || SAMPLE_PROFILE;
   const placeLine = p.placeEn && p.placeEn !== p.place ? `${p.place} · ${p.placeEn}` : p.place;
 
@@ -2358,13 +2435,39 @@ function ChartScreen({ go, profile, charts, chartsLoading, chartsError, hasProfi
   const ziwei = useMemo(() => adaptZiwei(raw?.ziwei) || (isDemo ? ZIWEI : null), [raw, isDemo]);
   const astro = useMemo(() => adaptAstro(raw?.natal_astro) || (isDemo ? ASTRO : null), [raw, isDemo]);
   const numer = useMemo(() => adaptNumer(raw?.numerology) || (isDemo ? NUMER : null), [raw, isDemo]);
+  const transit = raw?.transit_astro || null;
   const caveats = charts?.caveats || [];
+
+  // fetch today info
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const body = { profile: { date: (p.birth || "").split(" ")[0] || "", place: p.place || "" } };
+        const r = await fetch("/api/v1/daily", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        if (r.ok && !cancel) setDaily(await r.json());
+      } catch {}
+    })();
+    return () => { cancel = true; };
+  }, []);
 
   return (
     <div className="fade-in screen" style={{ position: "relative" }}>
+      {/* today strip */}
+      {daily && (
+        <div style={{ maxWidth: 1400, margin: "0 auto 0", padding: "14px 0", borderBottom: "var(--rule)", display: "flex", gap: 28, alignItems: "center", flexWrap: "wrap" }}>
+          <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)" }}>今日 · TODAY</div>
+          <span style={{ fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>{daily.gz}</span>
+          <span style={{ fontFamily: "var(--serif-cn)", fontSize: 14, color: "var(--ink-2)" }}>{daily.term}</span>
+          <span style={{ fontFamily: "var(--serif-cn)", fontSize: 14, color: "var(--ink-2)" }}>{daily.moon}</span>
+          {daily.lucky_direction && <span style={{ fontSize: 13, color: "var(--ink-3)" }}>利方位 <strong style={{ color: "var(--ink)" }}>{daily.lucky_direction}</strong></span>}
+          {daily.color_name && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--ink-3)" }}>吉色 <span style={{ display: "inline-block", width: 12, height: 12, background: daily.color || "var(--gild)", border: "1px solid var(--ink)", opacity: 0.7 }} /><strong style={{ color: "var(--ink)" }}>{daily.color_name}</strong></span>}
+        </div>
+      )}
+
       {/* identity strip */}
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "end", borderBottom: "1px solid var(--ink)", paddingBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "end", borderBottom: "1px solid var(--ink)", paddingBottom: 24, marginTop: daily ? 24 : 0 }}>
           <div>
             <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>盘 · CHART · {(p.scenario || "general").toUpperCase()}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 24, marginTop: 14, flexWrap: "wrap" }}>
@@ -2428,7 +2531,7 @@ function ChartScreen({ go, profile, charts, chartsLoading, chartsError, hasProfi
       <div style={{ maxWidth: 1400, margin: "40px auto 0" }}>
         {tab === "bazi"  && (bazi ? <BaziView bazi={bazi} isDemo={isDemo} /> : <ChartUnavailable system="八字" chartsLoading={chartsLoading} chartsError={chartsError} />)}
         {tab === "ziwei" && (ziwei ? <ZiweiView profile={p} ziwei={ziwei} /> : <ChartUnavailable system="紫微" chartsLoading={chartsLoading} chartsError={chartsError} />)}
-        {tab === "astro" && (astro ? <AstroView astro={astro} /> : <ChartUnavailable system="占星" chartsLoading={chartsLoading} chartsError={chartsError} />)}
+        {tab === "astro" && (astro ? <AstroView astro={astro} transit={transit} /> : <ChartUnavailable system="占星" chartsLoading={chartsLoading} chartsError={chartsError} />)}
         {tab === "numero"&& (numer ? <NumeroView numer={numer} /> : <ChartUnavailable system="数字命理" chartsLoading={chartsLoading} chartsError={chartsError} />)}
         {tab === "all"   && <AllView bazi={bazi} ziwei={ziwei} astro={astro} numer={numer} chartsLoading={chartsLoading} chartsError={chartsError} />}
       </div>
@@ -2503,15 +2606,67 @@ function ChartUnavailable({ system, chartsLoading, chartsError }) {
 }
 
 function BaziView({ bazi, isDemo }) {
+  if (!bazi || !bazi.pillars) return null;
   const b = bazi;
+  const tenGodKeys = ["year", "month", "day", "hour"];
+  const tenGodLabels = ["年", "月", "日", "时"];
+  const POSITION_LABEL = { "year-month": "年月", "month-day": "月日", "day-hour": "日时", "year-day": "年日", "year-hour": "年时", "month-hour": "月时" };
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 56 }}>
-      {/* 4 pillars */}
+      {/* main column */}
       <div>
+        {/* 4 pillars */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
           {b.pillars.map(p => <PillarCard key={p.label} pillar={p} big />)}
         </div>
 
+        {/* A. Ten Gods row */}
+        {b.tenGods && Object.keys(b.tenGods).length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginTop: 0 }}>
+            {tenGodKeys.map((k, i) => {
+              const god = b.tenGods[k] || "";
+              const isDayMaster = k === "day";
+              return (
+                <div key={k} style={{
+                  textAlign: "center", padding: "10px 8px",
+                  background: isDayMaster ? "color-mix(in oklch, var(--cinnabar) 6%, transparent)" : "color-mix(in oklch, var(--gild) 6%, transparent)",
+                  borderBottom: isDayMaster ? "2px solid var(--cinnabar)" : "1px solid color-mix(in oklch, var(--gild) 40%, transparent)",
+                }}>
+                  <div style={{ fontFamily: "var(--serif-cn)", fontSize: 16, fontWeight: 600, color: isDayMaster ? "var(--cinnabar)" : "var(--ink)" }}>{god}</div>
+                  <div className="caps" style={{ fontSize: 9, color: "var(--ink-4)", marginTop: 2 }}>{tenGodLabels[i]}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* E. Pillar interactions */}
+        {b.interactions?.length > 0 && (
+          <div style={{ marginTop: 28 }}>
+            <Rule label="柱间交互 · PILLAR INTERACTIONS" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 16 }}>
+              {b.interactions.map((ix, i) => {
+                const posKey = Array.isArray(ix.positions) ? ix.positions.join("-") : (ix.positions || "");
+                const posLabel = POSITION_LABEL[posKey] || (ix.labels || []).join("·");
+                const parts = [...(ix.stem_interactions || []), ...(ix.branch_interactions || [])];
+                if (parts.length === 0) return null;
+                return (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "8px 14px",
+                    background: "color-mix(in oklch, var(--paper-2) 60%, transparent)",
+                    border: "var(--rule)",
+                  }}>
+                    <span style={{ fontFamily: "var(--serif-cn)", fontSize: 14, fontWeight: 600, color: "var(--ink-2)", minWidth: 32 }}>{posLabel}</span>
+                    <span style={{ fontFamily: "var(--serif-cn)", fontSize: 14, color: "var(--ink)" }}>{parts.join(" · ")}</span>
+                  </div>
+                );
+              }).filter(Boolean)}
+            </div>
+          </div>
+        )}
+
+        {/* F. Da Yun with ten gods */}
         {b.daYun?.length > 0 && (
           <div style={{ marginTop: 48 }}>
             <Rule label="大运 · MAJOR LUCK CYCLES" />
@@ -2527,9 +2682,35 @@ function BaziView({ bazi, isDemo }) {
                 }}>
                   <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{d.age}+</div>
                   <div style={{ fontFamily: "var(--serif-cn)", fontSize: 28, fontWeight: 600, marginTop: 6, color: d.current ? "var(--cinnabar)" : "var(--ink)" }}>{d.ganzhi}</div>
-                  {d.current && <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)", marginTop: 8 }}>当前 · NOW</div>}
+                  {d.tenGod && <div style={{ fontFamily: "var(--serif-cn)", fontSize: 12, color: "var(--ink-3)", marginTop: 6 }}>{d.tenGod}</div>}
+                  {d.current && <div className="caps" style={{ fontSize: 9, color: "var(--cinnabar)", marginTop: 6 }}>当前 · NOW</div>}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* G. Liu Nian */}
+        {b.liuNian?.length > 0 && (
+          <div style={{ marginTop: 36 }}>
+            <Rule label="流年 · ANNUAL FORTUNE" />
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(6, b.liuNian.length)}, 1fr)`, gap: 0, marginTop: 24 }}>
+              {b.liuNian.slice(0, 6).map((ln, i, arr) => {
+                const isCurrent = ln.year === new Date().getFullYear();
+                return (
+                  <div key={i} style={{
+                    padding: "14px 10px",
+                    borderLeft: i === 0 ? "1px solid var(--ink)" : "var(--rule)",
+                    borderRight: i === arr.length - 1 ? "1px solid var(--ink)" : "none",
+                    borderTop: "1px solid var(--ink)", borderBottom: "1px solid var(--ink)",
+                    background: isCurrent ? "color-mix(in oklch, var(--jade) 6%, transparent)" : "transparent",
+                  }}>
+                    <div className="mono" style={{ fontSize: 10, color: isCurrent ? "var(--jade)" : "var(--ink-3)" }}>{ln.year}</div>
+                    <div style={{ fontFamily: "var(--serif-cn)", fontSize: 22, fontWeight: 600, marginTop: 4, color: isCurrent ? "var(--jade)" : "var(--ink)" }}>{ln.ganzhi}</div>
+                    {isCurrent && <div className="caps" style={{ fontSize: 9, color: "var(--jade)", marginTop: 6 }}>今年 · THIS YEAR</div>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -2561,11 +2742,134 @@ function BaziView({ bazi, isDemo }) {
           </div>
         </div>
 
-        {b.shenSha?.length > 0 && (
+        {/* B. Strength indicator */}
+        {b.strength && (
+          <div style={{ marginTop: 48 }}>
+            <Lockup cn="身强弱" en="DAY MASTER STRENGTH" size="md" />
+            <div style={{ marginTop: 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                <span style={{
+                  fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 700,
+                  color: b.strength.category === "身强" ? "var(--cinnabar)" : "var(--jade)",
+                }}>{b.strength.category}</span>
+                <span className="mono" style={{ fontSize: 13, color: "var(--ink-3)" }}>{b.strength.score_0_100}/100</span>
+              </div>
+              <div style={{ height: 8, background: "color-mix(in oklch, var(--ink) 8%, transparent)", overflow: "hidden" }}>
+                <div style={{
+                  height: "100%", width: `${b.strength.score_0_100}%`,
+                  background: b.strength.score_0_100 >= 50 ? "var(--cinnabar)" : "var(--jade)",
+                  transition: "width .8s ease",
+                }} />
+              </div>
+              {b.strength.same_party_score != null && (
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
+                  <div>
+                    <div className="caps" style={{ fontSize: 9 }}>同党 · SAME</div>
+                    <div className="mono" style={{ fontSize: 13, color: "var(--ink-2)", marginTop: 2 }}>{b.strength.same_party_score}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div className="caps" style={{ fontSize: 9 }}>异党 · OTHER</div>
+                    <div className="mono" style={{ fontSize: 13, color: "var(--ink-2)", marginTop: 2 }}>{b.strength.other_party_score}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* C. Xi Ji (favorable / unfavorable) */}
+        {b.xiJi && (
+          <div style={{ marginTop: 48 }}>
+            <Lockup cn="喜忌" en="FAVORABLE / UNFAVORABLE" size="md" />
+            <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+              {b.xiJi.favorable?.length > 0 && (
+                <div>
+                  <div className="caps" style={{ fontSize: 9, marginBottom: 6 }}>喜 · FAVORABLE</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {b.xiJi.favorable.map(el => (
+                      <span key={el} style={{
+                        fontFamily: "var(--serif-cn)", fontSize: 16, fontWeight: 600,
+                        padding: "4px 12px",
+                        background: "color-mix(in oklch, var(--jade) 10%, transparent)",
+                        color: "var(--jade)",
+                        border: "1px solid color-mix(in oklch, var(--jade) 30%, transparent)",
+                      }}>{el}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {b.xiJi.unfavorable?.length > 0 && (
+                <div>
+                  <div className="caps" style={{ fontSize: 9, marginBottom: 6 }}>忌 · UNFAVORABLE</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {b.xiJi.unfavorable.map(el => (
+                      <span key={el} style={{
+                        fontFamily: "var(--serif-cn)", fontSize: 16, fontWeight: 600,
+                        padding: "4px 12px",
+                        background: "color-mix(in oklch, var(--cinnabar) 8%, transparent)",
+                        color: "var(--cinnabar)",
+                        border: "1px solid color-mix(in oklch, var(--cinnabar) 25%, transparent)",
+                      }}>{el}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {b.xiJi.tiao_hou?.length > 0 && (
+                <div>
+                  <div className="caps" style={{ fontSize: 9, marginBottom: 6 }}>调候 · TIÁO HÒU</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {b.xiJi.tiao_hou.map(el => (
+                      <span key={el} style={{
+                        fontFamily: "var(--serif-cn)", fontSize: 16, fontWeight: 600,
+                        padding: "4px 12px",
+                        background: "color-mix(in oklch, var(--gild) 12%, transparent)",
+                        color: "var(--ink-2)",
+                        border: "1px solid color-mix(in oklch, var(--gild) 40%, transparent)",
+                      }}>{el}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Shen Sha + D. Kong Wang */}
+        {(b.shenSha?.length > 0 || b.kongWang?.length > 0) && (
           <div style={{ marginTop: 48 }}>
             <Lockup cn="神煞" en="SHEN SHA" size="md" />
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 18 }}>
-              {b.shenSha.map(s => <Chip key={s}>{s}</Chip>)}
+              {(b.shenSha || []).map(s => <Chip key={s}>{s}</Chip>)}
+            </div>
+            {b.kongWang?.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div className="caps" style={{ fontSize: 9, marginBottom: 8 }}>空亡 · VOID</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {b.kongWang.map(kw => (
+                    <span key={kw} style={{
+                      fontFamily: "var(--serif-cn)", fontSize: 14,
+                      padding: "3px 10px",
+                      background: "color-mix(in oklch, var(--ink) 6%, transparent)",
+                      border: "1px dashed color-mix(in oklch, var(--ink) 20%, transparent)",
+                      color: "var(--ink-3)",
+                    }}>{kw}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Ten God Patterns */}
+        {b.tenGodPatterns?.length > 0 && (
+          <div style={{ marginTop: 48 }}>
+            <Lockup cn="十神格局" en="TEN GOD PATTERNS" size="md" />
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 18 }}>
+              {b.tenGodPatterns.map((p, i) => {
+                  const label = typeof p === "string" ? p : (p && p.name) || "";
+                  if (!label) return null;
+                  return <Chip key={label + i} dot={false}>{label}</Chip>;
+                })}
             </div>
           </div>
         )}
@@ -2587,84 +2891,155 @@ function KV({ k, en, v, accent }) {
 }
 
 function ZiweiView({ profile, ziwei }) {
+  if (!ziwei || !ziwei.palaces) return null;
   const z = ziwei;
-  // simplified 12-palace grid (4x4 with center 2x2 info)
-  const palaces = [
-    "命宫","父母","福德","田宅",
-    "兄弟","",      "",     "官禄",
-    "夫妻","",      "",     "仆役",
-    "子女","财帛","疾厄","迁移",
-  ];
-  // Reorder to canonical 12-palace ring (clockwise from Si)
+  const SIHUA_COLOR = { "禄": "var(--cinnabar)", "权": "var(--jade)", "科": "oklch(0.55 0.10 240)", "忌": "var(--ink-3)" };
+  const SIHUA_LABEL = { "禄": "lù", "权": "quán", "科": "kē", "忌": "jì" };
+  const BRANCH_GRID = {
+    "巳":[1,1],"午":[1,2],"未":[1,3],"申":[1,4],
+    "辰":[2,1],"酉":[2,4],"卯":[3,1],"戌":[3,4],
+    "寅":[4,1],"丑":[4,2],"子":[4,3],"亥":[4,4],
+  };
+  const isMing = (p) => p?.name === z.ming;
+  const isShen = (p) => p?.name === z.shen;
+  const isCurrentDx = (p) => z.currentDaXian && p?.branch === z.currentDaXian.branch;
+  const renderStar = (name, siHuaList) => {
+    const hua = (siHuaList || []).find(s => s.startsWith(name));
+    const huaChar = hua ? hua.replace(name, "").replace("化", "") : null;
+    return (
+      <span key={name} style={{ display: "inline-flex", alignItems: "baseline", gap: 2 }}>
+        <span>{name}</span>
+        {huaChar && <span style={{ fontSize: 10, fontWeight: 700, color: SIHUA_COLOR[huaChar] || "var(--ink-3)" }}>{"化" + huaChar}</span>}
+      </span>
+    );
+  };
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 56 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 48 }}>
       <div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gridTemplateRows: "repeat(4, 140px)", gap: 0, border: "1px solid var(--ink)" }}>
-          {palaces.map((p, i) => {
-            const isCenter = i === 5 || i === 6 || i === 9 || i === 10;
-            const skip = i === 6 || i === 10; // covered by spans
-            if (skip) return null;
-            const ming = p === "命宫";
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gridTemplateRows: "repeat(4, minmax(130px, auto))", gap: 0, border: "1px solid var(--ink)" }}>
+          {z.palaces.map((p) => {
+            const pos = BRANCH_GRID[p.branch];
+            if (!pos) return null;
+            const ming = isMing(p);
+            const shen = isShen(p);
+            const dxActive = isCurrentDx(p);
+            const decRange = p.decadal?.range;
             return (
-              <div key={i} style={{
-                gridColumn: i === 5 || i === 9 ? "span 2" : "auto",
-                gridRow: i === 5 ? "span 2" : "auto",
-                borderRight: i % 4 < 3 ? "var(--rule)" : "none",
-                borderBottom: Math.floor(i / 4) < 3 ? "var(--rule)" : "none",
-                padding: 16,
+              <div key={p.name} style={{
+                gridRow: pos[0], gridColumn: pos[1],
+                borderRight: pos[1] < 4 ? "var(--rule)" : "none",
+                borderBottom: pos[0] < 4 ? "var(--rule)" : "none",
+                padding: "10px 10px 6px",
                 position: "relative",
-                background: ming ? "color-mix(in oklch, var(--cinnabar) 5%, transparent)" : "transparent",
+                background: ming ? "color-mix(in oklch, var(--cinnabar) 5%, transparent)" : dxActive ? "color-mix(in oklch, var(--gild) 6%, transparent)" : "transparent",
               }}>
-                {i === 5 ? (
-                  <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", alignItems: "center", gap: 8 }}>
-                    <div className="caps" style={{ fontSize: 9 }}>命主 · CENTER</div>
-                    <div style={{ fontFamily: "var(--serif-cn)", fontSize: 36, fontWeight: 700 }}>{profile?.name || SAMPLE_PROFILE.name}</div>
-                    <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{z.局}</div>
-                    <div className="hairline" style={{ width: "60%", margin: "8px 0" }} />
-                    <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>命: {z.ming} · 身: {z.shen}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+                  <span style={{ fontFamily: "var(--serif-cn)", fontSize: 13, fontWeight: 600, color: ming ? "var(--cinnabar)" : "var(--ink)" }}>
+                    {p.name}{shen && !ming ? " · 身" : ""}
+                  </span>
+                  <span className="mono" style={{ fontSize: 9, color: "var(--ink-4)" }}>{p.ganzhi || `${p.stem}${p.branch}`}</span>
+                </div>
+                {ming && shen && <span style={{ position: "absolute", top: 6, right: 28, fontSize: 9, color: "var(--cinnabar)", fontFamily: "var(--serif-cn)" }}>命身同宫</span>}
+                <div style={{ fontFamily: "var(--serif-cn)", fontSize: 13, lineHeight: 1.7, color: "var(--ink)" }}>
+                  {(p.stars || []).map(s => <div key={s}>{renderStar(s, p.si_hua)}</div>)}
+                </div>
+                {(p.auxiliary || []).length > 0 && (
+                  <div style={{ fontSize: 10, color: "var(--ink-3)", marginTop: 3, lineHeight: 1.5, fontFamily: "var(--serif-cn)" }}>
+                    {p.auxiliary.slice(0, 4).join(" · ")}
                   </div>
-                ) : (
-                  <>
-                    <div style={{ fontFamily: "var(--serif-cn)", fontSize: 16, fontWeight: 600, color: ming ? "var(--cinnabar)" : "var(--ink)" }}>{p}</div>
-                    {ming && (
-                      <div style={{ marginTop: 12, fontFamily: "var(--serif-cn)", fontSize: 14, lineHeight: 1.6 }}>
-                        <div>巨门 <span style={{ color: "var(--cinnabar)" }}>禄</span></div>
-                        <div>太阳 <span style={{ color: "var(--cinnabar)" }}>权</span></div>
-                      </div>
-                    )}
-                    {p === "迁移" && <div style={{ marginTop: 8, fontFamily: "var(--serif-cn)", fontSize: 13, color: "var(--ink-2)" }}>文昌 <span style={{ color: "var(--cinnabar)" }}>忌</span></div>}
-                    {p === "官禄" && <div style={{ marginTop: 8, fontFamily: "var(--serif-cn)", fontSize: 13, color: "var(--ink-2)" }}>天梁 <span style={{ color: "var(--cinnabar)" }}>科</span></div>}
-                  </>
+                )}
+                {decRange && decRange.length === 2 && (
+                  <div className="mono" style={{ fontSize: 9, color: dxActive ? "var(--gild)" : "var(--ink-4)", marginTop: 4 }}>
+                    {decRange[0]}–{decRange[1]}
+                  </div>
                 )}
               </div>
             );
           })}
+          <div style={{ gridRow: "2 / 4", gridColumn: "2 / 4", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 6, borderRight: "var(--rule)", borderBottom: "var(--rule)", padding: 16 }}>
+            <div className="caps" style={{ fontSize: 9 }}>命主 · CENTER</div>
+            <div style={{ fontFamily: "var(--serif-cn)", fontSize: 32, fontWeight: 700 }}>{profile?.name || "—"}</div>
+            <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{z.局}</div>
+            <div className="hairline" style={{ width: "60%", margin: "4px 0" }} />
+            <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>命宫: {z.mingBranch} · 身宫: {z.shenBranch}</div>
+            {z.soulStar && <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>命主: {z.soulStar} · 身主: {z.bodyStar || "—"}</div>}
+          </div>
         </div>
       </div>
 
       <div>
-        <Lockup cn="四化" en="FOUR TRANSFORMATIONS" size="md" />
-        <div style={{ marginTop: 18 }}>
+        <Lockup cn="四化飞星" en="FOUR TRANSFORMATIONS" size="md" />
+        <div style={{ marginTop: 14 }}>
           {Object.entries(z.bihua).map(([k, v]) => (
-            <KV key={k} k={`化${k}`} en={k === "禄" ? "lù · prosperity" : k === "权" ? "quán · authority" : k === "科" ? "kē · fame" : "jì · taboo"} v={v} accent={k === "禄"} />
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "var(--rule)", fontSize: 14 }}>
+              <span style={{ color: SIHUA_COLOR[k], fontWeight: 600, fontFamily: "var(--serif-cn)" }}>化{k}</span>
+              <span style={{ fontFamily: "var(--serif-cn)" }}>{v}</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--ink-4)" }}>{SIHUA_LABEL[k]}</span>
+            </div>
           ))}
         </div>
 
-        <div style={{ marginTop: 48 }}>
-          <Lockup cn="中州派" en="ZHONGZHOU SCHOOL" size="md" />
-          <p style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.7, marginTop: 12 }}>
-            紫微推演以中州派飞星为主，结合三方四正与化禄/化忌交涉点判读。
-          </p>
+        {z.currentDaXian && (
+          <div style={{ marginTop: 32 }}>
+            <Lockup cn="当前大限" en="CURRENT DECADE" size="md" />
+            <div style={{ marginTop: 12, padding: 16, border: "1px solid var(--gild)", background: "color-mix(in oklch, var(--gild) 4%, transparent)" }}>
+              <div style={{ fontFamily: "var(--serif-cn)", fontSize: 18, fontWeight: 600 }}>
+                {z.currentDaXian.palace_name}
+                <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)", marginLeft: 8 }}>{z.currentDaXian.stem}{z.currentDaXian.branch}</span>
+              </div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--ink-2)", marginTop: 6 }}>
+                {z.currentDaXian.age_start}–{z.currentDaXian.age_end} 岁
+              </div>
+              {z.daXianSiHua && (
+                <div style={{ marginTop: 10, fontSize: 13, fontFamily: "var(--serif-cn)", lineHeight: 1.8 }}>
+                  {Object.entries(z.daXianSiHua).map(([k, v]) => (
+                    <div key={k}>
+                      <span style={{ color: SIHUA_COLOR[k.replace("化","")] || "var(--ink-3)", fontWeight: 600 }}>{k}</span>
+                      <span style={{ marginLeft: 6 }}>{v.star} → {v.palace}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {z.liuNian && (
+          <div style={{ marginTop: 32 }}>
+            <Lockup cn="流年" en={`ANNUAL · ${z.liuNian.year || ""}`} size="md" />
+            <div style={{ marginTop: 12, fontSize: 13, fontFamily: "var(--serif-cn)", lineHeight: 1.8 }}>
+              {z.liuNian.ming_gong && <div>流年命宫: <strong>{z.liuNian.ming_gong}</strong></div>}
+              {z.liuNian.si_hua && Object.entries(z.liuNian.si_hua).map(([k, v]) => (
+                <div key={k}>
+                  <span style={{ color: SIHUA_COLOR[k.replace("化","")] || "var(--ink-3)" }}>{k}</span>: {typeof v === "object" ? `${v.star} → ${v.palace}` : v}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{ marginTop: 32 }}>
+          <Lockup cn="大限一览" en="DECADAL PERIODS" size="md" />
+          <div style={{ marginTop: 12, fontSize: 12, fontFamily: "var(--mono)", lineHeight: 1.8 }}>
+            {z.daXian.map((dx, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, color: z.currentDaXian?.palace_name === dx.palace_name ? "var(--gild)" : "var(--ink-3)" }}>
+                <span style={{ width: 50 }}>{dx.age_start}–{dx.age_end}</span>
+                <span style={{ fontFamily: "var(--serif-cn)" }}>{dx.palace_name}</span>
+                <span>{dx.stem}{dx.branch}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function AstroView({ astro }) {
+function AstroView({ astro, transit }) {
+  if (!astro || !astro.bodies) return null;
   const a = astro;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "start" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 40, alignItems: "start" }}>
       <div style={{ display: "flex", justifyContent: "center", color: "var(--ink)" }}>
         <AnimatedAstroWheel size={460} astro={a} />
       </div>
@@ -2679,26 +3054,81 @@ function AstroView({ astro }) {
             <div key={i} style={{ padding: 20, borderRight: i < 2 ? "var(--rule)" : "none", textAlign: "center" }}>
               <div className="caps" style={{ fontSize: 10 }}>{x.en}</div>
               <div style={{ fontFamily: "var(--serif-cn)", fontWeight: 600, fontSize: 18, marginTop: 6 }}>{x.cn}</div>
-              <div style={{ fontFamily: "var(--serif-en)", fontSize: 36, marginTop: 10 }}>{x.body.glyph}</div>
-              <div className="em" style={{ fontSize: 16, marginTop: 4 }}>{x.body.sign}</div>
-              <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 4 }}>{(x.body.deg || 0).toFixed(2)}°</div>
+              <div style={{ fontFamily: "var(--serif-cn)", fontSize: 28, marginTop: 10, color: "var(--cinnabar)", fontWeight: 700 }}>
+                {({"Aries":"白羊","Taurus":"金牛","Gemini":"双子","Cancer":"巨蟹","Leo":"狮子","Virgo":"处女","Libra":"天秤","Scorpio":"天蝎","Sagittarius":"射手","Capricorn":"摩羯","Aquarius":"水瓶","Pisces":"双鱼"})[x.body.sign] || x.body.sign}
+              </div>
+              <div className="em" style={{ fontSize: 14, marginTop: 4, color: "var(--ink-3)" }}>{x.body.sign}</div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 4 }}>{(x.body.deg || 0).toFixed(2)}°</div>
             </div>
           ))}
         </div>
 
         <div style={{ marginTop: 36 }}>
           <Lockup cn="行星位置" en="POSITIONS" size="md" />
-          <div style={{ marginTop: 14, fontFamily: "var(--mono)", fontSize: 13, lineHeight: 1.9 }}>
-            {a.bodies.slice(0, 7).map(b => (
-              <div key={b.name} style={{ display: "grid", gridTemplateColumns: "32px 1fr 80px 60px", gap: 12, padding: "4px 0", borderBottom: "var(--rule)" }}>
-                <span style={{ fontFamily: "var(--serif-en)", fontSize: 16 }}>{b.glyph}</span>
-                <span style={{ fontFamily: "var(--serif-en)" }}>{b.name}</span>
-                <span style={{ color: "var(--ink-3)" }}>{b.sign}</span>
-                <span style={{ color: "var(--cinnabar)" }}>{(b.deg || 0).toFixed(1)}° · {b.house}H</span>
+          <div style={{ marginTop: 14, fontFamily: "var(--mono)", fontSize: 13, lineHeight: 1.8 }}>
+            {a.bodies.map(b => {
+              const pcn = ({"Sun":"日","Moon":"月","Mercury":"水","Venus":"金","Mars":"火","Jupiter":"木","Saturn":"土","Uranus":"天","Neptune":"海","Pluto":"冥","N.Node":"北","Chiron":"幸"})[b.name] || b.name.charAt(0);
+              return (
+              <div key={b.name} style={{ display: "flex", alignItems: "center", padding: "6px 0", borderBottom: "var(--rule)", gap: 0 }}>
+                <span style={{ fontFamily: "var(--serif-cn)", fontSize: 15, fontWeight: 600, color: "var(--cinnabar)", width: 24, flexShrink: 0 }}>{pcn}</span>
+                <span style={{ fontFamily: "var(--serif-en)", display: "flex", alignItems: "center", gap: 4, width: 90, flexShrink: 0 }}>
+                  {b.name}
+                  {b.retrograde && <span style={{ color: "var(--cinnabar)", fontSize: 11 }}>℞</span>}
+                </span>
+                <span style={{ color: "var(--ink-3)", flex: 1 }}>{b.sign}</span>
+                <span style={{ color: "var(--cinnabar)", textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }}>{(b.deg || 0).toFixed(1)}°</span>
+                <span style={{ color: "var(--ink-3)", textAlign: "right", whiteSpace: "nowrap", flexShrink: 0, width: 32 }}>{b.house}H</span>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
+
+        {a.distributions && (() => {
+          const ELEM_META = { fire: { cn: "火", color: "var(--cinnabar)" }, earth: { cn: "土", color: "var(--jade)" }, air: { cn: "风", color: "var(--gild)" }, water: { cn: "水", color: "var(--ink-3)" } };
+          const MOD_META = { cardinal: { cn: "本位" }, fixed: { cn: "固定" }, mutable: { cn: "变动" } };
+          const els = a.distributions.elements || {};
+          const mods = a.distributions.modalities || {};
+          const elTotal = Object.values(els).reduce((s, v) => s + v, 0) || 1;
+          const modTotal = Object.values(mods).reduce((s, v) => s + v, 0) || 1;
+          return (
+            <div style={{ marginTop: 36 }}>
+              <Lockup cn="元素分布" en="ELEMENTS" size="md" />
+              <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
+                {Object.entries(ELEM_META).map(([k, meta]) => {
+                  const count = els[k] || 0;
+                  return (
+                    <div key={k} style={{ flex: 1, textAlign: "center" }}>
+                      <div style={{ fontFamily: "var(--serif-cn)", fontSize: 14, marginBottom: 6 }}>{meta.cn}</div>
+                      <div style={{ height: 6, borderRadius: 3, background: "var(--rule-color, rgba(0,0,0,0.08))", overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${(count / elTotal) * 100}%`, background: meta.color, borderRadius: 3 }} />
+                      </div>
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 12, color: meta.color, marginTop: 4, fontWeight: 600 }}>{count}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ marginTop: 24 }}>
+                <Lockup cn="模式分布" en="MODALITIES" size="md" />
+                <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
+                  {Object.entries(MOD_META).map(([k, meta]) => {
+                    const count = mods[k] || 0;
+                    return (
+                      <div key={k} style={{ flex: 1, textAlign: "center" }}>
+                        <div style={{ fontFamily: "var(--serif-cn)", fontSize: 14, marginBottom: 6 }}>{meta.cn}</div>
+                        <div style={{ height: 6, borderRadius: 3, background: "var(--rule-color, rgba(0,0,0,0.08))", overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${(count / modTotal) * 100}%`, background: "var(--ink)", borderRadius: 3 }} />
+                        </div>
+                        <div style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--ink-2)", marginTop: 4, fontWeight: 600 }}>{count}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         <div style={{ marginTop: 36 }}>
           <Lockup cn="主要相位" en="KEY ASPECTS" size="md" />
@@ -2712,12 +3142,54 @@ function AstroView({ astro }) {
             ))}
           </div>
         </div>
+
+        {/* Transit — current sky */}
+        {transit && transit.transit_planets && (() => {
+          const TPCN = {"sun":"日","moon":"月","mercury":"水","venus":"金","mars":"火","jupiter":"木","saturn":"土","uranus":"天","neptune":"海","pluto":"冥"};
+          const SIGN_CN = {"白羊座":"白羊","金牛座":"金牛","双子座":"双子","巨蟹座":"巨蟹","狮子座":"狮子","处女座":"处女","天秤座":"天秤","天蝎座":"天蝎","射手座":"射手","摩羯座":"摩羯","水瓶座":"水瓶","双鱼座":"双鱼"};
+          const tpEntries = Object.entries(transit.transit_planets).filter(([k]) => TPCN[k]);
+          const keyEvents = transit.key_transits || [];
+          const EVENT_CN = { saturn_return: "土星回归", jupiter_return: "木星回归", mercury_retrograde: "水星逆行", mars_retrograde: "火星逆行", saturn_retrograde: "土星逆行", uranus_opposition: "天王星对冲" };
+          return (
+            <div style={{ marginTop: 48 }}>
+              <Lockup cn="当前天象 · 过运" en="TRANSITS · NOW" size="md" />
+              <div className="caps" style={{ fontSize: 9, color: "var(--ink-4)", marginTop: 6 }}>{transit.target_date ? new Date(transit.target_date).toLocaleDateString("zh-CN") : ""}</div>
+
+              {keyEvents.length > 0 && (
+                <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {keyEvents.map((ev, i) => (
+                    <span key={i} style={{
+                      fontFamily: "var(--serif-cn)", fontSize: 13, fontWeight: 600,
+                      padding: "4px 12px",
+                      background: "color-mix(in oklch, var(--cinnabar) 8%, transparent)",
+                      color: "var(--cinnabar)",
+                      border: "1px solid color-mix(in oklch, var(--cinnabar) 25%, transparent)",
+                    }}>{EVENT_CN[ev.event] || ev.event}{ev.orb != null ? ` (${ev.orb}°)` : ""}</span>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ marginTop: 14, fontFamily: "var(--mono)", fontSize: 13 }}>
+                {tpEntries.map(([k, tp]) => (
+                  <div key={k} style={{ display: "flex", alignItems: "center", padding: "5px 0", borderBottom: "var(--rule)", gap: 0 }}>
+                    <span style={{ fontFamily: "var(--serif-cn)", fontSize: 15, fontWeight: 600, color: "var(--jade)", width: 24, flexShrink: 0 }}>{TPCN[k]}</span>
+                    <span style={{ fontFamily: "var(--serif-en)", width: 80, flexShrink: 0 }}>{k}</span>
+                    <span style={{ color: "var(--ink-3)", flex: 1 }}>{SIGN_CN[tp.sign] || (tp.sign || "").replace("座","")}</span>
+                    <span style={{ color: "var(--jade)", textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }}>{(tp.sign_degree || 0).toFixed(1)}°</span>
+                    {tp.retrograde && <span style={{ color: "var(--cinnabar)", fontSize: 11, marginLeft: 6 }}>℞</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
 }
 
 function NumeroView({ numer }) {
+  if (!numer) return null;
   const n = numer;
   const noteFor = (num) => n.notes?.[num] ?? "";
   const items = [
@@ -2768,27 +3240,60 @@ function AllView({ bazi, ziwei, astro, numer, chartsLoading, chartsError }) {
           {b.pillars.map(p => <PillarCard key={p.label} pillar={p} />)}
         </div>
       </div>}
-      {a && <div className="card" style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "var(--ink)" }}>
-        <Lockup cn="占星 · 星盘" en="NATAL CHART" size="md" />
-        <div style={{ marginTop: 16 }}><AstroWheel size={300} data={a} /></div>
-      </div>}
+      {a && (() => {
+        const SIGN_CN = {"Aries":"白羊","Taurus":"金牛","Gemini":"双子","Cancer":"巨蟹","Leo":"狮子","Virgo":"处女","Libra":"天秤","Scorpio":"天蝎","Sagittarius":"射手","Capricorn":"摩羯","Aquarius":"水瓶","Pisces":"双鱼"};
+        return (
+        <div className="card">
+          <Lockup cn="占星 · 星盘" en="NATAL CHART" size="md" />
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}><AnimatedAstroWheel size={360} astro={a} /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0, marginTop: 16, borderTop: "1px solid var(--ink)" }}>
+            {[
+              { cn: "太阳", en: "Sun", body: a.sun },
+              { cn: "月亮", en: "Moon", body: a.moon },
+              { cn: "上升", en: "Asc", body: a.asc },
+            ].map((x, i) => (
+              <div key={i} style={{ padding: "12px 8px", borderRight: i < 2 ? "var(--rule)" : "none", textAlign: "center" }}>
+                <div className="caps" style={{ fontSize: 9 }}>{x.cn} · {x.en}</div>
+                <div style={{ fontFamily: "var(--serif-cn)", fontSize: 20, fontWeight: 700, color: "var(--cinnabar)", marginTop: 4 }}>
+                  {SIGN_CN[x.body.sign] || x.body.sign}
+                </div>
+                <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>{(x.body.deg || 0).toFixed(1)}°</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        );
+      })()}
       {z && <div className="card">
         <Lockup cn="紫微 · 命主" en="ZIWEI · LIFE PALACE" size="md" />
         <div style={{ marginTop: 24, fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.9 }}>
-          <div>命宫: <strong>{z.ming}</strong> · 化禄 {z.bihua["禄"]} · 化权 {z.bihua["权"]}</div>
-          <div>身宫: <strong>{z.shen}</strong></div>
+          <div>命宫: <strong>{z.ming}（{z.mingBranch}）</strong> · 化禄 {z.bihua["禄"]} · 化权 {z.bihua["权"]}</div>
+          <div>身宫: <strong>{z.shen}（{z.shenBranch}）</strong></div>
           <div>局: <strong>{z.局}</strong></div>
         </div>
       </div>}
       {nm && <div className="card">
         <Lockup cn="数字命理" en="NUMEROLOGY" size="md" />
-        <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, textAlign: "center" }}>
-          {[nm.life, nm.expression, nm.soul, nm.personality, nm.year].map((v, i) => (
-            <div key={i}>
-              <div style={{ fontFamily: "var(--serif-en)", fontSize: 48, fontWeight: 500, lineHeight: 1, color: i === 4 ? "var(--cinnabar)" : "var(--ink)" }}>{v}</div>
-              <div className="caps" style={{ fontSize: 8, marginTop: 8 }}>
-                {["LIFE","EXPR","SOUL","PERS","YEAR"][i]}
-              </div>
+        <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, textAlign: "center" }}>
+          {[
+            { v: nm.life, cn: "生命", en: "LIFE" },
+            { v: nm.expression, cn: "表达", en: "EXPR" },
+            { v: nm.soul, cn: "灵魂", en: "SOUL" },
+          ].map((x, i) => (
+            <div key={i} style={{ padding: "8px 0", borderRight: i < 2 ? "var(--rule)" : "none" }}>
+              <div style={{ fontFamily: "var(--serif-en)", fontSize: 44, fontWeight: 500, lineHeight: 1, color: "var(--ink)" }}>{x.v}</div>
+              <div className="caps" style={{ fontSize: 8, marginTop: 6 }}>{x.cn} · {x.en}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, marginTop: 12, borderTop: "var(--rule)", textAlign: "center" }}>
+          {[
+            { v: nm.personality, cn: "人格", en: "PERS" },
+            { v: nm.year, cn: "今年", en: "YEAR", accent: true },
+          ].map((x, i) => (
+            <div key={i} style={{ padding: "10px 0", borderRight: i === 0 ? "var(--rule)" : "none" }}>
+              <div style={{ fontFamily: "var(--serif-en)", fontSize: 36, fontWeight: 500, lineHeight: 1, color: x.accent ? "var(--cinnabar)" : "var(--ink)" }}>{x.v}</div>
+              <div className="caps" style={{ fontSize: 8, marginTop: 6 }}>{x.cn} · {x.en}</div>
             </div>
           ))}
         </div>
@@ -3384,23 +3889,118 @@ function ReportScreen({ go, profile, charts, hasProfile }) {
   const raw = charts?.charts;
   const isDemo = !hasProfile && (profile?.name || SAMPLE_PROFILE.name) === SAMPLE_PROFILE.name;
   const baziAdapted = useMemo(() => adaptBazi(raw?.bazi) || (isDemo ? BAZI : null), [raw, isDemo]);
+  const ziweiAdapted = useMemo(() => adaptZiwei(raw?.ziwei) || (isDemo ? ZIWEI : null), [raw, isDemo]);
+  const astroAdapted = useMemo(() => adaptAstro(raw?.natal_astro) || (isDemo ? ASTRO : null), [raw, isDemo]);
+  const numerAdapted = useMemo(() => adaptNumer(raw?.numerology) || (isDemo ? NUMER : null), [raw, isDemo]);
 
-  if (!isDemo) {
+  const hasAnyChart = baziAdapted || ziweiAdapted || astroAdapted || numerAdapted;
+
+  // No charts at all — show "not ready"
+  if (!isDemo && !hasAnyChart) {
     return (
       <div className="fade-in screen" style={{ position: "relative" }}>
         <div style={{ maxWidth: 980, margin: "0 auto", border: "1px solid var(--ink)", padding: 48, background: "color-mix(in oklch, var(--paper) 60%, var(--paper-2))" }}>
           <div className="caps" style={{ fontSize: 10, color: "var(--cinnabar)" }}>研报未生成 · REPORT NOT READY</div>
-          <h1 style={{ fontFamily: "var(--serif-cn)", fontSize: 48, lineHeight: 1.2, margin: "16px 0 0" }}>
-            不能用示例研报代替你的命盘
-          </h1>
+          <h1 style={{ fontFamily: "var(--serif-cn)", fontSize: 48, lineHeight: 1.2, margin: "16px 0 0" }}>盘面数据尚未就绪</h1>
           <p style={{ fontFamily: "var(--serif-cn)", fontSize: 17, lineHeight: 1.9, color: "var(--ink-2)", marginTop: 18 }}>
-            深度研报必须由当前档案、当前问题和真实盘面生成。请先进入咨询，让 Agent 完成排盘、追问和综合后再归档成研报。
+            请先回到盘面页面等待排盘完成，排盘成功后即可生成研报。
           </p>
           <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
-            <button className="btn btn-ghost" onClick={() => go("chart")}>回本命盘 · chart</button>
-            <button className="btn" onClick={() => go("chat")}>进入咨询 · consult <span className="arr">→</span></button>
+            <button className="btn" onClick={() => go("chart")}>回本命盘 · chart <span className="arr">→</span></button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Real profile with chart data — generate data-driven report
+  if (!isDemo) {
+    const b = baziAdapted, z = ziweiAdapted, a = astroAdapted, nm = numerAdapted;
+    const SIGN_CN = {"Aries":"白羊","Taurus":"金牛","Gemini":"双子","Cancer":"巨蟹","Leo":"狮子","Virgo":"处女","Libra":"天秤","Scorpio":"天蝎","Sagittarius":"射手","Capricorn":"摩羯","Aquarius":"水瓶","Pisces":"双鱼"};
+    return (
+      <div className="fade-in" style={{ position: "relative", background: "var(--paper)" }}>
+        <ReportCover profile={profile} />
+
+        {/* Bazi */}
+        {b && <ReportChapter no="01" cn="八字 · 子平派" en="Four Pillars · Ziping School" body={
+          <>
+            <p>日主 <strong style={{ color: "var(--cinnabar)" }}>{b.master || "—"}</strong>，格局为 <strong>{b.pattern || "—"}</strong>，用神取 <strong style={{ color: "var(--cinnabar)" }}>{b.yongShen || "—"}</strong>。</p>
+            {b.strength && <p>{b.strength.category}，日主强度 {b.strength.score_0_100}/100。{b.strength.same_party_score != null ? `同党力 ${b.strength.same_party_score}，异党力 ${b.strength.other_party_score}。` : ""}</p>}
+            {b.xiJi && <>
+              {b.xiJi.favorable?.length > 0 && <p>喜用五行：<strong style={{ color: "var(--jade)" }}>{b.xiJi.favorable.join("、")}</strong>。{b.xiJi.unfavorable?.length > 0 ? `忌见 ${b.xiJi.unfavorable.join("、")}。` : ""}</p>}
+            </>}
+            {b.daYun?.length > 0 && <p>当前大运：{b.daYun.filter(d => d.current).map(d => <strong key={d.ganzhi}>{d.ganzhi}（{d.tenGod}）</strong>)[0] || "—"}。</p>}
+            {b.interactions?.length > 0 && <p>柱间交互：{b.interactions.slice(0, 4).map(ix => {
+              const parts = [...(ix.stem_interactions || []), ...(ix.branch_interactions || [])];
+              return parts.join("·");
+            }).filter(Boolean).join("，")}。</p>}
+          </>
+        } sidebar={<BaziMiniGrid bazi={b} />} />}
+
+        {/* Ziwei */}
+        {z && <ReportChapter no="02" cn="紫微斗数" en="Zǐwēi Dǒushù" body={
+          <>
+            <p>{z.局}，命宫在 <strong>{z.ming}（{z.mingBranch}）</strong>，身宫在 <strong>{z.shen}（{z.shenBranch}）</strong>。{z.soulStar ? `命主星 ${z.soulStar}` : ""}{z.bodyStar ? `，身主星 ${z.bodyStar}` : ""}。</p>
+            <p>四化飞星——化禄 <strong>{z.bihua["禄"]}</strong>，化权 <strong>{z.bihua["权"]}</strong>，化科 <strong>{z.bihua["科"]}</strong>，化忌 <strong style={{ color: "var(--ink-3)" }}>{z.bihua["忌"]}</strong>。</p>
+            {z.currentDaXian && <p>当前大限（{z.currentDaXian.age_start}–{z.currentDaXian.age_end}岁）走 <strong>{z.currentDaXian.palace_name}</strong>（{z.currentDaXian.stem}{z.currentDaXian.branch}）。</p>}
+          </>
+        } sidebar={
+          <SidebarKVList items={[
+            { k: "命宫", v: `${z.ming}（${z.mingBranch}）` },
+            { k: "身宫", v: `${z.shen}（${z.shenBranch}）` },
+            { k: "局", v: z.局 },
+            { k: "化禄", v: z.bihua["禄"], accent: true },
+            { k: "化权", v: z.bihua["权"] },
+            { k: "化科", v: z.bihua["科"] },
+            { k: "化忌", v: z.bihua["忌"] },
+          ]} />
+        } />}
+
+        {/* Astro */}
+        {a && <ReportChapter no="03" cn="占星 · 现代心理派" en="Astrology · Psychological" body={
+          <>
+            <p>太阳 <strong style={{ color: "var(--cinnabar)" }}>{SIGN_CN[a.sun.sign] || a.sun.sign} {Math.round(a.sun.deg)}°</strong>，月亮 <strong>{SIGN_CN[a.moon.sign] || a.moon.sign} {Math.round(a.moon.deg)}°</strong>，上升 <strong>{SIGN_CN[a.asc.sign] || a.asc.sign} {Math.round(a.asc.deg)}°</strong>。</p>
+            {a.aspects?.length > 0 && <p>主要相位：{a.aspects.slice(0, 5).map(asp => `${asp.a}${asp.b} ${asp.type}（容许度 ${asp.orb}°）`).join("；")}。</p>}
+            {a.distributions && <p>元素分布——火 {a.distributions.elements?.fire || 0}，土 {a.distributions.elements?.earth || 0}，风 {a.distributions.elements?.air || 0}，水 {a.distributions.elements?.water || 0}。</p>}
+          </>
+        } sidebar={
+          <SidebarKVList items={[
+            { k: "太阳", v: `${SIGN_CN[a.sun.sign] || a.sun.sign} ${Math.round(a.sun.deg)}°`, accent: true },
+            { k: "月亮", v: `${SIGN_CN[a.moon.sign] || a.moon.sign} ${Math.round(a.moon.deg)}°` },
+            { k: "上升", v: `${SIGN_CN[a.asc.sign] || a.asc.sign} ${Math.round(a.asc.deg)}°` },
+            { k: "月相", v: a.phase },
+          ]} />
+        } />}
+
+        {/* Numerology */}
+        {nm && <ReportChapter no="04" cn="数字命理" en="Numerology" body={
+          <>
+            <p>生命数 <strong style={{ color: "var(--cinnabar)" }}>{nm.life}</strong>，表达数 <strong>{nm.expression}</strong>，灵魂数 <strong>{nm.soul}</strong>，人格数 <strong>{nm.personality}</strong>。</p>
+            <p>今年个人年数 <strong style={{ color: "var(--cinnabar)" }}>{nm.year}</strong>。</p>
+          </>
+        } sidebar={
+          <SidebarKVList items={[
+            { k: "Life", v: String(nm.life), accent: true },
+            { k: "Expression", v: String(nm.expression) },
+            { k: "Soul", v: String(nm.soul) },
+            { k: "Personality", v: String(nm.personality) },
+            { k: "Personal Year", v: String(nm.year), accent: true },
+          ]} />
+        } />}
+
+        {/* CTA */}
+        <section style={{ padding: "60px var(--screen-pad)", display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 1400, margin: "0 auto", flexWrap: "wrap", gap: 24, borderTop: "var(--rule)" }}>
+          <div>
+            <div className="caps" style={{ fontSize: 10 }}>深度解读 · DEEP ANALYSIS</div>
+            <div style={{ fontFamily: "var(--serif-cn)", fontSize: 17, marginTop: 8, color: "var(--ink-2)", lineHeight: 1.8 }}>
+              以上为盘面速览。如需 Agent 深度解读（含塔罗、易经、风水、交叉验证），请进入咨询。
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button className="btn btn-ghost" onClick={() => window.print()}>导出 PDF · save</button>
+            <button className="btn" onClick={() => go("chat")}>请教 Agent · consult <span className="arr">→</span></button>
+          </div>
+        </section>
       </div>
     );
   }
@@ -4044,7 +4644,6 @@ const SCENARIO_MAP = {
 function App() {
   const [screen, setScreen] = useState("home");
   const [chatEverOpened, setChatEverOpened] = useState(false);
-
   const readSealed = () => {
     try { return localStorage.getItem("suan_sealed") === "1"; } catch { return false; }
   };
@@ -4233,7 +4832,25 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(err) { return { error: err }; }
+  componentDidCatch(err, info) { console.error("React crash:", err, info); }
+  render() {
+    if (this.state.error) {
+      return React.createElement("div", { style: { padding: 40, textAlign: "center", fontFamily: "var(--serif-cn)" } },
+        React.createElement("h2", null, "页面渲染出错"),
+        React.createElement("p", { style: { color: "var(--ink-3)", fontFamily: "var(--mono)", fontSize: 13 } }, String(this.state.error)),
+        React.createElement("button", {
+          className: "btn", style: { marginTop: 20 },
+          onClick: () => { try { localStorage.clear(); } catch(e){} window.location.reload(); }
+        }, "清除缓存并重载")
+      );
+    }
+    return this.props.children;
+  }
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<ErrorBoundary><App /></ErrorBoundary>);
 
   </script>
 </body>

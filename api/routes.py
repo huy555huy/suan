@@ -324,7 +324,7 @@ async def compute_charts_only(req: SyncReq):
     charts = Charts()
     executor = ToolExecutor(birth, charts, req.question or "", profile=profile)
     errors = []
-    for ct in ["bazi", "ziwei", "natal_astro", "numerology"]:
+    for ct in ["bazi", "ziwei", "natal_astro", "transit_astro", "numerology"]:
         result = await executor.dispatch("compute_chart", {"chart_type": ct})
         if result.get("error"):
             errors.append(f"{ct}:{result['error']}")
