@@ -338,29 +338,30 @@ WEST_GROUP = {"乾", "坤", "艮", "兑"}
 def _ming_gua(year: int, gender: str) -> str:
     """八宅命卦计算。
 
-    男：(100 - YY) mod 9
-    女：(YY - 4) mod 9
-    YY = 出生年末 2 位数字之和
+    经典公式（1900-1999）：
+        男：(100 - YY) mod 9，0 → 9
+        女：(YY - 4) mod 9，0 → 9
+    2000 年及以后：
+        男：(9 - (YY mod 9)) mod 9，0 → 9
+        女：(YY + 6) mod 9，0 → 9
+    YY = 出生年末两位数字（直接取模，不做归根）。
+    5 男寄坤、5 女寄艮。
     """
-    # 用简单方式取末两位
     yy = year % 100
-    # 处理出生年份为 2000 后：部分流派用 (10-YY/10) 然后再 mod；这里用经典口诀：
-    # 方法：取出生年末两位数字相加直至个位 (例如 1991 → 9+1=10 → 1+0=1)
-    s = sum(int(c) for c in str(yy).zfill(2))
-    while s >= 10:
-        s = sum(int(c) for c in str(s))
-    if gender == "male":
-        num = 11 - s
-        if num >= 10:
-            num -= 9
-        if num == 5:
-            return "坤"  # 男 5 寄坤
+    if year < 2000:
+        if gender == "male":
+            num = (100 - yy) % 9
+        else:
+            num = (yy - 4) % 9
     else:
-        num = s + 4
-        while num > 9:
-            num -= 9
-        if num == 5:
-            return "艮"  # 女 5 寄艮
+        if gender == "male":
+            num = (9 - (yy % 9)) % 9
+        else:
+            num = (yy + 6) % 9
+    if num == 0:
+        num = 9
+    if num == 5:
+        return "坤" if gender == "male" else "艮"
     return GUA_BY_NUM.get(num, "坎")
 
 

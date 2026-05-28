@@ -300,29 +300,33 @@ def get_four_pillars(birth_dt: datetime, longitude: float,
 
     输入：当地时间 birth_dt（无时区或带时区均可，按 tz_offset 换算）+ 经度。
     """
-    # 1. 真太阳时校正
+    # 1. 真太阳时校正（仅用于时柱/子时换日，不用于节气边界判断）
     naive_local = birth_dt.replace(tzinfo=None) if birth_dt.tzinfo else birth_dt
     if use_true_solar_time:
         true_local = to_true_solar_time(naive_local, longitude, tz_offset)
     else:
         true_local = naive_local
 
-    # 2. UTC 时刻（用于节气判断）
-    utc_dt = (true_local - timedelta(hours=tz_offset)).replace(tzinfo=timezone.utc)
+    # 2. **实际 UTC**（用于节气边界判断）。
+    #    节气是天文绝对时刻（UTC 定义），必须与出生的实际 UTC 时刻比较。
+    #    这里从 *钟表时间* 换算 UTC，而非从真太阳时换算——后者会引入系统偏差，
+    #    对西部地区（新疆、西藏）可能导致月柱甚至年柱判错。
+    utc_dt = (naive_local - timedelta(hours=tz_offset)).replace(tzinfo=timezone.utc)
 
-    # 3. 处理子时换日：默认采用“子初换日”，23:00 起算次日。
+    # 3. 处理子时换日：默认采用”子初换日”，23:00 起算次日。
+    #    子时换日基于真太阳时（反映真实太阳能量节律）。
     day_dt = true_local
     if true_local.hour == 23:
         day_dt = true_local + timedelta(days=1)
 
-    # 4. 节气
-    terms_this = solar_terms_for_year(true_local.year)
-    terms_next = solar_terms_for_year(true_local.year + 1) if true_local.month >= 11 else None
+    # 4. 节气（按实际 UTC 所在年份取）
+    terms_this = solar_terms_for_year(utc_dt.year)
+    terms_next = solar_terms_for_year(utc_dt.year + 1) if utc_dt.month >= 11 else None
 
-    # 5. 年柱
-    year_stem, year_branch, year_idx = get_year_pillar(true_local.year, terms_this, utc_dt)
+    # 5. 年柱（用实际 UTC 与立春比较）
+    year_stem, year_branch, year_idx = get_year_pillar(utc_dt.year, terms_this, utc_dt)
 
-    # 6. 月柱
+    # 6. 月柱（用实际 UTC 与 12 节比较）
     month_stem, month_branch = get_month_pillar(utc_dt, year_stem, terms_this, terms_next)
 
     # 7. 日柱
@@ -446,9 +450,9 @@ HUAGAI_TABLE = {  # 华盖
     "亥": "未", "卯": "未", "未": "未",
 }
 YANGREN_TABLE = {
-    "甲": "卯", "乙": "寅", "丙": "午", "丁": "巳",
-    "戊": "午", "己": "巳", "庚": "酉", "辛": "申",
-    "壬": "子", "癸": "亥",
+    # 羊刃 = 帝旺之位。主流取法：仅阳干有羊刃（阴干是否有刃存在学派争议，
+    # 此处采用最广泛的「阳干帝旺」标准）。
+    "甲": "卯", "丙": "午", "戊": "午", "庚": "酉", "壬": "子",
 }
 LUSHEN_TABLE = {
     "甲": "寅", "乙": "卯", "丙": "巳", "丁": "午",
@@ -481,7 +485,8 @@ def find_shensha(four_pillars: dict) -> list[str]:
         if HUAGAI_TABLE.get(ref) in branches:
             shensha.append("华盖")
             break
-    if YANGREN_TABLE[day_stem] in branches:
+    yangren_branch = YANGREN_TABLE.get(day_stem)
+    if yangren_branch and yangren_branch in branches:
         shensha.append("羊刃")
     if LUSHEN_TABLE[day_stem] in branches:
         shensha.append("禄神")

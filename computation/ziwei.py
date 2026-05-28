@@ -312,7 +312,7 @@ def _compute_liu_nian(palaces: list[dict[str, Any]], year: int) -> dict[str, Any
     start_idx = _BRANCH_ORDER.index(year_branch)
     liu_nian_palaces: dict[str, Any] = {}
     for i, ln_name in enumerate(_PALACE_NAMES_CYCLE):
-        branch = _BRANCH_ORDER[(start_idx + i) % 12]
+        branch = _BRANCH_ORDER[(start_idx - i) % 12]  # 逆时针排十二宫
         natal_palace = branch_map.get(branch)
         if natal_palace:
             liu_nian_palaces[f"流年{ln_name}"] = {
@@ -392,7 +392,7 @@ def compute_ziwei(birth: BirthInfo) -> ZiweiChart:
     liu_nian = _compute_liu_nian(palaces, current_year)
 
     current_da_xian = None
-    current_age = current_year - birth.year
+    current_age = current_year - birth.year + 1  # 虚岁（紫微斗数传统用虚岁）
     for dx in da_xian:
         if dx["age_start"] <= current_age <= dx["age_end"]:
             current_da_xian = dx

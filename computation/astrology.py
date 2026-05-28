@@ -299,8 +299,8 @@ def compute_natal_chart(birth: BirthInfo, house_system: str = "placidus") -> Ast
     coords["ASC"] = angles_all["ASC"]
     coords["MC"] = angles_all["MC"]
     speeds = {name: planets[name]["speed_per_day"] for name in planets}
-    speeds["ASC"] = 360.0
-    speeds["MC"] = 360.0
+    speeds["ASC"] = 0.0  # ASC/MC are fixed points in a natal chart
+    speeds["MC"] = 0.0
     for i, a in enumerate(names):
         for b in names[i + 1:]:
             asp = compute_aspect(coords[a], coords[b])

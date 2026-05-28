@@ -533,8 +533,8 @@ def _meihua_from_time(dt: datetime) -> tuple[list[int], list[int], int]:
     lunar = Solar.fromYmdHms(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second).getLunar()
     year_zhi = lunar.getYearZhiExact()
     year_num = DI_ZHI.index(year_zhi) + 1
-    month = dt.month
-    day = dt.day
+    month = lunar.getMonth()   # 农历月（梅花易数须用农历）
+    day = lunar.getDay()       # 农历日
     # 时辰序：子=1...亥=12
     hour = dt.hour
     if hour == 23 or hour < 1:
