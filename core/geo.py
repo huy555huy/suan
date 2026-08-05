@@ -10,7 +10,7 @@ from functools import lru_cache
 from pathlib import Path
 import re
 from datetime import datetime
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 _GEO_PATH = Path(__file__).resolve().parent.parent / "data" / "geo_cn.json"
@@ -82,7 +82,13 @@ _COMPACT_ALIASES = {
 
 def _offset_for_zone(tz_name: str, local_dt: datetime | None = None) -> float:
     ref_dt = local_dt or datetime.now()
-    offset = ref_dt.replace(tzinfo=ZoneInfo(tz_name)).utcoffset()
+    try:
+        zone = ZoneInfo(tz_name)
+    except ZoneInfoNotFoundError as exc:
+        raise TimezoneResolutionError(
+            f"运行环境缺少 IANA 时区数据库，无法读取 {tz_name}；请安装 tzdata。"
+        ) from exc
+    offset = ref_dt.replace(tzinfo=zone).utcoffset()
     if offset is None:
         raise TimezoneResolutionError(f"无法读取 {tz_name} 的历史时区偏移。")
     return offset.total_seconds() / 3600

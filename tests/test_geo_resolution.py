@@ -3,7 +3,12 @@ from datetime import datetime
 from api.routes import CreateOrUpdateSession, _profile_to_birthinfo
 import pytest
 
-from core.geo import GeoResolutionError, infer_timezone_offset, resolve_geo
+from core.geo import (
+    GeoResolutionError,
+    TimezoneResolutionError,
+    infer_timezone_offset,
+    resolve_geo,
+)
 
 
 def test_resolve_geo_handles_alias_and_district_names():
@@ -71,6 +76,17 @@ def test_infer_timezone_offset_respects_china_historical_dst():
     assert offset == 9.0
     assert confidence == "exact"
     assert source == "Asia/Shanghai"
+
+
+def test_missing_timezone_database_returns_actionable_error(monkeypatch):
+    import core.geo as geo
+
+    def missing_zone(_name):
+        raise geo.ZoneInfoNotFoundError("missing timezone data")
+
+    monkeypatch.setattr(geo, "ZoneInfo", missing_zone)
+    with pytest.raises(TimezoneResolutionError, match="缺少 IANA 时区数据库"):
+        geo._offset_for_zone("Asia/Shanghai", datetime(2024, 1, 1, 12, 0))
 
 
 def test_profile_to_birthinfo_rejects_overseas_place():
